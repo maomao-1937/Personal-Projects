@@ -1,12 +1,14 @@
 PROJECT: Auto Beat Video Editor
 
 VERSION: v1.0.0
-LAST_UPDATED: 2026-02-09 00:00
+LAST_UPDATED: 2026-02-09
 
 STATUS:
 - [x] Repo initialized
 - [x] Project structure created
 - [x] Web UI scaffold
+- [x] GitHub remote configured & pushed
+- [x] GitHub release v1.0.0 published
 - [ ] Beat engine implementation
 - [ ] Backend API (FastAPI)
 - [ ] Video processing pipeline
@@ -30,16 +32,19 @@ DECISIONS:
 - Keep ASCII opacity <= 0.12
 - Avoid GPU-heavy shaders
 
+GITHUB:
+- Repo: https://github.com/Nilabh2020/auto-beat-video-engine
+- Auth: gh CLI (browser OAuth, HTTPS protocol)
+- Topics: video-editing, beat-detection, ai, react, cyberpunk, threejs, fastapi, audio-analysis, music, ffmpeg
+
 NEXT STEPS:
-1. Install frontend dependencies (npm install)
-2. Verify dev server runs clean
-3. Scaffold backend/ with FastAPI skeleton
-4. Implement beat detection engine (librosa)
-5. Wire upload -> analyze -> export pipeline
-6. Connect frontend <-> backend via REST API
+1. Scaffold backend/ with FastAPI skeleton
+2. Implement beat detection engine (librosa)
+3. Wire upload -> analyze -> export pipeline
+4. Connect frontend <-> backend via REST API
 
 NOTES:
-- No remote GitHub repo configured yet (awaiting user PAT/SSH setup)
-- Frontend is fully scaffolded and ready for dev
+- Frontend is fully scaffolded and build-verified
 - All versioning via semantic versioning (MAJOR.MINOR.PATCH)
 - Conventional commits enforced
+- gh CLI installed and authenticated as Nilabh2020
