@@ -247,7 +247,7 @@ export default function App() {
           transition={{ delay: 1, duration: 1 }}
           className="mt-auto pt-12 pb-4 text-center text-white/10 text-xs tracking-widest uppercase"
         >
-          v1.1.0 — auto beat video engine
+          v1.2.0 — auto beat video engine
         </motion.footer>
       </div>
     </div>

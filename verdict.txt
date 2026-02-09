@@ -1,6 +1,6 @@
 PROJECT: Auto Beat Video Editor
 
-VERSION: v1.1.0
+VERSION: v1.2.0
 LAST_UPDATED: 2026-02-09
 
 STATUS:
@@ -27,7 +27,7 @@ DECISIONS:
 - YouTube URL validated client-side (youtube.com, youtu.be, music.youtube.com)
 - File and URL are mutually exclusive per card (selecting one clears the other)
 - ASCII rendered via Canvas (2D context, character grid)
-- Particles via tsParticles (GPU-friendly, configurable)
+- Particles via custom Canvas 2D (hand-rolled, real objects with velocity)
 - Ambient lighting via Three.js (soft volumetric glow)
 - Dark cyberpunk theme: purple / cyan / blue neon palette
 - Glassmorphism cards with backdrop-blur

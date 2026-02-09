@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-02-09
+
+### Changed
+- **ASCIIBackground**: Every cell now deterministically cycles characters per frame via sine-driven indexing; per-cell phase offsets, multi-frequency alpha waves, hue drift, and periodic glitch bursts
+- **ParticleField**: Replaced tsParticles library with custom Canvas 2D particle system — 80 real particle objects each with explicit `x/y/vx/vy/radius/opacity`, updated and rendered every frame in a `requestAnimationFrame` loop; inter-particle link lines drawn when distance < threshold
+- **AmbientScene**: Added per-frame light intensity pulsing, hue rotation, mesh scale breathing, opacity sync; added 4th orb (neon pink); wider orbital drift paths
+
+### Removed
+- `@tsparticles/react` and `@tsparticles/slim` dependencies (replaced by hand-rolled Canvas 2D)
+
 ## [1.1.0] - 2026-02-09
 
 ### Added
