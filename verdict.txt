@@ -1,6 +1,6 @@
 PROJECT: Auto Beat Video Editor
 
-VERSION: v1.0.0
+VERSION: v1.1.0
 LAST_UPDATED: 2026-02-09
 
 STATUS:
@@ -23,6 +23,9 @@ ARCHITECTURE:
 - Persistence: verdict.txt
 
 DECISIONS:
+- UploadCard supports File upload OR YouTube URL input (toggle)
+- YouTube URL validated client-side (youtube.com, youtu.be, music.youtube.com)
+- File and URL are mutually exclusive per card (selecting one clears the other)
 - ASCII rendered via Canvas (2D context, character grid)
 - Particles via tsParticles (GPU-friendly, configurable)
 - Ambient lighting via Three.js (soft volumetric glow)

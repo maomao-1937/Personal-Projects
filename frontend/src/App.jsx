@@ -16,6 +16,8 @@ export default function App() {
   const [stage, setStage] = useState(STAGES.UPLOAD)
   const [videoFile, setVideoFile] = useState(null)
   const [audioFile, setAudioFile] = useState(null)
+  const [videoUrl, setVideoUrl] = useState('')
+  const [audioUrl, setAudioUrl] = useState('')
   const [settings, setSettings] = useState({
     aggressiveness: 50,
     motionBias: 50,
@@ -23,14 +25,18 @@ export default function App() {
   })
   const [logs, setLogs] = useState([])
 
+  const hasVideo = videoFile || videoUrl
+  const hasAudio = audioFile || audioUrl
+
   const handleProcess = () => {
-    if (!videoFile || !audioFile) return
+    if (!hasVideo || !hasAudio) return
     setStage(STAGES.PROCESSING)
     setLogs([])
 
     const messages = [
       '> initializing engine...',
-      '> loading video source...',
+      videoUrl ? `> fetching video from YouTube...` : '> loading video source...',
+      audioUrl ? `> fetching audio from YouTube...` : '> loading audio source...',
       '> analyzing audio waveform...',
       '> detecting BPM and beat grid...',
       '> mapping scene boundaries...',
@@ -55,6 +61,8 @@ export default function App() {
     setStage(STAGES.UPLOAD)
     setVideoFile(null)
     setAudioFile(null)
+    setVideoUrl('')
+    setAudioUrl('')
     setLogs([])
   }
 
@@ -105,14 +113,18 @@ export default function App() {
                   accept={{ 'video/*': ['.mp4', '.mov', '.avi', '.mkv'] }}
                   icon="film"
                   file={videoFile}
+                  url={videoUrl}
                   onFile={setVideoFile}
+                  onUrl={setVideoUrl}
                 />
                 <UploadCard
                   label="Music"
                   accept={{ 'audio/*': ['.mp3', '.wav', '.flac', '.aac'] }}
                   icon="music"
                   file={audioFile}
+                  url={audioUrl}
                   onFile={setAudioFile}
+                  onUrl={setAudioUrl}
                 />
               </div>
 
@@ -124,7 +136,7 @@ export default function App() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleProcess}
-                disabled={!videoFile || !audioFile}
+                disabled={!hasVideo || !hasAudio}
                 className="w-full py-4 rounded-xl font-bold text-lg tracking-wider uppercase
                   bg-gradient-to-r from-neon-purple to-neon-cyan
                   text-white shadow-[0_0_30px_rgba(168,85,247,0.3)]
@@ -235,7 +247,7 @@ export default function App() {
           transition={{ delay: 1, duration: 1 }}
           className="mt-auto pt-12 pb-4 text-center text-white/10 text-xs tracking-widest uppercase"
         >
-          v1.0.0 — auto beat video engine
+          v1.1.0 — auto beat video engine
         </motion.footer>
       </div>
     </div>
