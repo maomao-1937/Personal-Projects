@@ -27,13 +27,12 @@ def export_video(
     filter_path = os.path.join(job_temp, "filter.txt")
     n = len(valid_cuts)
 
-    # Build the filter graph
+    # Build the filter graph — use trim with start/end (not duration) for precision
     filter_parts = []
     concat_inputs = []
     for i, seg in enumerate(valid_cuts):
-        duration = seg.end - seg.start
         filter_parts.append(
-            f"[0:v]trim=start={seg.start:.4f}:duration={duration:.4f},"
+            f"[0:v]trim=start={seg.start:.6f}:end={seg.end:.6f},"
             f"setpts=PTS-STARTPTS[v{i}]"
         )
         concat_inputs.append(f"[v{i}]")
@@ -54,6 +53,7 @@ def export_video(
         "-map", "[outv]",
         "-map", "1:a",
         "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+        "-video_track_timescale", "90000",
         "-c:a", "aac", "-b:a", "192k",
         "-shortest",
         "-movflags", "+faststart",
