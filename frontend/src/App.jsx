@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ASCIIBackground from './components/ASCIIBackground'
 import ParticleField from './components/ParticleField'
@@ -24,46 +24,109 @@ export default function App() {
     sensitivity: 50,
   })
   const [logs, setLogs] = useState([])
+  const [progress, setProgress] = useState(0)
+  const [jobId, setJobId] = useState(null)
+  const [error, setError] = useState(null)
+  const eventSourceRef = useRef(null)
 
   const hasVideo = videoFile || videoUrl
   const hasAudio = audioFile || audioUrl
 
-  const handleProcess = () => {
+  // Cleanup EventSource on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+      }
+    }
+  }, [])
+
+  const handleProcess = async () => {
     if (!hasVideo || !hasAudio) return
     setStage(STAGES.PROCESSING)
     setLogs([])
+    setProgress(0)
+    setError(null)
 
-    const messages = [
-      '> initializing engine...',
-      videoUrl ? '> fetching video from YouTube...' : '> loading video source...',
-      audioUrl ? '> fetching audio from YouTube...' : '> loading audio source...',
-      '> analyzing audio waveform...',
-      '> detecting BPM and beat grid...',
-      '> mapping scene boundaries...',
-      '> calculating motion vectors...',
-      '> aligning cuts to downbeats...',
-      '> rendering timeline...',
-      '> encoding output (H.264)...',
-      '> complete.',
-    ]
+    const formData = new FormData()
 
-    messages.forEach((msg, i) => {
-      setTimeout(() => {
-        setLogs((prev) => [...prev, msg])
-        if (i === messages.length - 1) {
-          setTimeout(() => setStage(STAGES.COMPLETE), 800)
+    if (videoFile) formData.append('video', videoFile)
+    if (audioFile) formData.append('audio', audioFile)
+    if (videoUrl) formData.append('videoUrl', videoUrl)
+    if (audioUrl) formData.append('audioUrl', audioUrl)
+    formData.append('aggressiveness', settings.aggressiveness)
+    formData.append('motionBias', settings.motionBias)
+    formData.append('sensitivity', settings.sensitivity)
+
+    try {
+      const res = await fetch('/api/process', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Server error' }))
+        throw new Error(err.detail || 'Processing failed')
+      }
+
+      const data = await res.json()
+      const id = data.job_id
+      setJobId(id)
+
+      // Open SSE stream
+      const es = new EventSource(`/api/status/${id}`)
+      eventSourceRef.current = es
+
+      es.onmessage = (event) => {
+        const msg = JSON.parse(event.data)
+        if (msg.log) {
+          setLogs((prev) => [...prev, msg.log])
         }
-      }, (i + 1) * 600)
-    })
+        if (msg.progress !== undefined) {
+          setProgress(msg.progress)
+        }
+        if (msg.status === 'complete') {
+          es.close()
+          eventSourceRef.current = null
+          setTimeout(() => setStage(STAGES.COMPLETE), 600)
+        }
+        if (msg.status === 'failed') {
+          es.close()
+          eventSourceRef.current = null
+          setError(msg.error || 'Processing failed')
+        }
+      }
+
+      es.onerror = () => {
+        es.close()
+        eventSourceRef.current = null
+      }
+    } catch (err) {
+      setError(err.message)
+      setLogs((prev) => [...prev, `> ERROR: ${err.message}`])
+    }
+  }
+
+  const handleDownload = () => {
+    if (jobId) {
+      window.location.href = `/api/download/${jobId}`
+    }
   }
 
   const handleReset = () => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+      eventSourceRef.current = null
+    }
     setStage(STAGES.UPLOAD)
     setVideoFile(null)
     setAudioFile(null)
     setVideoUrl('')
     setAudioUrl('')
     setLogs([])
+    setProgress(0)
+    setJobId(null)
+    setError(null)
   }
 
   return (
@@ -174,18 +237,43 @@ export default function App() {
               className="w-full max-w-2xl"
             >
               <div className="glass-card" style={{ padding: '2rem' }}>
-                <h2
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    color: '#a855f7',
-                    fontSize: '0.8rem',
-                    letterSpacing: '0.2em',
-                    textTransform: 'uppercase',
-                    marginBottom: '1.25rem',
-                  }}
-                >
-                  Processing
-                </h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                  <h2
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      color: '#a855f7',
+                      fontSize: '0.8rem',
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Processing
+                  </h2>
+                  <span style={{ color: '#06b6d4', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
+                    {Math.round(progress * 100)}%
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{
+                  width: '100%',
+                  height: '3px',
+                  background: 'rgba(255,255,255,0.05)',
+                  borderRadius: '2px',
+                  marginBottom: '1.25rem',
+                  overflow: 'hidden',
+                }}>
+                  <motion.div
+                    style={{
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #a855f7, #06b6d4)',
+                      borderRadius: '2px',
+                    }}
+                    animate={{ width: `${progress * 100}%` }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+
                 <div
                   style={{
                     background: 'rgba(0,0,0,0.5)',
@@ -194,6 +282,8 @@ export default function App() {
                     fontFamily: 'var(--font-mono)',
                     fontSize: '0.85rem',
                     minHeight: '280px',
+                    maxHeight: '400px',
+                    overflowY: 'auto',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '0.35rem',
@@ -205,19 +295,47 @@ export default function App() {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       style={{
-                        color: log.includes('complete') ? '#4ade80' : 'rgba(6,182,212,0.7)',
+                        color: log.includes('ERROR') ? '#f87171'
+                          : log.includes('complete') ? '#4ade80'
+                          : 'rgba(6,182,212,0.7)',
                       }}
                     >
                       {log}
                     </motion.div>
                   ))}
-                  {logs.length > 0 && !logs[logs.length - 1]?.includes('complete') && (
+                  {!error && stage === STAGES.PROCESSING && (
                     <span
                       className="animate-pulse"
                       style={{ display: 'inline-block', width: 8, height: 16, background: '#06b6d4' }}
                     />
                   )}
                 </div>
+
+                {error && (
+                  <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem' }}>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleReset}
+                      style={{
+                        flex: 1,
+                        padding: '0.75rem',
+                        borderRadius: '0.75rem',
+                        border: '1px solid rgba(248,113,113,0.3)',
+                        background: 'transparent',
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        fontFamily: 'var(--font-display)',
+                        fontSize: '0.8rem',
+                        color: '#f87171',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Try Again
+                    </motion.button>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -246,21 +364,17 @@ export default function App() {
                 >
                   Output Preview
                 </h2>
-                <div
+                <video
+                  src={jobId ? `/api/download/${jobId}` : undefined}
+                  controls
                   style={{
+                    width: '100%',
                     aspectRatio: '16/9',
                     background: 'rgba(0,0,0,0.6)',
                     borderRadius: '0.5rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     border: '1px solid rgba(255,255,255,0.05)',
                   }}
-                >
-                  <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.85rem' }}>
-                    [ video preview — backend required ]
-                  </span>
-                </div>
+                />
               </div>
 
               {/* Actions */}
@@ -268,6 +382,7 @@ export default function App() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  onClick={handleDownload}
                   style={{
                     flex: 1,
                     padding: '0.85rem',
@@ -328,7 +443,7 @@ export default function App() {
             textTransform: 'uppercase',
           }}
         >
-          v1.2.0 — auto beat video engine
+          v2.0.0 — auto beat video engine
         </motion.footer>
       </div>
     </div>

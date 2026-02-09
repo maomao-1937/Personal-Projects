@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] - 2026-02-09
+
+### Added
+- **Full backend** with FastAPI, uvicorn, CORS, SSE streaming
+- **Audio analysis pipeline**: librosa-based BPM detection, beat tracking, onset strength, RMS energy curves
+- **Video analysis pipeline**: FFmpeg scene detection (`select` filter), motion estimation via frame differencing at low-res
+- **Beat-sync algorithm**: aggressiveness controls cut density (downbeats → sub-beats), motionBias selects high-motion windows, sensitivity tunes beat detection tightness; candidates scored by motion + energy + scene proximity
+- **Export pipeline**: FFmpeg segment trimming (libx264 CRF 18), concat demuxer, AAC audio mux, faststart
+- **YouTube download**: yt-dlp integration for both video and audio URLs
+- **Job system**: in-memory job store with asyncio.Queue for real-time SSE log streaming
+- **API endpoints**: POST `/api/process`, GET `/api/status/{job_id}` (SSE), GET `/api/download/{job_id}`
+- **Real-time progress**: percentage bar + live terminal log in processing view
+- **Video preview**: `<video>` tag with controls on completion screen
+- **Working download**: actual MP4 file served via FileResponse
+- **Error handling**: red error logs + "Try Again" button on failure
+- Vite dev proxy (`/api` → `localhost:8000`)
+
+### Changed
+- `App.jsx` rewritten: mock setTimeout replaced with real `fetch` + `EventSource` API calls
+- Footer version updated to v2.0.0
+
+### Dependencies (backend)
+- fastapi, uvicorn[standard], python-multipart, pydantic
+- librosa, numpy, soundfile
+- yt-dlp, aiofiles
+
 ## [1.2.0] - 2026-02-09
 
 ### Changed
