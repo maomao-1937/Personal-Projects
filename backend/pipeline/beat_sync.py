@@ -29,6 +29,34 @@ def _subdivide_beats(beats: np.ndarray, n: int) -> np.ndarray:
     return np.array(result)
 
 
+def _build_interest_map(video: VideoAnalysis, n_bins: int = 200) -> np.ndarray:
+    """Build a per-bin interest score combining motion + scene proximity."""
+    dur = video.duration
+    if dur <= 0:
+        return np.ones(n_bins)
+
+    bins = np.linspace(0, dur, n_bins)
+    interest = np.zeros(n_bins)
+
+    # Add motion
+    for i, t in enumerate(bins):
+        interest[i] = _interp(video.motion_times, video.motion_scores, t)
+
+    # Boost scene boundaries (strong visual impact)
+    for scene_t in video.scenes:
+        idx = int(scene_t / dur * (n_bins - 1))
+        idx = max(0, min(idx, n_bins - 1))
+        # Boost a window around the scene boundary
+        for j in range(max(0, idx - 3), min(n_bins, idx + 4)):
+            interest[j] += 0.5
+
+    # Normalize to 0..1
+    if interest.max() > 0:
+        interest = interest / interest.max()
+
+    return interest
+
+
 def compute_beat_sync_cuts(
     audio: AudioAnalysis,
     video: VideoAnalysis,
@@ -38,12 +66,15 @@ def compute_beat_sync_cuts(
     mb = settings.motionBias / 100.0
     beats = audio.beats
     downbeats = audio.downbeats
+    vid_dur = video.duration
+    aud_dur = audio.duration
 
     if len(beats) < 2:
-        # Not enough beats — just return the whole video as one segment
-        return [CutSegment(start=0.0, end=min(video.duration, audio.duration))]
+        return [CutSegment(start=0.0, end=min(vid_dur, aud_dur))]
 
-    # Step 1: Build candidate cut points based on aggressiveness
+    # ================================================================
+    # Step 1: Choose which beats to cut on (based on aggressiveness)
+    # ================================================================
     if agg <= 0.25:
         candidates = downbeats if len(downbeats) > 1 else beats[::4]
     elif agg <= 0.5:
@@ -58,99 +89,133 @@ def compute_beat_sync_cuts(
     if len(candidates) < 2:
         candidates = beats.copy()
 
-    # Step 2: Score each candidate
-    scored = []
-    for t in candidates:
-        motion = _interp(video.motion_times, video.motion_scores, t)
-        energy = _interp(audio.energy_times, audio.energy_curve, t)
+    candidates = np.sort(np.unique(candidates))
 
-        # Normalize energy
-        e_max = audio.energy_curve.max() if len(audio.energy_curve) > 0 else 1.0
-        energy_norm = energy / e_max if e_max > 0 else 0.0
-
-        # Scene boundary bonus
-        scene_bonus = 0.0
-        if video.scenes:
-            nearest = min(abs(t - s) for s in video.scenes)
-            if nearest < 0.5:
-                scene_bonus = 1.0
-
-        score = (1.0 - mb) * 1.0 + mb * motion + 0.15 * scene_bonus + 0.1 * energy_norm
-        scored.append((t, score, scene_bonus > 0))
-
-    # Step 3: Filter low-scoring candidates
-    scored.sort(key=lambda x: x[1], reverse=True)
-    keep_ratio = 0.6 + 0.3 * agg
-    n_keep = max(2, math.ceil(len(scored) * keep_ratio))
-
-    kept = list(scored[:n_keep])
-    # Always keep scene-boundary cuts
-    for item in scored[n_keep:]:
-        if item[2]:
-            kept.append(item)
-
-    kept.sort(key=lambda x: x[0])  # sort by time
-    cut_times = [x[0] for x in kept]
-
-    # Step 4: Enforce minimum segment duration
+    # ================================================================
+    # Step 2: Build the beat grid — times where visual cuts happen
+    # ================================================================
+    # Always start from 0 so video aligns with audio start
     min_seg = 2.0 - 1.7 * agg  # 2.0s at agg=0, 0.3s at agg=100
-    filtered = [cut_times[0]]
-    for t in cut_times[1:]:
-        if t - filtered[-1] >= min_seg:
-            filtered.append(t)
 
-    # Step 5: Build segments
-    # Each cut point defines a moment in the audio timeline.
-    # We map segments sequentially from the source video.
+    beat_grid = [0.0]
+    for t in candidates:
+        if t <= 0.0:
+            continue
+        if t - beat_grid[-1] >= min_seg:
+            beat_grid.append(float(t))
+
+    # Add the audio end
+    if aud_dur - beat_grid[-1] > 0.1:
+        beat_grid.append(aud_dur)
+
+    # ================================================================
+    # Step 3: For each beat interval, pick WHERE in the source video
+    #         to grab footage — this is what creates the "cuts" effect
+    # ================================================================
+    interest = _build_interest_map(video)
+    n_bins = len(interest)
+
+    # Build pool of candidate source windows sorted by interest
+    # We'll pick from these to create visual variety
+    window_step = 0.5  # seconds
+    n_windows = int(vid_dur / window_step)
+    windows = []
+    for w in range(n_windows):
+        t = w * window_step
+        bin_idx = min(int(t / vid_dur * (n_bins - 1)), n_bins - 1)
+        windows.append((t, interest[bin_idx]))
+
+    # Sort by interest (descending) — prefer high-motion/scene-boundary areas
+    windows.sort(key=lambda x: x[1], reverse=True)
+
     segments = []
-    video_cursor = 0.0
+    used_times = set()  # Track which source windows we've used (avoid repetition)
 
-    for i in range(len(filtered)):
-        if i + 1 < len(filtered):
-            seg_duration = filtered[i + 1] - filtered[i]
-        else:
-            seg_duration = audio.duration - filtered[i]
-            if seg_duration <= 0:
-                break
+    for i in range(len(beat_grid) - 1):
+        seg_duration = beat_grid[i + 1] - beat_grid[i]
+        if seg_duration < 0.04:
+            continue
 
-        # If motionBias is high, try to find high-motion window
-        if mb > 0.7 and len(video.motion_scores) > 0:
-            best_start = _find_best_motion_window(
-                video.motion_scores, video.motion_times,
-                seg_duration, video.duration, video_cursor
+        # Clamp segment to fit within source video
+        seg_duration_clamped = min(seg_duration, vid_dur - 0.01)
+
+        if mb < 0.3:
+            # Low motionBias: prefer variety, cycle through video sequentially
+            # but with jumps at each beat to create visual cuts
+            src_start = _pick_sequential_with_jumps(
+                i, len(beat_grid) - 1, vid_dur, seg_duration_clamped
             )
-            segments.append(CutSegment(start=best_start, end=best_start + seg_duration))
-            video_cursor = best_start + seg_duration
+        elif mb < 0.7:
+            # Medium motionBias: mix of sequential + interest-driven
+            src_start = _pick_mixed(
+                i, len(beat_grid) - 1, vid_dur, seg_duration_clamped,
+                interest, n_bins, used_times, window_step
+            )
         else:
-            # Sequential
-            if video_cursor + seg_duration > video.duration:
-                video_cursor = 0.0
-            segments.append(CutSegment(start=video_cursor, end=video_cursor + seg_duration))
-            video_cursor += seg_duration
+            # High motionBias: always pick highest-interest window
+            src_start = _pick_best_interest(
+                vid_dur, seg_duration_clamped, interest, n_bins,
+                used_times, window_step
+            )
+
+        # Clamp to valid range
+        src_start = max(0.0, min(src_start, vid_dur - seg_duration_clamped))
+        src_end = src_start + seg_duration_clamped
+
+        segments.append(CutSegment(start=src_start, end=src_end))
+
+        # Mark this window as used
+        bin_key = round(src_start / window_step)
+        used_times.add(bin_key)
 
     return segments
 
 
-def _find_best_motion_window(
-    motion: np.ndarray, times: np.ndarray,
-    duration: float, video_duration: float, hint_start: float
+def _pick_sequential_with_jumps(
+    seg_idx: int, total_segs: int, vid_dur: float, seg_dur: float
 ) -> float:
-    """Find the window of `duration` seconds with highest average motion."""
-    if len(times) == 0 or duration <= 0:
-        return 0.0
+    """Spread segments across the video with non-sequential ordering.
+    Creates a pattern that jumps around the video at each cut."""
+    # Use golden ratio to spread picks across the video for maximum variety
+    golden = (1 + 5**0.5) / 2
+    phase = (seg_idx * golden) % 1.0
+    return phase * max(0, vid_dur - seg_dur)
 
+
+def _pick_mixed(
+    seg_idx: int, total_segs: int, vid_dur: float, seg_dur: float,
+    interest: np.ndarray, n_bins: int, used: set, step: float
+) -> float:
+    """Alternate between sequential golden-ratio picks and interest-driven picks."""
+    if seg_idx % 3 == 0:
+        # Every 3rd cut: pick a high-interest spot
+        return _pick_best_interest(vid_dur, seg_dur, interest, n_bins, used, step)
+    else:
+        # Others: golden ratio spread
+        return _pick_sequential_with_jumps(seg_idx, total_segs, vid_dur, seg_dur)
+
+
+def _pick_best_interest(
+    vid_dur: float, seg_dur: float,
+    interest: np.ndarray, n_bins: int, used: set, step: float
+) -> float:
+    """Pick the highest-interest window that hasn't been used recently."""
     best_score = -1.0
-    best_start = hint_start
+    best_start = 0.0
 
-    step = max(0.5, duration / 4)
+    search_step = max(0.5, seg_dur / 2)
     t = 0.0
-    while t + duration <= video_duration:
-        mask = (times >= t) & (times < t + duration)
-        if mask.any():
-            avg = motion[mask].mean()
-            if avg > best_score:
-                best_score = avg
-                best_start = t
-        t += step
+    while t + seg_dur <= vid_dur:
+        bin_key = round(t / step)
+        # Penalize recently used windows
+        penalty = 0.5 if bin_key in used else 0.0
+
+        bin_idx = min(int(t / vid_dur * (n_bins - 1)), n_bins - 1)
+        score = interest[bin_idx] - penalty
+
+        if score > best_score:
+            best_score = score
+            best_start = t
+        t += search_step
 
     return best_start

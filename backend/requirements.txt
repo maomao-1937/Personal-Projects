@@ -5,5 +5,5 @@ pydantic==2.10.0
 librosa==0.10.2
 numpy<3
 soundfile==0.13.0
-yt-dlp>=2025.1.0
+yt-dlp>=2026.1.0
 aiofiles==24.1.0
