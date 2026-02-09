@@ -35,8 +35,8 @@ export default function App() {
 
     const messages = [
       '> initializing engine...',
-      videoUrl ? `> fetching video from YouTube...` : '> loading video source...',
-      audioUrl ? `> fetching audio from YouTube...` : '> loading audio source...',
+      videoUrl ? '> fetching video from YouTube...' : '> loading video source...',
+      audioUrl ? '> fetching audio from YouTube...' : '> loading audio source...',
       '> analyzing audio waveform...',
       '> detecting BPM and beat grid...',
       '> mapping scene boundaries...',
@@ -74,23 +74,23 @@ export default function App() {
       <AmbientScene />
 
       {/* Main content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center px-4 py-8">
+      <div className="relative z-10 min-h-screen flex flex-col items-center px-6 py-12">
         {/* Hero */}
         <motion.header
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="text-center mb-12 mt-8"
+          className="text-center mb-16 mt-12"
         >
           <h1
-            className="text-4xl md:text-6xl font-black tracking-widest mb-3"
+            className="text-4xl md:text-6xl lg:text-7xl font-black tracking-widest mb-4"
             style={{ fontFamily: 'var(--font-display)' }}
           >
-            <span className="text-neon-purple">AUTO BEAT</span>
-            <span className="text-white/20 mx-3">//</span>
-            <span className="text-neon-cyan">VIDEO ENGINE</span>
+            <span style={{ color: '#a855f7' }}>AUTO BEAT</span>
+            <span style={{ color: 'rgba(255,255,255,0.15)', margin: '0 0.75rem' }}>//</span>
+            <span style={{ color: '#06b6d4' }}>VIDEO ENGINE</span>
           </h1>
-          <p className="text-white/30 text-sm tracking-[0.3em] uppercase">
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem', letterSpacing: '0.3em', textTransform: 'uppercase' }}>
             AI-powered beat-synced video editing
           </p>
         </motion.header>
@@ -104,10 +104,11 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5 }}
-              className="w-full max-w-4xl space-y-6"
+              className="w-full max-w-4xl"
+              style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
             >
               {/* Upload cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <UploadCard
                   label="Video"
                   accept={{ 'video/*': ['.mp4', '.mov', '.avi', '.mkv'] }}
@@ -137,12 +138,26 @@ export default function App() {
                 whileTap={{ scale: 0.98 }}
                 onClick={handleProcess}
                 disabled={!hasVideo || !hasAudio}
-                className="w-full py-4 rounded-xl font-bold text-lg tracking-wider uppercase
-                  bg-gradient-to-r from-neon-purple to-neon-cyan
-                  text-white shadow-[0_0_30px_rgba(168,85,247,0.3)]
-                  disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none
-                  transition-shadow hover:shadow-[0_0_50px_rgba(168,85,247,0.5)]"
-                style={{ fontFamily: 'var(--font-display)' }}
+                style={{
+                  width: '100%',
+                  padding: '1.1rem',
+                  borderRadius: '0.75rem',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '1.1rem',
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                  fontFamily: 'var(--font-display)',
+                  background: (!hasVideo || !hasAudio)
+                    ? 'rgba(168,85,247,0.15)'
+                    : 'linear-gradient(135deg, #a855f7, #06b6d4)',
+                  color: (!hasVideo || !hasAudio) ? 'rgba(255,255,255,0.2)' : '#fff',
+                  cursor: (!hasVideo || !hasAudio) ? 'not-allowed' : 'pointer',
+                  boxShadow: (!hasVideo || !hasAudio)
+                    ? 'none'
+                    : '0 0 40px rgba(168,85,247,0.3), 0 0 80px rgba(168,85,247,0.1)',
+                  transition: 'box-shadow 0.3s, background 0.3s',
+                }}
               >
                 Process
               </motion.button>
@@ -158,30 +173,49 @@ export default function App() {
               transition={{ duration: 0.5 }}
               className="w-full max-w-2xl"
             >
-              <div className="rounded-2xl border border-cyber-border bg-cyber-card backdrop-blur-xl p-6">
+              <div className="glass-card" style={{ padding: '2rem' }}>
                 <h2
-                  className="text-neon-purple text-sm tracking-[0.2em] uppercase mb-4"
-                  style={{ fontFamily: 'var(--font-display)' }}
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    color: '#a855f7',
+                    fontSize: '0.8rem',
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    marginBottom: '1.25rem',
+                  }}
                 >
                   Processing
                 </h2>
-                <div className="bg-black/50 rounded-lg p-4 font-mono text-sm space-y-1 min-h-[240px]">
+                <div
+                  style={{
+                    background: 'rgba(0,0,0,0.5)',
+                    borderRadius: '0.5rem',
+                    padding: '1.25rem',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.85rem',
+                    minHeight: '280px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.35rem',
+                  }}
+                >
                   {logs.map((log, i) => (
                     <motion.div
                       key={i}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className={
-                        log.includes('complete')
-                          ? 'text-green-400'
-                          : 'text-neon-cyan/70'
-                      }
+                      style={{
+                        color: log.includes('complete') ? '#4ade80' : 'rgba(6,182,212,0.7)',
+                      }}
                     >
                       {log}
                     </motion.div>
                   ))}
                   {logs.length > 0 && !logs[logs.length - 1]?.includes('complete') && (
-                    <span className="inline-block w-2 h-4 bg-neon-cyan animate-pulse" />
+                    <span
+                      className="animate-pulse"
+                      style={{ display: 'inline-block', width: 8, height: 16, background: '#06b6d4' }}
+                    />
                   )}
                 </div>
               </div>
@@ -195,18 +229,35 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5 }}
-              className="w-full max-w-2xl space-y-6"
+              className="w-full max-w-2xl"
+              style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
             >
               {/* Preview */}
-              <div className="rounded-2xl border border-cyber-border bg-cyber-card backdrop-blur-xl p-6">
+              <div className="glass-card" style={{ padding: '2rem' }}>
                 <h2
-                  className="text-neon-cyan text-sm tracking-[0.2em] uppercase mb-4"
-                  style={{ fontFamily: 'var(--font-display)' }}
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    color: '#06b6d4',
+                    fontSize: '0.8rem',
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    marginBottom: '1.25rem',
+                  }}
                 >
                   Output Preview
                 </h2>
-                <div className="aspect-video bg-black/60 rounded-lg flex items-center justify-center border border-white/5">
-                  <span className="text-white/20 text-sm">
+                <div
+                  style={{
+                    aspectRatio: '16/9',
+                    background: 'rgba(0,0,0,0.6)',
+                    borderRadius: '0.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                  }}
+                >
+                  <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.85rem' }}>
                     [ video preview — backend required ]
                   </span>
                 </div>
@@ -217,10 +268,21 @@ export default function App() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex-1 py-3 rounded-xl font-bold tracking-wider uppercase
-                    bg-gradient-to-r from-neon-purple to-neon-cyan text-white
-                    shadow-[0_0_30px_rgba(168,85,247,0.3)]"
-                  style={{ fontFamily: 'var(--font-display)' }}
+                  style={{
+                    flex: 1,
+                    padding: '0.85rem',
+                    borderRadius: '0.75rem',
+                    border: 'none',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '0.85rem',
+                    background: 'linear-gradient(135deg, #a855f7, #06b6d4)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    boxShadow: '0 0 30px rgba(168,85,247,0.3)',
+                  }}
                 >
                   Download MP4
                 </motion.button>
@@ -228,10 +290,20 @@ export default function App() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleReset}
-                  className="flex-1 py-3 rounded-xl font-bold tracking-wider uppercase
-                    border border-neon-purple/30 text-neon-purple
-                    hover:bg-neon-purple/10 transition-colors"
-                  style={{ fontFamily: 'var(--font-display)' }}
+                  style={{
+                    flex: 1,
+                    padding: '0.85rem',
+                    borderRadius: '0.75rem',
+                    border: '1px solid rgba(168,85,247,0.3)',
+                    background: 'transparent',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '0.85rem',
+                    color: '#a855f7',
+                    cursor: 'pointer',
+                  }}
                 >
                   New Project
                 </motion.button>
@@ -245,7 +317,16 @@ export default function App() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1, duration: 1 }}
-          className="mt-auto pt-12 pb-4 text-center text-white/10 text-xs tracking-widest uppercase"
+          style={{
+            marginTop: 'auto',
+            paddingTop: '4rem',
+            paddingBottom: '1rem',
+            textAlign: 'center',
+            color: 'rgba(255,255,255,0.1)',
+            fontSize: '0.7rem',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+          }}
         >
           v1.2.0 — auto beat video engine
         </motion.footer>

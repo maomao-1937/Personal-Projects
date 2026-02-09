@@ -8,10 +8,10 @@ const controls = [
 
 function Slider({ label, desc, value, onChange }) {
   return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-baseline">
-        <label className="text-white/60 text-sm">{label}</label>
-        <span className="text-neon-cyan text-xs font-mono">{value}%</span>
+    <div style={{ padding: '0.75rem 0' }}>
+      <div className="flex justify-between items-center" style={{ marginBottom: '0.75rem' }}>
+        <label className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>{label}</label>
+        <span className="text-xs font-mono" style={{ color: '#06b6d4' }}>{value}%</span>
       </div>
       <input
         type="range"
@@ -19,15 +19,8 @@ function Slider({ label, desc, value, onChange }) {
         max={100}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-1 rounded-full appearance-none cursor-pointer
-          bg-white/10 accent-neon-purple
-          [&::-webkit-slider-thumb]:appearance-none
-          [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
-          [&::-webkit-slider-thumb]:rounded-full
-          [&::-webkit-slider-thumb]:bg-neon-purple
-          [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(168,85,247,0.6)]"
       />
-      <p className="text-white/20 text-xs">{desc}</p>
+      <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)', marginTop: '0.5rem' }}>{desc}</p>
     </div>
   )
 }
@@ -40,23 +33,35 @@ export default function ControlPanel({ settings, onChange }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2, duration: 0.5 }}
-      className="rounded-2xl border border-cyber-border bg-cyber-card backdrop-blur-xl p-6 space-y-5"
+      className="glass-card"
+      style={{ padding: '1.75rem' }}
     >
       <h2
-        className="text-neon-purple text-xs tracking-[0.2em] uppercase"
-        style={{ fontFamily: 'var(--font-display)' }}
+        className="text-xs tracking-widest uppercase"
+        style={{
+          fontFamily: 'var(--font-display)',
+          color: '#a855f7',
+          marginBottom: '0.5rem',
+          letterSpacing: '0.2em',
+        }}
       >
         Controls
       </h2>
-      {controls.map((ctrl) => (
-        <Slider
-          key={ctrl.key}
-          label={ctrl.label}
-          desc={ctrl.desc}
-          value={settings[ctrl.key]}
-          onChange={update(ctrl.key)}
-        />
-      ))}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        {controls.map((ctrl, i) => (
+          <div key={ctrl.key}>
+            <Slider
+              label={ctrl.label}
+              desc={ctrl.desc}
+              value={settings[ctrl.key]}
+              onChange={update(ctrl.key)}
+            />
+            {i < controls.length - 1 && (
+              <div style={{ height: 1, background: 'rgba(168,85,247,0.08)', margin: '0.25rem 0' }} />
+            )}
+          </div>
+        ))}
+      </div>
     </motion.div>
   )
 }
