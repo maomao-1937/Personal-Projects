@@ -77,7 +77,7 @@ export function TaskForm(props: Props) {
       </div>
       <input
         name="tags"
-        placeholder="标签，用逗号分隔（如：数学,复习）"
+        placeholder="标签，用逗号分隔（最多 10 个，每个 30 字内）"
         defaultValue={defaults.tags}
         className="rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm dark:border-white/[.145] dark:bg-zinc-900"
       />

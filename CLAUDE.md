@@ -53,6 +53,7 @@ src/
       range-picker.tsx  # 区间切换（Link + searchParams，不用客户端状态）
       panels.tsx        # 统计块、任务归集条、完成率、打卡摘要、表格数据
       charts.tsx        # Recharts 折线/柱状图，配色读 --viz-* CSS 令牌
+      export-button.tsx # 导出 JSON 备份按钮（客户端，调 exportAllData 触发下载）
   generated/prisma/      # Prisma Client 生成代码（勿手动编辑，勿提交）
   lib/
     prisma.ts           # PrismaClient 单例（driver adapter 初始化 + 热重载防重复连接）
@@ -62,6 +63,7 @@ src/
       tasks.ts          # 任务 CRUD Server Actions
       pomodoro.ts       # 番茄钟会话记录 Server Actions
       checkin.ts        # 打卡 upsert / 撤销 Server Actions
+      export.ts         # exportAllData：导出全部数据为 JSON 备份
 prisma/
   schema.prisma          # Priority / SessionPhase / Mood 枚举 + Task / PomodoroSession / CheckIn 模型
 ```
@@ -92,6 +94,10 @@ prisma/
 - `taskId` 来自客户端，Server Action 里先查任务是否真实存在，不存在就降级成 `null`（Server Actions 是公开 POST 端点，不能信任入参）
 - 提示音用 Web Audio API 合成正弦音，没有引入 `public/` 音频文件（Howler 已装但这里用不上，留给后续需要真实音源时用）
 - Zustand 的 `persist` 只存配置，`taskId` 走 `partialize` 排除掉——否则下次打开可能关联到已删除的任务
+- `PomodoroSession` 存 `plannedSec`（= plannedMin × 60）而不是 `actualSec`：计时器是倒计时模式，跑完的阶段完成秒数恒等于计划秒数，`actualSec` 这个命名会误导人以为记录了真实墙钟时长（暂停/恢复不会改变计数值）。曾用名 `actualSec` 在迁移 `20260803080912_rename_actual_sec_to_planned_sec` 中重命名
+- 统计面板右上角有「导出 JSON 备份」按钮：`lib/actions/export.ts` 读全量数据 → 客户端 Blob 下载。当前只有导出没有导入，恢复数据靠手工用 Prisma 导入
+
+## 已知问题（暂不处理）
 
 ## 关键约定
 
@@ -120,6 +126,7 @@ prisma/
 - [X] 功能 2：番茄钟（计时器 + 工作/休息循环 + 任务关联）
 - [X] 功能 3：打卡系统（一键打卡 + 心情标记 + 连续天数 + 半年热力图）
 - [X] 功能 4：统计面板（每日时长 / 周节律 / 任务归集 / 完成率 / 打卡摘要 + 表格数据）
+- [X] 数据备份：统计面板「导出 JSON 备份」按钮（全量数据导出）
 
 四个功能均已完成。完整技术选型调研与参考项目见 `/Users/liuxs/.claude/plans/quirky-prancing-fountain.md`。
 

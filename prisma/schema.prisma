@@ -67,8 +67,9 @@ model PomodoroSession {
   phase       SessionPhase @default(WORK)
   /// 该阶段计划时长（分钟），用于统计"计划专注"
   plannedMin  Int
-  /// 实际完成秒数，仅记录跑完的阶段，中途放弃不落库
-  actualSec   Int
+  /// 计划时长对应的秒数（= plannedMin × 60），计时器是倒计时模式，
+  /// 每个阶段跑完时实际完成的秒数就是计划的秒数，所以用 plannedSec 命名
+  plannedSec  Int
   taskId      String?
   task        Task?        @relation(fields: [taskId], references: [id], onDelete: SetNull)
   finishedAt  DateTime     @default(now())

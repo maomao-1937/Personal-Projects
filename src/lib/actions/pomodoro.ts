@@ -20,7 +20,7 @@ function isPhase(value: unknown): value is SessionPhase {
 export async function logSession(input: {
   phase: string;
   plannedMin: number;
-  actualSec: number;
+  plannedSec: number;
   taskId: string | null;
 }): Promise<LogResult> {
   if (!isPhase(input.phase)) {
@@ -28,13 +28,13 @@ export async function logSession(input: {
   }
 
   const plannedMin = Math.round(Number(input.plannedMin));
-  const actualSec = Math.round(Number(input.actualSec));
+  const plannedSec = Math.round(Number(input.plannedSec));
 
   if (!Number.isFinite(plannedMin) || plannedMin < 1 || plannedMin > 180) {
     return { ok: false, error: "时长超出允许范围" };
   }
-  if (!Number.isFinite(actualSec) || actualSec < 1 || actualSec > MAX_PHASE_SEC) {
-    return { ok: false, error: "实际时长异常，本次不记录" };
+  if (!Number.isFinite(plannedSec) || plannedSec < 1 || plannedSec > MAX_PHASE_SEC) {
+    return { ok: false, error: "计划时长异常，本次不记录" };
   }
 
   // taskId 来自客户端，不能直接信任：确认任务真实存在再关联
@@ -51,7 +51,7 @@ export async function logSession(input: {
     data: {
       phase: input.phase,
       plannedMin,
-      actualSec,
+      plannedSec,
       taskId,
     },
   });

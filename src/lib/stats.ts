@@ -9,7 +9,7 @@ import { dayKey, recentDayKeys } from "@/lib/checkin-date";
 
 export type SessionInput = {
   phase: string;
-  actualSec: number;
+  plannedSec: number;
   finishedAt: Date;
   taskId: string | null;
 };
@@ -49,7 +49,7 @@ export function buildDailySeries(
     if (!isWork(s)) continue;
     const slot = bucket.get(dayKey(s.finishedAt));
     if (!slot) continue; // 落在窗口外，忽略
-    slot.minutes += s.actualSec / 60;
+    slot.minutes += s.plannedSec / 60;
     slot.sessions += 1;
   }
 
@@ -80,7 +80,7 @@ export function buildWeekdayProfile(
     if (!window.has(dayKey(s.finishedAt))) continue;
     // getDay(): 0=周日，转成 0=周一
     const idx = (s.finishedAt.getDay() + 6) % 7;
-    totals[idx] += s.actualSec / 60;
+    totals[idx] += s.plannedSec / 60;
   }
 
   return labels.map((weekday, i) => ({
@@ -111,13 +111,13 @@ export function buildTaskShare(
   for (const s of sessions) {
     if (!isWork(s)) continue;
     if (!s.taskId) {
-      freeMin += s.actualSec / 60;
+      freeMin += s.plannedSec / 60;
       continue;
     }
     // 任务被删除后 taskId 会置 null，所以能查到的都还存在；
     // 万一有残留就退回"已删除任务"，不要静默丢掉这段时长。
     const title = titleById.get(s.taskId) ?? "已删除的任务";
-    byTask.set(title, (byTask.get(title) ?? 0) + s.actualSec / 60);
+    byTask.set(title, (byTask.get(title) ?? 0) + s.plannedSec / 60);
   }
 
   if (freeMin > 0) byTask.set("自由计时", (byTask.get("自由计时") ?? 0) + freeMin);

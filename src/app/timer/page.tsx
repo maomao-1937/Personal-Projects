@@ -21,7 +21,7 @@ export default async function TimerPage() {
       select: {
         id: true,
         phase: true,
-        actualSec: true,
+        plannedSec: true,
         finishedAt: true,
         task: { select: { title: true } },
       },
@@ -31,14 +31,14 @@ export default async function TimerPage() {
   const rows: SessionRow[] = sessions.map((s) => ({
     id: s.id,
     phase: s.phase as Phase,
-    actualSec: s.actualSec,
+    plannedSec: s.plannedSec,
     finishedAt: format(s.finishedAt, "HH:mm"),
     taskTitle: s.task?.title ?? null,
   }));
 
   const workSessions = sessions.filter((s) => s.phase === "WORK");
   const focusMin = Math.round(
-    workSessions.reduce((sum, s) => sum + s.actualSec, 0) / 60,
+    workSessions.reduce((sum, s) => sum + s.plannedSec, 0) / 60,
   );
 
   return (

@@ -9,11 +9,12 @@ export type ActionResult = { error?: string };
 function parseTags(raw: FormData | string | null): string {
   const value = typeof raw === "string" ? raw : (raw?.get("tags") as string | null);
   if (!value) return "";
-  return value
+  const tags = value
     .split(",")
     .map((t) => t.trim())
-    .filter(Boolean)
-    .join(",");
+    .filter(Boolean);
+  // 限制数量和单个标签长度，避免恶意输入撑爆页面
+  return tags.slice(0, 10).map((t) => t.slice(0, 30)).join(",");
 }
 
 function isPriority(value: unknown): value is Priority {
@@ -35,7 +36,14 @@ export async function createTask(
   const description = (formData.get("description") as string | null)?.trim() || null;
   const tags = parseTags(formData);
 
-  const siblingCount = await prisma.task.count({ where: { parentId } });
+  // 用 findFirst 取最大 order + 1，而不是 count。
+  // count 有竞态：两个并发创建同时读到 count=0，都得到 order=0。
+  const last = await prisma.task.findFirst({
+    where: { parentId },
+    orderBy: { order: "desc" },
+    select: { order: true },
+  });
+  const nextOrder = (last?.order ?? -1) + 1;
 
   await prisma.task.create({
     data: {
@@ -44,7 +52,7 @@ export async function createTask(
       priority,
       tags,
       parentId,
-      order: siblingCount,
+      order: nextOrder,
     },
   });
 

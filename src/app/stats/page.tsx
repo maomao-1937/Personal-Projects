@@ -12,6 +12,7 @@ import {
 } from "@/lib/stats";
 import { DailyFocusChart, WeekdayChart } from "./charts";
 import { RangePicker } from "./range-picker";
+import { ExportButton } from "./export-button";
 import { DEFAULT_DAYS, RANGES } from "./ranges";
 import {
   DataTable,
@@ -70,7 +71,7 @@ export default async function StatsPage({
   const [sessions, checkIns, tasks] = await Promise.all([
     prisma.pomodoroSession.findMany({
       where: { finishedAt: { gte: queryFrom } },
-      select: { phase: true, actualSec: true, finishedAt: true, taskId: true },
+      select: { phase: true, plannedSec: true, finishedAt: true, taskId: true },
     }),
     prisma.checkIn.findMany({
       where: { date: { gte: spanKeys[0] } },
@@ -119,7 +120,10 @@ export default async function StatsPage({
       </div>
 
       {/* 筛选放一行，在所有内容上方，作用于下面全部图表 */}
-      <RangePicker current={days} />
+      <div className="flex items-center justify-between gap-2">
+        <RangePicker current={days} />
+        <ExportButton />
+      </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile

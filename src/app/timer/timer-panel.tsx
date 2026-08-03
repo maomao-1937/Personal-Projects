@@ -35,7 +35,7 @@ export function TimerPanel({ tasks }: { tasks: TaskOption[] }) {
   const [logError, setLogError] = useState<string | null>(null);
 
   const handleComplete = useCallback(
-    (phase: Phase, plannedMin: number, actualSec: number) => {
+    (phase: Phase, plannedMin: number, plannedSec: number) => {
       if (config.soundOn) {
         playChime(phase === "WORK" ? "work-end" : "break-end");
       }
@@ -49,7 +49,7 @@ export function TimerPanel({ tasks }: { tasks: TaskOption[] }) {
       void logSession({
         phase,
         plannedMin,
-        actualSec,
+        plannedSec,
         taskId: phase === "WORK" ? taskId : null,
       }).then((res) => {
         if (res.ok) {
@@ -80,7 +80,11 @@ export function TimerPanel({ tasks }: { tasks: TaskOption[] }) {
   // 运行中离开页面前提醒一下，避免手滑关掉丢掉这一段
   useEffect(() => {
     if (!running) return;
-    const onBeforeUnload = (e: BeforeUnloadEvent) => e.preventDefault();
+    // preventDefault 在 Chrome 里不够——必须设 returnValue 才能触发确认弹窗
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [running]);

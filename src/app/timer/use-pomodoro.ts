@@ -18,7 +18,7 @@ type Status = "idle" | "running" | "paused";
  * 息屏、浏览器降频 setInterval 都不会让时间跑偏。
  */
 export function usePomodoro(
-  onPhaseComplete: (phase: Phase, plannedMin: number, actualSec: number) => void,
+  onPhaseComplete: (phase: Phase, plannedMin: number, plannedSec: number) => void,
 ) {
   const config = useTimerStore((s) => s.config);
 

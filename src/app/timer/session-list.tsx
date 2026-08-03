@@ -8,7 +8,7 @@ import { PHASE_LABEL } from "./timer-store";
 export type SessionRow = {
   id: string;
   phase: Phase;
-  actualSec: number;
+  plannedSec: number;
   finishedAt: string;
   taskTitle: string | null;
 };
@@ -39,7 +39,7 @@ export function SessionList({ sessions }: { sessions: SessionRow[] }) {
             {PHASE_LABEL[s.phase]}
           </span>
           <span className="w-14 shrink-0 tabular-nums text-zinc-600 dark:text-zinc-400">
-            {Math.round(s.actualSec / 60)} 分
+            {Math.round(s.plannedSec / 60)} 分
           </span>
           <span className="w-14 shrink-0 tabular-nums text-zinc-500">
             {s.finishedAt}
@@ -49,11 +49,12 @@ export function SessionList({ sessions }: { sessions: SessionRow[] }) {
           </span>
           <button
             disabled={pending}
-            onClick={() =>
+            onClick={() => {
+              if (!confirm("确定删除这条记录吗？")) return;
               startTransition(async () => {
                 await deleteSession(s.id);
-              })
-            }
+              });
+            }}
             className="shrink-0 rounded px-1.5 py-1 text-xs text-zinc-400 hover:text-red-600 disabled:opacity-40"
             aria-label="删除这条记录"
           >
