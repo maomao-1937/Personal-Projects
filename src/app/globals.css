@@ -24,3 +24,40 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+ * 图表配色令牌。按角色命名而不是直接写十六进制，深浅色只在这里换一次。
+ * 这些值跑过配色校验脚本（对比度 / 色盲可辨识度 / 明度带 / 彩度下限），
+ * 校验用的表面色就是下面的 --viz-surface，改颜色前先重跑校验。
+ */
+.viz-root {
+  color-scheme: light;
+  --viz-surface: #ffffff;
+  --viz-ink: #0b0b0b;
+  --viz-ink-secondary: #52514e;
+  --viz-ink-muted: #898781;
+  --viz-grid: #e1e0d9;
+  --viz-axis: #c3c2b7;
+  /* 唯一的类别色（单序列图表用它，不需要图例） */
+  --viz-series-1: #2a78d6;
+  /* 进度条未填充部分：同一色系更浅一档，整条都能读出状态 */
+  --viz-track: #cde2fb;
+  --viz-up: #006300;
+  --viz-down: #d03b3b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .viz-root {
+    color-scheme: dark;
+    --viz-surface: #18181b;
+    --viz-ink: #ffffff;
+    --viz-ink-secondary: #c3c2b7;
+    --viz-ink-muted: #898781;
+    --viz-grid: #2c2c2a;
+    --viz-axis: #383835;
+    --viz-series-1: #3987e5;
+    --viz-track: #184f95;
+    --viz-up: #0ca30c;
+    --viz-down: #e66767;
+  }
+}

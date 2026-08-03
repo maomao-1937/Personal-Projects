@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Priority {
+  P0
+  P1
+  P2
+  P3
+}
+
+enum SessionPhase {
+  WORK
+  SHORT_BREAK
+  LONG_BREAK
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  priority    Priority  @default(P2)
+  tags        String    @default("")
+  completed   Boolean   @default(false)
+  order       Int       @default(0)
+  parentId    String?
+  parent      Task?     @relation("Subtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks    Task[]    @relation("Subtasks")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  sessions    PomodoroSession[]
+
+  @@index([parentId])
+}
+
+/// 打卡记录。date 存 "YYYY-MM-DD" 字符串而不是 DateTime：
+/// 打卡的语义是"哪一天"，不是"哪一刻"，用字符串避免时区换算把"今天"算错。
+model CheckIn {
+  id        String   @id @default(cuid())
+  date      String   @unique
+  mood      Mood     @default(OK)
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+enum Mood {
+  GREAT
+  OK
+  TOUGH
+}
+
+model PomodoroSession {
+  id          String       @id @default(cuid())
+  phase       SessionPhase @default(WORK)
+  /// 该阶段计划时长（分钟），用于统计"计划专注"
+  plannedMin  Int
+  /// 实际完成秒数，仅记录跑完的阶段，中途放弃不落库
+  actualSec   Int
+  taskId      String?
+  task        Task?        @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  finishedAt  DateTime     @default(now())
+
+  @@index([taskId])
+  @@index([finishedAt])
+}
