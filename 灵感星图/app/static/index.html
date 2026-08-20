@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#030014" />
+    <meta
+      name="description"
+      content="从你保存过的素材里，发现一个值得验证的周末项目。"
+    />
+    <title>灵感星图</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script src="/assets/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">跳到工作区</a>
+    <div class="cosmos" aria-hidden="true">
+      <div class="nebula nebula-one"></div>
+      <div class="nebula nebula-two"></div>
+    </div>
+
+    <header class="site-header">
+      <nav class="nav-pill" aria-label="主导航">
+        <a class="brand" href="#top" aria-label="灵感星图首页">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <circle cx="16" cy="16" r="4"></circle>
+            <path d="M5 18c4-8 14-12 22-5M7 24c7 3 15 0 19-7"></path>
+            <circle cx="6" cy="18" r="1.5"></circle>
+            <circle cx="26" cy="13" r="1.5"></circle>
+          </svg>
+          <span>灵感星图</span>
+        </a>
+        <div class="nav-links" aria-label="页面区域">
+          <a href="#observatory">观测台</a>
+          <a href="#materials">素材星库</a>
+          <a href="#projects">候选项目</a>
+        </div>
+        <div class="nav-actions">
+          <button class="connection-button" id="connectionButton" type="button">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="connectionLabel">星库登录</span>
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <main id="workspace">
+      <section class="hero" id="top">
+        <div class="eyebrow"><span></span> INSPIRATION CONSTELLATION</div>
+        <h1 aria-label="散落的念头、网页和问题存进来。"><span class="hero-nowrap">散落的念头、网页和问题</span><em>存进来。</em></h1>
+        <p>
+          系统不会随机拼接，而会寻找真实问题与可借用机制，推进成一个有来源、可验证的方案假设。
+        </p>
+        <div class="hero-actions">
+          <a class="primary-button" href="#observatory">
+            开始观测
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 6 6-6 6M3 10h10"></path></svg>
+          </a>
+          <button class="text-button" id="loadDemoButton" type="button">填入示例素材</button>
+        </div>
+
+        <div class="hero-galaxy" aria-hidden="true">
+          <div class="galaxy-ambient"></div>
+          <div class="galaxy-stars"></div>
+          <div class="galaxy-disc"></div>
+          <div class="galaxy-core"></div>
+          <div class="galaxy-wing galaxy-wing-a"></div>
+          <div class="galaxy-wing galaxy-wing-b"></div>
+        </div>
+      </section>
+
+      <section class="section-shell" id="observatory" aria-labelledby="observatory-title">
+        <div class="section-heading">
+          <div>
+            <span class="section-index">01 / OBSERVATORY</span>
+            <h2 id="observatory-title">把一颗新星放进来</h2>
+          </div>
+          <p>保存时自动拆解摘要、问题、机制与主题。原始内容始终保留。</p>
+        </div>
+
+        <div class="capture-grid">
+          <form class="capture-card glass-card" id="materialForm">
+            <div class="segmented-control" role="group" aria-label="素材类型">
+              <button class="segment active" data-source="text" type="button">文字念头</button>
+              <button class="segment" data-source="url" type="button">网页链接</button>
+            </div>
+
+            <label class="field-label" for="materialTitle">标题 <span>可选</span></label>
+            <input id="materialTitle" name="title" maxlength="300" placeholder="给这条素材一个名字" />
+
+            <div id="textSourceFields">
+              <label class="field-label" for="materialContent">素材内容</label>
+              <textarea
+                id="materialContent"
+                name="content"
+                rows="7"
+                maxlength="200000"
+                placeholder="例如：收藏的文章越来越多，但我从来不回看……"
+              ></textarea>
+            </div>
+
+            <div id="urlSourceFields" hidden>
+              <label class="field-label" for="materialUrl">网页地址</label>
+              <input id="materialUrl" name="source_url" type="url" placeholder="https://example.com/article" />
+              <p class="field-note">仅抓取公开 HTTP(S) 文本页面，私网地址会被拒绝。</p>
+            </div>
+
+            <div class="form-footer">
+              <p><span id="materialCount">0</span> 颗素材星已就位</p>
+              <button class="primary-button compact" type="submit">
+                <span>存入星库</span>
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v14M3 10h14"></path></svg>
+              </button>
+            </div>
+          </form>
+
+          <aside class="signal-card glass-card" aria-labelledby="signal-title">
+            <div class="card-kicker">SIGNAL QUALITY</div>
+            <h3 id="signal-title">组合信号</h3>
+            <div class="signal-orbit" aria-hidden="true">
+              <svg viewBox="0 0 180 180">
+                <circle class="orbit-line" cx="90" cy="90" r="61"></circle>
+                <path class="signal-path" d="M37 105 Q82 24 143 80 Q116 151 37 105"></path>
+                <circle class="signal-node" cx="37" cy="105" r="5"></circle>
+                <circle class="signal-node" cx="143" cy="80" r="5"></circle>
+                <circle class="signal-node muted" cx="99" cy="137" r="4"></circle>
+              </svg>
+              <strong id="signalValue">等待素材</strong>
+            </div>
+            <dl class="signal-stats">
+              <div><dt>问题</dt><dd id="problemStat">0</dd></div>
+              <div><dt>机制</dt><dd id="mechanismStat">0</dd></div>
+              <div><dt>洞察</dt><dd id="insightStat">0</dd></div>
+            </dl>
+            <p class="signal-note" id="signalNote">至少保存一条问题素材和一条机制素材，才会形成可靠方向。</p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section-shell" id="materials" aria-labelledby="materials-title">
+        <div class="section-heading inline-heading">
+          <div>
+            <span class="section-index">02 / MATERIAL CONSTELLATION</span>
+            <h2 id="materials-title">素材星库</h2>
+          </div>
+          <button class="ghost-button" id="refreshButton" type="button">刷新星图</button>
+        </div>
+        <div class="material-grid" id="materialGrid" aria-live="polite"></div>
+      </section>
+
+      <section class="section-shell project-section" id="projects" aria-labelledby="projects-title">
+        <div class="section-heading">
+          <div>
+            <span class="section-index">03 / WEEKEND HYPOTHESIS</span>
+            <h2 id="projects-title">让旧素材继续向前</h2>
+          </div>
+          <p>选择一条核心素材，系统会自动从整个星库中寻找可以组合的其他素材。</p>
+        </div>
+
+        <form class="incubation-console glass-card" id="incubationForm">
+          <div class="query-field seed-picker" id="projectSeedPicker">
+            <label class="field-label" id="projectSeedLabelText">选择一条核心素材</label>
+            <button
+              class="seed-picker-button"
+              id="projectSeedButton"
+              type="button"
+              aria-expanded="false"
+              aria-controls="projectSeedList"
+            >
+              <span id="projectSeedLabel">从素材星库选择</span>
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"></path></svg>
+            </button>
+            <div
+              class="seed-picker-list"
+              id="projectSeedList"
+              role="listbox"
+              aria-labelledby="projectSeedLabelText"
+              hidden
+            ></div>
+            <p class="seed-picker-hint" id="projectSeedHint">先选择一条核心素材</p>
+          </div>
+          <div class="constraint-field">
+            <label class="field-label" for="availableDays">可用时间</label>
+            <select id="availableDays">
+              <option value="1">1 天</option>
+              <option value="2" selected>2 天</option>
+              <option value="3">3 天</option>
+              <option value="7">1 周</option>
+            </select>
+          </div>
+          <div class="constraint-field">
+            <label class="field-label" for="projectBudget">预算</label>
+            <select id="projectBudget">
+              <option value="low">低预算</option>
+              <option value="medium">中等</option>
+              <option value="none">零预算</option>
+            </select>
+          </div>
+          <button class="primary-button generate-button" id="generateHypothesisButton" type="submit" disabled>
+            <span class="spark-mark">✦</span>
+            生成方案假设
+          </button>
+        </form>
+
+        <div class="hypothesis-stage" id="hypothesisStage" aria-live="polite">
+          <div class="empty-state glass-card">
+            <div class="empty-glyph" aria-hidden="true">✦</div>
+            <h3>等待一次可靠的连线</h3>
+            <p>系统会展示每条素材贡献了什么，以及你可以立刻开始的第一个验证动作。</p>
+          </div>
+        </div>
+
+        <div class="history-row">
+          <div>
+            <span class="section-index">RECENT OBSERVATIONS</span>
+            <h3>最近的候选方向</h3>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>灵感星图</span>
+      <span>旧想法的推进器，而不是随机拼接器。</span>
+    </footer>
+
+    <dialog class="access-dialog" id="accessDialog">
+      <form method="dialog" id="accessForm">
+        <button class="dialog-close" value="cancel" aria-label="关闭" type="submit">×</button>
+        <div class="dialog-symbol" aria-hidden="true">✦</div>
+        <span class="section-index">PRIVATE ACCESS</span>
+        <h2>连接你的私人星库</h2>
+        <p>输入服务端配置的访问令牌。令牌只保存在当前浏览器会话，关闭页面后自动清除。</p>
+        <label class="field-label" for="accessToken">访问令牌</label>
+        <input id="accessToken" type="password" autocomplete="current-password" placeholder="Bearer Token" />
+        <div class="dialog-actions">
+          <button class="ghost-button" value="cancel" type="submit">稍后</button>
+          <button class="primary-button compact" id="saveTokenButton" value="default" type="submit">连接星库</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="access-dialog material-dialog" id="materialDialog">
+      <form id="materialEditForm">
+        <button class="dialog-close" aria-label="关闭" type="button" data-close-dialog="materialDialog">×</button>
+        <span class="section-index">MATERIAL DETAIL</span>
+        <h2>查看与修改素材</h2>
+        <label class="field-label" for="editMaterialTitle">标题</label>
+        <input id="editMaterialTitle" maxlength="300" placeholder="素材标题" />
+        <label class="field-label" for="editMaterialContent">原始内容</label>
+        <textarea id="editMaterialContent" rows="8" maxlength="200000"></textarea>
+        <section class="organized-result" aria-labelledby="organized-result-title">
+          <div class="organized-heading">
+            <h3 id="organized-result-title">整理后的想法</h3>
+            <span id="analysisModelBadge">等待分析</span>
+          </div>
+          <p id="organizedMaterialContent">保存或重新分析后，整理结果会显示在这里。</p>
+        </section>
+        <div class="analysis-box" id="materialAnalysis"></div>
+        <div class="material-inline-status" id="materialInlineStatus" role="status" aria-live="polite"></div>
+        <div class="dialog-actions split-actions">
+          <button class="ghost-button" id="reanalyzeMaterialButton" type="button">重新分析</button>
+          <button class="primary-button compact" type="submit">保存并分析</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
