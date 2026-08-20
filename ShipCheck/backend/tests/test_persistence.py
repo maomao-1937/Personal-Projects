@@ -47,11 +47,12 @@ def test_recover_running_item(client):
         assert it.status == "failed"
 
 
-def test_passed_item_not_recovered(client, wait_done):
+def test_passed_item_not_recovered(client, auth, wait_done):
     """已 passed 的 item 在重跑同 Job 时不重跑。"""
     r = client.post(
         "/api/v1/acceptance",
         json={"prd_text": "一个足够长的 PRD 文本内容", "target_url": "https://example.com"},
+        headers=auth,
     )
     job_id = r.json()["job_id"]
     j = wait_done(client, job_id)

@@ -567,6 +567,66 @@ textarea:focus, input[type=text]:focus, input[type=url]:focus {
   text-transform: uppercase;
   color: var(--color-silver-mist);
 }
+/* 语义底纹:红=高/失败,黄=中,绿=低/通过 */
+.stat.sev-high   { background: rgba(255, 99, 99, 0.10); }
+.stat.sev-high b   { color: #ff9b9b; }
+.stat.sev-medium { background: rgba(255, 193, 69, 0.10); }
+.stat.sev-medium b { color: #ffca6b; }
+.stat.sev-low    { background: rgba(74, 222, 128, 0.10); }
+.stat.sev-low b    { color: #7ee2a8; }
+.stat.sev-pass   { background: rgba(74, 222, 128, 0.10); }
+.stat.sev-pass b   { color: #7ee2a8; }
+.stat.sev-fail   { background: rgba(255, 99, 99, 0.10); }
+.stat.sev-fail b   { color: #ff9b9b; }
+
+/* ===== Doc attachment chip ===== */
+.doc-chip-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.doc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+  padding: 9px 12px;
+  background: var(--color-liquid-deep);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-small);
+}
+.doc-chip svg { flex: none; width: 18px; height: 18px; }
+.doc-chip .meta { min-width: 0; display: flex; flex-direction: column; }
+.doc-chip .name {
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  color: var(--color-liquid-mist);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.doc-chip .size {
+  font-size: 11px;
+  color: var(--color-slate-deep);
+  letter-spacing: 0.06em;
+}
+.doc-chip .rm {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-small);
+  color: var(--color-silver-mist);
+  font-size: 15px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.doc-chip .rm:hover { color: #ff9b9b; background: rgba(255, 99, 99, 0.10); }
 
 /* ===== Status pills ===== */
 .pill {
@@ -580,12 +640,13 @@ textarea:focus, input[type=text]:focus, input[type=url]:focus {
   text-transform: uppercase;
   line-height: 1.4;
 }
-.pill.passed  { background: rgba(203, 255, 252, 0.10); color: #cbfffc; }
-.pill.failed  { background: rgba(250, 209, 255, 0.12); color: #fde9ff; }
+/* 语义色:绿=通过/低危,黄=中危,红=失败/高危 */
+.pill.passed  { background: rgba(74, 222, 128, 0.15); color: #7ee2a8; }
+.pill.failed  { background: rgba(255, 99, 99, 0.17); color: #ff9b9b; }
 .pill.skipped { background: rgba(255, 255, 255, 0.06); color: var(--color-silver-mist); }
-.pill.high    { background: rgba(250, 209, 255, 0.12); color: #fde9ff; }
-.pill.medium  { background: rgba(203, 255, 252, 0.10); color: #cbfffc; }
-.pill.low     { background: rgba(255, 255, 255, 0.06); color: var(--color-silver-mist); }
+.pill.high    { background: rgba(255, 99, 99, 0.17); color: #ff9b9b; }
+.pill.medium  { background: rgba(255, 193, 69, 0.16); color: #ffca6b; }
+.pill.low     { background: rgba(74, 222, 128, 0.15); color: #7ee2a8; }
 
 /* ===== Table ===== */
 .table-wrap {
@@ -1005,8 +1066,10 @@ a:hover { border-bottom-color: #cbfffc; }
         </div>
 
         <label class="sc-label">PRD <span class="req">*</span></label>
-        <textarea id="acc-prd" placeholder="粘贴 PRD……"></textarea>
+        <div class="doc-chip-wrap" id="acc-doc-chip"></div>
+        <textarea id="acc-prd" placeholder="粘贴 PRD……(文档以附件形式附在上方便于追加补充)"></textarea>
         <div class="btn-tools">
+          <button class="btn-ghost" onclick="uploadDoc('acc')">上传 MD / PDF</button>
           <button class="btn-ghost" onclick="selectAll('acc-prd')">全选</button>
           <button class="btn-ghost" onclick="clearText('acc-prd')">清空</button>
         </div>
@@ -1037,11 +1100,14 @@ a:hover { border-bottom-color: #cbfffc; }
         </div>
 
         <label class="sc-label">PRD <span class="req">*</span></label>
-        <textarea id="rev-prd" placeholder="粘贴 PRD……"></textarea>
+        <div class="doc-chip-wrap" id="rev-doc-chip"></div>
+        <textarea id="rev-prd" placeholder="粘贴 PRD……(文档以附件形式附在上方便于追加补充)"></textarea>
         <div class="btn-tools">
+          <button class="btn-ghost" onclick="uploadDoc('rev')">上传 MD / PDF</button>
           <button class="btn-ghost" onclick="selectAll('rev-prd')">全选</button>
           <button class="btn-ghost" onclick="clearText('rev-prd')">清空</button>
         </div>
+        <input type="file" id="doc-file" accept=".md,.markdown,.txt,.pdf" style="display:none" onchange="handleDocFile(this)" />
 
         <div class="btn-group">
           <button class="btn-primary" id="rev-submit" onclick="submitReview()">提交审查</button>
@@ -1253,27 +1319,50 @@ async function redeemInvite() {
   }
 }
 
+function showGateWith(msg) {
+  /* 清掉失效码并重新弹门;若 URL 带新码则预填 */
+  localStorage.removeItem("sc_invite");
+  inviteCode = "";
+  document.getElementById("gate").style.display = "";
+  document.getElementById("gate-error").textContent = msg || "";
+  const input = document.getElementById("gate-input");
+  const pre = new URLSearchParams(location.search).get("invite");
+  input.value = pre ? pre.toUpperCase() : "";
+  setTimeout(() => input.focus(), 100);
+}
+
+function maybeInviteError(data) {
+  /* 业务接口返回邀请码类错误 → 弹门重新输入 */
+  const c = (data && data.error && data.error.code) || "";
+  if (c.indexOf("invite_") === 0) {
+    showGateWith(data.error.message);
+    return true;
+  }
+  return false;
+}
+
 (function initGate() {
   const gate = document.getElementById("gate");
   const input = document.getElementById("gate-input");
+  input.addEventListener("keydown", e => { if (e.key === "Enter") redeemInvite(); });
   if (inviteCode) {
-    // 已有码:静默校验有效性(不消耗额度),失效则重新弹门
+    // 已有码:静默校验有效性(不消耗额度);码被删/停用/用完 → 重新弹门
     fetch(API + "/invite/status?code=" + encodeURIComponent(inviteCode))
-      .then(r => { if (!r.ok) throw 0; return r.json(); })
-      .then(st => {
-        if (!st.active || st.remaining <= 0) {
-          localStorage.removeItem("sc_invite");
-          inviteCode = "";
-          gate.style.display = "";
-        }
+      .then(async r => {
+        if (r.status === 404) return null;  // 码不存在(如旧的10码已被清理)
+        if (!r.ok) throw 0;                 // 网络/服务异常,放行,后端仍会强制校验
+        return r.json();
       })
-      .catch(() => { /* 网络异常时放行,后端仍会强制校验 */ });
+      .then(st => {
+        if (st && st.active && st.remaining > 0) return;
+        showGateWith("原邀请码已失效,请输入新邀请码");
+      })
+      .catch(() => {});
   } else {
     // 支持 ?invite=CODE 预填
     const pre = new URLSearchParams(location.search).get("invite");
     if (pre) input.value = pre.toUpperCase();
     gate.style.display = "";
-    input.addEventListener("keydown", e => { if (e.key === "Enter") redeemInvite(); });
     setTimeout(() => input.focus(), 100);
   }
 })();
@@ -1293,6 +1382,113 @@ function clearText(id) {
   const el = document.getElementById(id);
   el.value = "";
   el.focus();
+}
+
+/* ===== 文档上传:以附件形式附加,MD/TXT 直接读文本,PDF 用 pdf.js 提取 ===== */
+const docFiles = {acc: null, rev: null};  // {name, size, text}
+let docTargetKey = null;
+
+function uploadDoc(key) {
+  docTargetKey = key;
+  const fi = document.getElementById("doc-file");
+  fi.value = "";
+  fi.click();
+}
+
+function fmtSize(n) {
+  if (n >= 1024 * 1024) return (n / 1024 / 1024).toFixed(1) + " MB";
+  if (n >= 1024) return (n / 1024).toFixed(0) + " KB";
+  return n + " B";
+}
+
+function renderDocChip(key) {
+  const wrap = document.getElementById(key + "-doc-chip");
+  const f = docFiles[key];
+  if (!f) { wrap.innerHTML = ""; return; }
+  wrap.innerHTML = `
+    <div class="doc-chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#7ee2a8" stroke-width="1.6">
+        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
+        <path d="M14 3v5h5"/>
+      </svg>
+      <div class="meta">
+        <span class="name">${esc(f.name)}</span>
+        <span class="size">${fmtSize(f.size)} · ${f.text.length} 字符</span>
+      </div>
+      <button class="rm" onclick="removeDoc('${key}')" title="移除附件">×</button>
+    </div>`;
+}
+
+function removeDoc(key) {
+  docFiles[key] = null;
+  renderDocChip(key);
+}
+
+/* 组合提交用的 PRD:文本框内容 + 附件内容 */
+function getPrdText(key) {
+  const ta = document.getElementById(key + "-prd");
+  const parts = [ (ta.value || "").trim(), docFiles[key] ? docFiles[key].text.trim() : "" ];
+  return parts.filter(Boolean).join("\n\n");
+}
+
+function loadPdfJs() {
+  /* 懒加载:只在首次选 PDF 时引入 */
+  if (window.pdfjsLib) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    s.onload = () => {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      resolve();
+    };
+    s.onerror = () => reject(new Error("pdf.js 加载失败,请检查网络"));
+    document.head.appendChild(s);
+  });
+}
+
+async function extractPdfText(file) {
+  await loadPdfJs();
+  const buf = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({data: buf}).promise;
+  const pages = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const tc = await page.getTextContent();
+    pages.push(tc.items.map(it => it.str).join(" "));
+  }
+  return pages.join("\n\n");
+}
+
+async function handleDocFile(input) {
+  const file = input.files && input.files[0];
+  if (!file || !docTargetKey) return;
+  const key = docTargetKey;
+  const name = file.name.toLowerCase();
+  if (file.size > 20 * 1024 * 1024) {
+    alert("文件超过 20MB,请精简后上传");
+    return;
+  }
+  const wrap = document.getElementById(key + "-doc-chip");
+  wrap.innerHTML = `<div class="doc-chip"><div class="meta"><span class="name">正在解析 ${esc(file.name)} …</span><span class="size">请稍候</span></div></div>`;
+  try {
+    let text;
+    if (name.endsWith(".pdf")) {
+      text = await extractPdfText(file);
+      if (!text.trim()) {
+        renderDocChip(key);
+        alert("PDF 中未提取到文本(可能是扫描件/图片型 PDF),请改用文本版或直接粘贴");
+        return;
+      }
+    } else {
+      text = await file.text();
+    }
+    docFiles[key] = {name: file.name, size: file.size, text};
+    renderDocChip(key);
+  } catch (e) {
+    renderDocChip(key);
+    alert("解析失败:" + (e.message || e));
+  }
 }
 
 function switchTab(t) {
@@ -1319,6 +1515,7 @@ async function submitJob(path, body, btnId, ctx) {
     });
     const data = await resp.json();
     if (!resp.ok) {
+      if (maybeInviteError(data)) { btn.disabled = false; return; }
       document.getElementById("result").innerHTML =
         `<div class="card"><p class="error" style="margin:0;">提交失败：${data.error?.message || resp.status}</p></div>`;
       btn.disabled = false;
@@ -1335,25 +1532,24 @@ async function submitJob(path, body, btnId, ctx) {
 }
 
 function submitAcceptance() {
-  const prd = document.getElementById("acc-prd").value.trim();
+  const prd = getPrdText("acc");
   const url = document.getElementById("acc-url").value.trim();
   const destructive = document.getElementById("acc-destructive").checked;
-  if (prd.length < 10) { alert("PRD 太短"); return; }
+  if (prd.length < 10) { alert("PRD 太短(可粘贴文本或上传文档)"); return; }
   if (!url) { alert("请填写产品网址"); return; }
   submitJob("/acceptance", {prd_text: prd, target_url: url, allow_destructive: destructive},
     "acc-submit", {type:"acceptance", prd});
 }
 
 function submitReview() {
-  const prd = document.getElementById("rev-prd").value.trim();
-  if (prd.length < 10) { alert("PRD 太短"); return; }
+  const prd = getPrdText("rev");
+  if (prd.length < 10) { alert("PRD 太短(可粘贴文本或上传文档)"); return; }
   submitJob("/review", {prd_text: prd}, "rev-submit", {type:"review", prd});
 }
 
 function pollJob(jobId) {
   document.getElementById("result").innerHTML =
     `<div class="card">
-       <p style="margin:0 0 8px; color:var(--color-silver-mist);">Job：<code>${jobId}</code></p>
        <p style="margin:0; color:var(--color-silver-mist);">
          状态：<span class="status pending" id="status">排队中…</span>
          <span class="spinner" style="margin-left:4px;"></span>
@@ -1404,7 +1600,15 @@ async function rewritePRD() {
   if (!suggestionsText) { alert("没有可落实的建议"); return; }
   btn.disabled = true;
   const outBox = document.getElementById("rewrite-out");
-  outBox.value = "改写中……";
+  /* 修改中提示:按钮文案 + 秒表 + 占位说明,结束自动恢复 */
+  btn.innerHTML = 'AI 修改中<span class="spinner" style="margin-left:8px;"></span>';
+  const t0 = Date.now();
+  const timer = setInterval(() => {
+    const s = Math.round((Date.now() - t0) / 1000);
+    btn.innerHTML = `AI 修改中 · ${s}s<span class="spinner" style="margin-left:8px;"></span>`;
+  }, 1000);
+  outBox.value = "";
+  outBox.placeholder = "AI 正在根据建议改写 PRD,通常需要 30s ~ 2min……";
   try {
     const resp = await apiFetch("/rewrite-prd", {
       method: "POST",
@@ -1413,6 +1617,7 @@ async function rewritePRD() {
     });
     const data = await resp.json();
     if (!resp.ok) {
+      if (maybeInviteError(data)) return;
       outBox.value = "改写失败：" + (data.error?.message || resp.status);
       return;
     }
@@ -1421,7 +1626,10 @@ async function rewritePRD() {
   } catch (e) {
     outBox.value = "网络错误：" + e;
   } finally {
+    clearInterval(timer);
     btn.disabled = false;
+    btn.innerHTML = "修改 PRD";
+    outBox.placeholder = "";
   }
 }
 
@@ -1436,6 +1644,7 @@ function copyRewritten() {
 
 function renderResult(j) {
   const el = document.getElementById("result");
+  lastJob = j;
   if (j.status === "failed") {
     el.innerHTML = `<div class="card"><h2 class="card-title" style="margin:0 0 12px;">任务失败</h2><p class="error" style="margin:0;">${esc(j.error_message || "未知错误")}</p></div>`;
     return;
@@ -1484,8 +1693,8 @@ function renderResult(j) {
       </div>
       <div class="stats">
         <div class="stat"><b>${total}</b><span>总项</span></div>
-        <div class="stat"><b>${passed}</b><span>通过</span></div>
-        <div class="stat"><b>${failed}</b><span>失败</span></div>
+        <div class="stat sev-pass"><b>${passed}</b><span>通过</span></div>
+        <div class="stat sev-fail"><b>${failed}</b><span>失败</span></div>
         ${skipped ? `<div class="stat"><b>${skipped}</b><span>跳过</span></div>` : ""}
       </div>
       <div class="table-wrap">
@@ -1530,9 +1739,9 @@ function renderResult(j) {
       </div>
       <div class="stats">
         <div class="stat"><b>${total}</b><span>总问题</span></div>
-        ${high ? `<div class="stat"><b>${high}</b><span>高</span></div>` : ""}
-        ${med ? `<div class="stat"><b>${med}</b><span>中</span></div>` : ""}
-        ${low ? `<div class="stat"><b>${low}</b><span>低</span></div>` : ""}
+        ${high ? `<div class="stat sev-high"><b>${high}</b><span>高</span></div>` : ""}
+        ${med ? `<div class="stat sev-medium"><b>${med}</b><span>中</span></div>` : ""}
+        ${low ? `<div class="stat sev-low"><b>${low}</b><span>低</span></div>` : ""}
       </div>
       <ul class="findings-list">${items || '<li style="color:#cbfffc;">未发现明显问题，可放心进入开发 / 验收阶段</li>'}</ul>
     `;
@@ -1543,6 +1752,7 @@ function renderResult(j) {
       ${body}
       <div class="rewrite-intro">
         <button class="btn-primary" id="btn-rewrite" onclick="rewritePRD()">修改 PRD</button>
+        <button class="btn-ghost" onclick="downloadMarkdown()">下载 Markdown</button>
         <span class="hint">原 PRD + 建议 → 整改版</span>
       </div>
     </div>
@@ -1560,6 +1770,85 @@ function renderResult(j) {
       </div>
       <textarea id="rewrite-out" class="rewritten-out" readonly></textarea>
     </div>`;
+}
+
+/* ===== Markdown 报告导出 ===== */
+let lastJob = null;
+
+function mdTable(rows) {
+  return rows.map(r => "| " + r.map(c => (c || "").replace(/\|/g, "\\|").replace(/\n/g, " ")).join(" | ") + " |").join("\n");
+}
+
+function buildMarkdownReport(j) {
+  const r = j.result_json || {};
+  const d = new Date();
+  const stamp = d.toLocaleString("zh-CN");
+  const sevZh = {high: "高", medium: "中", low: "低"};
+  let md = "";
+
+  if (j.type === "acceptance") {
+    const s = r.summary || {};
+    md += `# ShipCheck 验收报告\n\n`
+      + `- **时间**: ${stamp}\n`
+      + `- **产品地址**: ${lastContext ? lastContext.url || "-" : "-"}\n`
+      + `- **Job**: ${j.id}\n\n`
+      + `## 总览\n\n| 总项 | 通过 | 失败 | 跳过 |\n|---:|---:|---:|---:|\n`
+      + `| ${s.total ?? 0} | ${s.passed ?? 0} | ${s.failed ?? 0} | ${s.skipped ?? 0} |\n\n`;
+    const rows = [["#", "检查项", "期望", "状态", "判定理由"]];
+    for (const i of (r.checklist || [])) {
+      rows.push([`#${i.seq}`, i.description, i.expected, i.status, i.judge_reason || "—"]);
+    }
+    md += `## 逐条核验\n\n` + mdTable(rows) + `\n\n`;
+    const shots = (r.checklist || []).flatMap(i => (i.evidence || [])
+      .filter(e => e.kind === "screenshot" && e.url)
+      .map(e => ({seq: i.seq, url: e.url})));
+    if (shots.length) {
+      md += `## 截图证据\n\n`;
+      for (const sh of shots) md += `- 检查项 #${sh.seq}: [截图](${sh.url})\n`;
+      md += `\n`;
+    }
+    if ((r.fix_tasks || []).length) {
+      md += `## 修复任务\n\n`;
+      (r.fix_tasks || []).forEach((f, i) => {
+        md += `${i + 1}. **${f.description}**\n   - 修复方案: ${f.fix}\n`;
+      });
+      md += `\n`;
+    }
+  } else {
+    const s = r.summary || {};
+    md += `# ShipCheck 审查报告\n\n`
+      + `- **时间**: ${stamp}\n`
+      + `- **Job**: ${j.id}\n\n`
+      + `## 总览\n\n| 总问题 | 高 | 中 | 低 |\n|---:|---:|---:|---:|\n`
+      + `| ${s.total_findings ?? 0} | ${s.high ?? 0} | ${s.medium ?? 0} | ${s.low ?? 0} |\n\n`;
+    const fs = r.findings || [];
+    if (!fs.length) {
+      md += `未发现明显问题,可放心进入开发/验收阶段。\n`;
+    } else {
+      md += `## 问题清单\n\n`;
+      fs.forEach((f, i) => {
+        md += `### ${i + 1}. [${sevZh[f.severity] || f.severity}/${f.category}] ${f.message}\n\n`
+          + `- **建议**: ${f.suggestion}\n\n`;
+      });
+    }
+  }
+  md += `---\n\n*本报告由 ShipCheck 生成*`;
+  return md;
+}
+
+function downloadMarkdown() {
+  if (!lastJob || lastJob.status !== "done") { alert("暂无可导出的报告"); return; }
+  const md = buildMarkdownReport(lastJob);
+  const prefix = lastJob.type === "acceptance" ? "ShipCheck-验收报告" : "ShipCheck-审查报告";
+  const ts = new Date().toISOString().slice(0, 10);
+  const blob = new Blob([md], {type: "text/markdown;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${prefix}-${ts}.md`;
+  document.body.appendChild(a);
+  a.click();
+  URL.revokeObjectURL(a.href);
+  a.remove();
 }
 
 function esc(s) {

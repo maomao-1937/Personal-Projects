@@ -26,12 +26,23 @@ def _wait_done(client: TestClient, job_id: str, timeout: float = 10.0) -> dict:
 
 @pytest.fixture(scope="session")
 def client():
-    from app.db import init_db
+    from app.db import init_db, session_scope
     from app.main import app
+    from app.models.models import InviteCode
 
     init_db()
+    # 种子测试邀请码(业务接口强制校验 X-Invite-Code)
+    with session_scope() as s:
+        if not s.query(InviteCode).filter(InviteCode.code == "SHIP-TEST-0000").first():
+            s.add(InviteCode(code="SHIP-TEST-0000", max_uses=9999, used_count=0, active=True))
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture(scope="session")
+def auth():
+    """业务接口需要的邀请码头。"""
+    return {"X-Invite-Code": "SHIP-TEST-0000"}
 
 
 @pytest.fixture

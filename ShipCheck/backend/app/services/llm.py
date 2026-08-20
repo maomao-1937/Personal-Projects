@@ -24,7 +24,7 @@ def _get_client() -> OpenAI:
         _client = OpenAI(
             api_key=settings.hunyuan_api_key,
             base_url=settings.hunyuan_base_url,
-            timeout=60.0,
+            timeout=180.0,
         )
     return _client
 
@@ -51,18 +51,24 @@ def complete_text(system: str, user: str, *, model: str | None = None) -> str:
 
 
 def complete_json(system: str, user: str, *, model: str | None = None) -> dict:
-    """JSON 补全。强约束 + 宽松解析 + 有限重试。"""
+    """JSON 补全。强约束 + 宽松解析 + 有限重试。
+
+    只对「解析失败」重试;调用失败(认证/网络/超时)直接抛真实错误,不再误报为解析失败。
+    """
     if settings.mock_mode:
         raise AppError("config_error", "mock 模式不应走到真实 LLM 调用", 500)
     sys_prompt = system + "\n\n严格只输出一个 JSON 对象,不要 markdown 代码块,不要解释。"
-    last_err: AppError | None = None
     for attempt in range(settings.llm_max_retries + 1):
+        # 第一步:调用失败(认证/网络等)直接透传,不重试、不误报
+        text = complete_text(sys_prompt, user, model=model)
+        # 第二步:只对解析失败重试
         try:
-            text = complete_text(sys_prompt, user, model=model)
             return _parse_json_lenient(text)
         except AppError as e:
-            last_err = e
-            logger.warning("JSON 解析失败 attempt=%d: %s", attempt, e.message)
+            logger.warning(
+                "JSON 解析失败 attempt=%d: %s | 原始输出前200字: %.200s",
+                attempt, e.message, text,
+            )
     raise AppError(
         "llm_format_error",
         f"模型输出无法解析为 JSON(重试 {settings.llm_max_retries} 次仍失败)",
@@ -122,7 +128,7 @@ def vision_complete_json(
 
 
 def _parse_json_lenient(text: str) -> dict:
-    """宽松解析:剥 markdown 代码块,容忍前后多余文本,取首个 {...}。"""
+    """宽松解析:剥 markdown 代码块,容忍前后多余文本,取首个 {...},并修复常见小错误。"""
     t = text.strip()
     t = re.sub(r"^```(?:json)?\s*", "", t)
     t = re.sub(r"\s*```$", "", t)
@@ -130,7 +136,12 @@ def _parse_json_lenient(text: str) -> dict:
     end = t.rfind("}")
     if start == -1 or end == -1 or end <= start:
         raise AppError("parse_error", "响应中找不到 JSON 对象", 502)
+    frag = t[start : end + 1]
+    # 修复模型常见小错误:尾逗号 / 全角引号 / 中文冒号(键值分隔)
+    frag = re.sub(r",\s*([}\]])", r"\1", frag)
+    frag = frag.replace("，", ",").replace("：", ":")
+    frag = re.sub(r"[“”]", '"', frag)
     try:
-        return json.loads(t[start : end + 1])
+        return json.loads(frag)
     except json.JSONDecodeError as e:
         raise AppError("parse_error", f"JSON 解析失败: {e.msg}", 502)

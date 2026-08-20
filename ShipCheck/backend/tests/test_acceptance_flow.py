@@ -1,8 +1,9 @@
-def test_acceptance_full_flow(client, wait_done):
+def test_acceptance_full_flow(client, auth, wait_done):
     prd = "做一个登录页,用户输邮箱密码登录,登录后跳转 dashboard。"
     r = client.post(
         "/api/v1/acceptance",
         json={"prd_text": prd, "target_url": "https://example.com"},
+        headers=auth,
     )
     assert r.status_code == 200
     job_id = r.json()["job_id"]
@@ -17,10 +18,11 @@ def test_acceptance_full_flow(client, wait_done):
     assert len(result["fix_tasks"]) == 0
 
 
-def test_acceptance_job_listed(client, wait_done):
+def test_acceptance_job_listed(client, auth, wait_done):
     r = client.post(
         "/api/v1/acceptance",
         json={"prd_text": "另一个 PRD 文本内容", "target_url": "https://example.org"},
+        headers=auth,
     )
     job_id = r.json()["job_id"]
     wait_done(client, job_id)

@@ -1,6 +1,6 @@
-def test_review_full_flow(client, wait_done):
+def test_review_full_flow(client, auth, wait_done):
     prd = "做一个登录页,响应要快,用户输邮箱密码登录。"
-    r = client.post("/api/v1/review", json={"prd_text": prd})
+    r = client.post("/api/v1/review", json={"prd_text": prd}, headers=auth)
     assert r.status_code == 200
     job_id = r.json()["job_id"]
     j = wait_done(client, job_id)
