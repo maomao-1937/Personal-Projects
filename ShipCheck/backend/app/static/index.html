@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ShipCheck — 开发前理 PRD · 上线后验交付</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ===== Auros Design Tokens — Abyssal Terminal with Bioluminescent Data Orbs ===== */
+:root {
+  /* Colors — Liquid teal stack + rationed accents */
+  --color-liquid-abyss: #012624;
+  --color-liquid-deep: #011d1c;
+  --color-liquid-kelp: #003734;
+  --color-liquid-mist: #edfffe;
+  --color-platinum: #ffffff;
+  --color-silver-mist: #bbc7c6;
+  --color-slate-deep: #707777;
+  --color-lavender-phosphor: #fde9ff;
+  --color-aurora-gradient: linear-gradient(90deg, rgb(203, 255, 252) 0%, rgb(237, 255, 254) 26.25%, rgb(255, 253, 250) 47.57%, rgb(250, 209, 255) 88.96%);
+  --color-bioluminescent: #00827c;
+
+  /* Typography */
+  --font-matter: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Type Scale — Auros */
+  --text-caption: 10px;
+  --tracking-caption: 1.5px;
+  --text-body: 16px;
+  --leading-body: 1.4;
+  --text-subheading: 24px;
+  --leading-subheading: 1.3;
+  --text-heading: 36px;
+  --leading-heading: 1;
+  --text-heading-lg: 61px;
+  --leading-heading-lg: 1;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+
+  /* Spacing */
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-20: 20px;
+  --spacing-24: 24px;
+  --spacing-32: 32px;
+  --spacing-36: 36px;
+  --spacing-48: 48px;
+  --spacing-64: 64px;
+  --spacing-80: 80px;
+  --spacing-120: 120px;
+
+  /* Shape vocabulary — ONLY 16px (cards) & 6px (buttons/small) */
+  --radius-cards: 16px;
+  --radius-small: 6px;
+
+  /* Layout */
+  --page-max-width: 1440px;
+  --card-padding: 36px;
+  --element-gap: 20px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-liquid-abyss);
+  color: var(--color-silver-mist);
+  font-family: var(--font-matter);
+  font-weight: var(--fw-regular);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== Atmospheric bioluminescent glow — top of canvas ===== */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% -8%, rgba(0, 130, 124, 0.22) 0%, rgba(0, 130, 124, 0.06) 45%, transparent 70%),
+    radial-gradient(ellipse 40% 30% at 88% 12%, rgba(250, 209, 255, 0.05) 0%, transparent 65%);
+}
+
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+}
+
+/* ============================================================
+   SHEET 1 — pinned first page (Hero + mode toggle)
+   Sticky stacking: pinned via position:sticky while sheet 2 slides over
+   ============================================================ */
+.sheet-one {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--spacing-48);
+}
+
+/* Navigation Bar — transparent, 80px, instrument labeling */
+.nav {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-24);
+  flex-shrink: 0;
+}
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-platinum);
+}
+.nav-brand-mark {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--color-aurora-gradient);
+  flex-shrink: 0;
+}
+.nav-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-24);
+  font-size: 10px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-slate-deep);
+}
+.nav-meta .live { color: var(--color-silver-mist); }
+
+/* Hero — centered stack over the particle orb */
+.hero {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--spacing-24) 0 var(--spacing-48);
+  min-height: 0;
+}
+.hero-orb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.85;
+  pointer-events: none;
+}
+.hero-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-silver-mist);
+  margin-bottom: var(--spacing-24);
+}
+.eyebrow::before, .eyebrow::after {
+  content: "";
+  width: 24px;
+  height: 1px;
+  background: rgba(187, 199, 198, 0.3);
+}
+.hero-title {
+  font-size: clamp(52px, 8vw, 92px);
+  font-weight: var(--fw-medium);
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  color: var(--color-platinum);
+  margin: 0 0 var(--spacing-24);
+}
+.hero-sub {
+  max-width: 560px;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  line-height: var(--leading-body);
+  color: var(--color-silver-mist);
+  margin: 0;
+}
+
+/* Segmented mode toggle — pinned at bottom of sheet 1 */
+.seg-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-24);
+  padding-bottom: var(--spacing-48);
+  flex-shrink: 0;
+}
+.seg {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--color-liquid-deep);
+  border-radius: var(--radius-small);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.seg button {
+  border: 0;
+  background: transparent;
+  padding: 10px 28px;
+  cursor: pointer;
+  font-family: var(--font-matter);
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-slate-deep);
+  border-radius: var(--radius-small);
+  transition: color 0.18s ease, background 0.18s ease;
+}
+.seg button:hover { color: var(--color-silver-mist); }
+.seg button.on {
+  background: var(--color-liquid-kelp);
+  color: var(--color-platinum);
+}
+
+/* Scroll hint — breathing arrow */
+.scroll-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-caption);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-caption);
+  text-transform: uppercase;
+  color: var(--color-slate-deep);
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: var(--font-matter);
+  padding: 0;
+}
+.scroll-hint .arrow {
+  width: 1px;
+  height: 28px;
+  background: linear-gradient(to bottom, rgba(187, 199, 198, 0.4), transparent);
+  position: relative;
+}
+.scroll-hint .arrow::after {
+  content: "";
+  position: absolute;
+  left: -3.5px;
+  bottom: 0;
+  width: 8px;
+  height: 8px;
+  border-right: 1px solid var(--color-silver-mist);
+  border-bottom: 1px solid var(--color-silver-mist);
+  transform: rotate(45deg);
+  animation: hint-float 1.8s ease-in-out infinite;
+}
+@keyframes hint-float {
+  0%, 100% { transform: rotate(45deg) translate(0, 0); opacity: 0.5; }
+  50% { transform: rotate(45deg) translate(3px, 3px); opacity: 1; }
+}
+
+/* ============================================================
+   SHEET 2 — slides up over sheet 1 like a rising card
+   Opaque bg + rounded top + scroll-driven scale entrance
+   ============================================================ */
+.sheet-two {
+  position: relative;
+  z-index: 2;
+  background: var(--color-liquid-abyss);
+  border-radius: 28px 28px 0 0;
+  padding: 0 var(--spacing-48) var(--spacing-120);
+  box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.45);
+  transform-origin: center top;
+}
+/* Sheet 2 carries its own glow so it fully covers sheet 1 */
+.sheet-two::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 30% at 50% 0%, rgba(0, 130, 124, 0.16) 0%, transparent 60%);
+}
+
+/* Compact in-page nav — sticks to top while browsing sheet 2 */
+.sub-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  margin: 0 calc(var(--spacing-48) * -1);
+  padding: 0 var(--spacing-48);
+  background: linear-gradient(to bottom, rgba(1, 38, 36, 0.92), rgba(1, 38, 36, 0.75) 70%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.sub-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-silver-mist);
+}
+.sub-nav-brand .nav-brand-mark { width: 8px; height: 8px; }
+.btn-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--color-silver-mist);
+  padding: 8px 14px;
+  border-radius: var(--radius-small);
+  cursor: pointer;
+  font-family: var(--font-matter);
+  font-size: 10px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  transition: all 0.15s ease;
+}
+.btn-top:hover { color: var(--color-platinum); border-color: rgba(255, 255, 255, 0.3); }
+.btn-top .up {
+  width: 8px;
+  height: 8px;
+  border-left: 1px solid currentColor;
+  border-top: 1px solid currentColor;
+  transform: rotate(45deg) translate(1px, 1px);
+}
+
+/* ===== Surface Card — Liquid Kelp, 16px, NO shadow, NO border ===== */
+.card {
+  position: relative;
+  background: var(--color-liquid-kelp);
+  border-radius: var(--radius-cards);
+  padding: var(--card-padding);
+  max-width: 780px;
+  margin: var(--spacing-32) auto var(--spacing-24);
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-16);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-32);
+}
+.card-title {
+  font-size: var(--text-subheading);
+  font-weight: var(--fw-medium);
+  line-height: var(--leading-subheading);
+  letter-spacing: -0.01em;
+  color: var(--color-platinum);
+  margin: 0;
+}
+.card-sub {
+  font-size: 13px;
+  color: var(--color-silver-mist);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+/* ===== Uppercase tracked labels — instrument labeling ===== */
+label.sc-label {
+  display: block;
+  font-size: var(--text-caption);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-caption);
+  text-transform: uppercase;
+  color: var(--color-liquid-mist);
+  margin: 0 0 var(--spacing-12);
+}
+label.sc-label .req { color: var(--color-slate-deep); }
+.hint {
+  font-size: 12px;
+  color: var(--color-slate-deep);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ===== Text Input — recessed deep field ===== */
+textarea, input[type=text], input[type=url] {
+  width: 100%;
+  font-family: var(--font-matter);
+  font-weight: var(--fw-regular);
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 14px 16px;
+  background: var(--color-liquid-deep);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: var(--radius-small);
+  color: var(--color-liquid-mist);
+  transition: border-color 0.15s ease;
+  outline: none;
+}
+textarea { min-height: 180px; resize: vertical; }
+textarea::placeholder, input::placeholder { color: rgba(112, 119, 119, 0.85); }
+textarea:focus, input[type=text]:focus, input[type=url]:focus {
+  border-color: var(--color-bioluminescent);
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-12);
+  margin-top: var(--spacing-20);
+}
+.checkbox-row input[type=checkbox] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  background: var(--color-liquid-deep);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  transition: background 0.15s ease;
+}
+.checkbox-row input[type=checkbox]:checked {
+  background: var(--color-bioluminescent);
+  border-color: var(--color-bioluminescent);
+}
+.checkbox-row input[type=checkbox]:checked::after {
+  content: "";
+  position: absolute;
+  left: 4.5px; top: 1.5px;
+  width: 4px; height: 8px;
+  border: solid var(--color-platinum);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+.checkbox-row label {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-silver-mist);
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+/* ===== Buttons ===== */
+.btn-tools {
+  display: flex;
+  gap: 8px;
+  margin: var(--spacing-12) 0 var(--spacing-20);
+  justify-content: flex-end;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--color-silver-mist);
+  padding: 8px 14px;
+  border-radius: var(--radius-small);
+  cursor: pointer;
+  font-family: var(--font-matter);
+  font-size: 10px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: all 0.15s ease;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.btn-ghost:hover {
+  color: var(--color-platinum);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Gradient Pill Button — aurora, the ONLY chromatic CTA */
+.btn-primary {
+  background: var(--color-aurora-gradient);
+  color: #222222;
+  border: none;
+  padding: 14px 28px;
+  border-radius: var(--radius-small);
+  cursor: pointer;
+  font-family: var(--font-matter);
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: filter 0.18s ease, transform 0.18s ease;
+}
+.btn-primary:hover { filter: brightness(1.06); transform: translateY(-1px); }
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+.btn-group {
+  display: flex;
+  gap: var(--spacing-20);
+  align-items: center;
+  margin-top: var(--spacing-24);
+  flex-wrap: wrap;
+}
+
+/* ===== Status ===== */
+.status {
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.06em;
+}
+.status.pending, .status.running { color: var(--color-liquid-mist); }
+.status.done { color: var(--color-lavender-phosphor); }
+.status.failed { color: var(--color-platinum); }
+
+/* ===== Statistic Counter — lavender phosphor numbers ===== */
+.stats {
+  display: flex;
+  gap: var(--spacing-48);
+  flex-wrap: wrap;
+  margin: 0 0 var(--spacing-32);
+  padding-bottom: var(--spacing-32);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.stat b {
+  display: block;
+  font-size: var(--text-heading);
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--color-lavender-phosphor);
+}
+.stat span {
+  display: block;
+  margin-top: 8px;
+  font-size: var(--text-caption);
+  font-weight: var(--fw-regular);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-silver-mist);
+}
+
+/* ===== Status pills ===== */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-small);
+  font-size: 10px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+.pill.passed  { background: rgba(203, 255, 252, 0.10); color: #cbfffc; }
+.pill.failed  { background: rgba(250, 209, 255, 0.12); color: #fde9ff; }
+.pill.skipped { background: rgba(255, 255, 255, 0.06); color: var(--color-silver-mist); }
+.pill.high    { background: rgba(250, 209, 255, 0.12); color: #fde9ff; }
+.pill.medium  { background: rgba(203, 255, 252, 0.10); color: #cbfffc; }
+.pill.low     { background: rgba(255, 255, 255, 0.06); color: var(--color-silver-mist); }
+
+/* ===== Table ===== */
+.table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-small);
+  margin: var(--spacing-16) 0 var(--spacing-24);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 680px;
+}
+th, td {
+  text-align: left;
+  padding: 14px 16px;
+  vertical-align: top;
+  font-size: 13px;
+  color: var(--color-silver-mist);
+  font-weight: var(--fw-regular);
+  line-height: 1.5;
+}
+thead th {
+  font-size: var(--text-caption);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-caption);
+  text-transform: uppercase;
+  color: var(--color-slate-deep);
+  background: var(--color-liquid-deep);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+tbody tr + tr td { border-top: 1px solid rgba(255, 255, 255, 0.06); }
+tbody tr:hover td { background: rgba(1, 29, 28, 0.5); }
+td.desc { color: var(--color-liquid-mist); font-weight: var(--fw-regular); }
+td.seq { color: var(--color-slate-deep); }
+
+/* ===== Evidence ===== */
+.ev-img {
+  max-width: 320px;
+  border-radius: var(--radius-small);
+  display: block;
+  margin-top: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+details {
+  margin-top: 10px;
+  background: var(--color-liquid-deep);
+  border-radius: var(--radius-small);
+  padding: 10px 14px;
+}
+details summary {
+  font-size: var(--text-caption);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-caption);
+  text-transform: uppercase;
+  color: var(--color-silver-mist);
+  cursor: pointer;
+  list-style: none;
+}
+details summary::-webkit-details-marker { display: none; }
+details[open] { padding-bottom: 12px; }
+pre {
+  background: var(--color-liquid-deep);
+  padding: 14px 16px;
+  border-radius: var(--radius-small);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 10px 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--color-liquid-mist);
+}
+code {
+  background: var(--color-liquid-deep);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #cbfffc;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+a {
+  color: #cbfffc;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(203, 255, 252, 0.3);
+}
+a:hover { border-bottom-color: #cbfffc; }
+
+.error { color: #fde9ff; font-weight: var(--fw-medium); }
+
+/* ===== Findings list ===== */
+.findings-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--spacing-16) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-12);
+}
+.findings-list li {
+  background: var(--color-liquid-deep);
+  border-radius: var(--radius-small);
+  padding: var(--spacing-16) var(--spacing-20);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-liquid-mist);
+}
+.findings-list li b {
+  color: var(--color-platinum);
+  font-weight: var(--fw-medium);
+  font-size: 13px;
+  margin: 0 6px;
+}
+.findings-list small {
+  display: block;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  color: var(--color-silver-mist);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.findings-list small::before {
+  content: "建议";
+  font-size: var(--text-caption);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-caption);
+  text-transform: uppercase;
+  color: var(--color-slate-deep);
+  margin-right: 10px;
+}
+
+/* ===== Fix tasks ===== */
+.section-title {
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-caption);
+  text-transform: uppercase;
+  color: var(--color-silver-mist);
+  margin: var(--spacing-32) 0 var(--spacing-16);
+}
+.fix-list {
+  padding-left: 0;
+  list-style: none;
+  counter-reset: fix;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-12);
+  margin: 0;
+}
+.fix-list li {
+  counter-increment: fix;
+  background: var(--color-liquid-deep);
+  border-radius: var(--radius-small);
+  padding: var(--spacing-16) var(--spacing-20);
+  padding-left: 72px;
+  position: relative;
+}
+.fix-list li::before {
+  content: counter(fix, decimal-leading-zero);
+  position: absolute;
+  left: 20px; top: 18px;
+  font-size: 20px;
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--color-lavender-phosphor);
+}
+.fix-list li b {
+  display: block;
+  color: var(--color-platinum);
+  font-weight: var(--fw-medium);
+  font-size: 14px;
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+.fix-list li small {
+  color: var(--color-silver-mist);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ===== Rewrite section ===== */
+.rewrite-intro {
+  margin-top: var(--spacing-32);
+  padding-top: var(--spacing-24);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-16);
+}
+.rewritten-out {
+  width: 100%;
+  min-height: 320px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 20px 22px;
+  background: var(--color-liquid-deep);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: var(--radius-small);
+  color: var(--color-liquid-mist);
+  white-space: pre-wrap;
+  resize: vertical;
+}
+
+/* ===== Footer ===== */
+.footer {
+  margin-top: var(--spacing-64);
+  padding: var(--spacing-48) var(--spacing-24);
+  text-align: center;
+  font-size: var(--text-caption);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-caption);
+  text-transform: uppercase;
+  color: var(--color-slate-deep);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ===== Animations ===== */
+.spinner::after {
+  content: " ·";
+  animation: dots 1s steps(4, end) infinite;
+}
+@keyframes dots {
+  0% { content: ""; }
+  25% { content: " ·"; }
+  50% { content: " ··"; }
+  75% { content: " ···"; }
+  100% { content: " ···"; }
+}
+
+/* ===== Invite gate — 邀请码门禁(Auros 风格) ===== */
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-24);
+  background: var(--color-liquid-abyss);
+}
+.gate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% -8%, rgba(0, 130, 124, 0.22) 0%, rgba(0, 130, 124, 0.06) 45%, transparent 70%),
+    radial-gradient(ellipse 40% 30% at 88% 12%, rgba(250, 209, 255, 0.05) 0%, transparent 65%);
+}
+.gate-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-liquid-kelp);
+  border-radius: var(--radius-cards);
+  padding: var(--card-padding);
+}
+.gate-title {
+  font-size: var(--text-subheading);
+  font-weight: var(--fw-medium);
+  letter-spacing: -0.01em;
+  color: var(--color-platinum);
+  margin: 0 0 6px;
+}
+.gate-sub {
+  font-size: 13px;
+  color: var(--color-silver-mist);
+  margin: 0 0 var(--spacing-24);
+  line-height: 1.5;
+}
+.gate-input {
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 16px;
+  background: var(--color-liquid-deep);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: var(--radius-small);
+  color: var(--color-liquid-mist);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.gate-input:focus { border-color: var(--color-bioluminescent); }
+.gate-input::placeholder {
+  font-family: var(--font-matter);
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(112, 119, 119, 0.85);
+}
+.gate-error {
+  min-height: 20px;
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #fde9ff;
+  text-align: center;
+  line-height: 1.5;
+}
+.gate-btn {
+  width: 100%;
+  margin-top: var(--spacing-12);
+}
+.gate-meta {
+  margin-top: var(--spacing-20);
+  text-align: center;
+  font-size: var(--text-caption);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-caption);
+  text-transform: uppercase;
+  color: var(--color-slate-deep);
+}
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .scroll-hint .arrow::after { animation: none; }
+  .sheet-two { transform: none !important; border-radius: 28px 28px 0 0 !important; }
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 720px) {
+  .sheet-one { padding: 0 var(--spacing-20); }
+  .sheet-two { padding: 0 var(--spacing-20) var(--spacing-64); border-radius: 20px 20px 0 0; }
+  .sub-nav { margin: 0 calc(var(--spacing-20) * -1); padding: 0 var(--spacing-20); }
+  .card { padding: var(--spacing-24); }
+  .stats { gap: var(--spacing-24); }
+  .stat b { font-size: 28px; }
+  .btn-primary { width: 100%; }
+  .btn-group { flex-direction: column; align-items: stretch; }
+  .seg button { padding: 10px 18px; }
+  .nav { padding: 0 var(--spacing-4); }
+  .nav-meta .live { display: none; }
+  .seg-wrap { padding-bottom: var(--spacing-32); }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ INVITE GATE — 邀请码门禁 ============ -->
+<div class="gate" id="gate" style="display:none;">
+  <div class="gate-card">
+    <h2 class="gate-title">ShipCheck · 内测</h2>
+    <p class="gate-sub">凭邀请码进入。每个邀请码可用 5 次。</p>
+    <input class="gate-input" id="gate-input" placeholder="SHIP-XXXX-XXXX" autocomplete="off" spellcheck="false" />
+    <p class="gate-error" id="gate-error"></p>
+    <button class="btn-primary gate-btn" id="gate-btn" onclick="redeemInvite()">进入</button>
+    <div class="gate-meta">Invite Only · MVP</div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- ============ SHEET 1 — pinned hero page ============ -->
+  <section class="sheet-one">
+    <nav class="nav">
+      <div class="nav-brand">
+        <div class="nav-brand-mark"></div>
+        <span>ShipCheck</span>
+      </div>
+      <div class="nav-meta">
+        <span class="live">Entropy Reversal</span>
+      </div>
+    </nav>
+
+    <div class="hero">
+      <canvas class="hero-orb" id="orb"></canvas>
+      <div class="hero-inner">
+        <div class="eyebrow">熵逆 · Entropy Reversal</div>
+        <h1 class="hero-title">ShipCheck</h1>
+        <p class="hero-sub">开发前理 PRD · 上线后验交付</p>
+      </div>
+    </div>
+
+    <div class="seg-wrap">
+      <div class="seg">
+        <button id="tab-acceptance" class="on" onclick="switchTab('acceptance')">验收</button>
+        <button id="tab-review" onclick="switchTab('review')">审查</button>
+      </div>
+      <button class="scroll-hint" onclick="goToSheet2()">
+        <span>向下滚动开始</span>
+        <span class="arrow"></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ SHEET 2 — slides up over sheet 1 ============ -->
+  <section class="sheet-two" id="sheet-two">
+    <div class="sub-nav">
+      <div class="sub-nav-brand">
+        <div class="nav-brand-mark"></div>
+        <span>ShipCheck</span>
+      </div>
+      <button class="btn-top" onclick="goToSheet1()">
+        <span class="up"></span>
+        <span>回到首页</span>
+      </button>
+    </div>
+
+    <!-- 验收模式 -->
+    <div id="form-acceptance">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">验收</h2>
+            <p class="card-sub">PRD + 网址 → 核验 · 证据 · 修复清单</p>
+          </div>
+        </div>
+
+        <label class="sc-label">PRD <span class="req">*</span></label>
+        <textarea id="acc-prd" placeholder="粘贴 PRD……"></textarea>
+        <div class="btn-tools">
+          <button class="btn-ghost" onclick="selectAll('acc-prd')">全选</button>
+          <button class="btn-ghost" onclick="clearText('acc-prd')">清空</button>
+        </div>
+
+        <label class="sc-label">网址 <span class="req">*</span></label>
+        <input id="acc-url" type="url" placeholder="https://your-product.example.com" />
+
+        <div class="checkbox-row">
+          <input id="acc-destructive" type="checkbox" />
+          <label for="acc-destructive">允许破坏性操作（默认只读）</label>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn-primary" id="acc-submit" onclick="submitAcceptance()">开始验收</button>
+          <span class="hint">30s ~ 3min</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 审查模式 -->
+    <div id="form-review" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">审查</h2>
+            <p class="card-sub">PRD → 漏洞 · 整改版</p>
+          </div>
+        </div>
+
+        <label class="sc-label">PRD <span class="req">*</span></label>
+        <textarea id="rev-prd" placeholder="粘贴 PRD……"></textarea>
+        <div class="btn-tools">
+          <button class="btn-ghost" onclick="selectAll('rev-prd')">全选</button>
+          <button class="btn-ghost" onclick="clearText('rev-prd')">清空</button>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn-primary" id="rev-submit" onclick="submitReview()">提交审查</button>
+          <span class="hint">可一键改写整改版</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div id="result"></div>
+
+    <footer class="footer">ShipCheck — Entropy Reversal Terminal</footer>
+  </section>
+
+</div>
+
+<script>
+/* ===== Bioluminescent particle orb ===== */
+(function () {
+  const cv = document.getElementById("orb");
+  const ctx = cv.getContext("2d");
+  let W = 0, H = 0, DPR = 1;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    const r = cv.parentElement.getBoundingClientRect();
+    W = r.width; H = r.height;
+    cv.width = W * DPR; cv.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  const N = 480;
+  const pts = [];
+  for (let i = 0; i < N; i++) {
+    const y = 1 - (i / (N - 1)) * 2;
+    const r = Math.sqrt(1 - y * y);
+    const th = i * 2.39996323;
+    pts.push({ x: Math.cos(th) * r, y, z: Math.sin(th) * r });
+  }
+  const AQUA = "203,255,252", WHITE = "237,255,254", PINK = "250,209,255";
+  pts.forEach((p, i) => {
+    p.c = (i % 23 === 0) ? PINK : (i % 3 === 0 ? WHITE : AQUA);
+    p.s = 0.8 + ((i * 7919) % 100) / 100 * 1.1;
+  });
+
+  let rot = 0;
+  const TILT = -0.35;
+
+  function frame() {
+    rot += 0.0022;
+    ctx.clearRect(0, 0, W, H);
+    const cx = W / 2, cy = H / 2;
+    const R = Math.min(W, H) * 0.36;
+    const ct = Math.cos(TILT), st = Math.sin(TILT);
+
+    const proj = [];
+    for (const p of pts) {
+      const x1 = p.x * Math.cos(rot) - p.z * Math.sin(rot);
+      const z1 = p.x * Math.sin(rot) + p.z * Math.cos(rot);
+      const y2 = p.y * ct - z1 * st;
+      const z2 = p.y * st + z1 * ct;
+      const persp = 1 / (2.6 - z2);
+      proj.push({
+        sx: cx + x1 * R * persp * 2.6,
+        sy: cy + y2 * R * persp * 2.6,
+        depth: (z2 + 1) / 2,
+        c: p.c, s: p.s
+      });
+    }
+    proj.sort((a, b) => a.depth - b.depth);
+    for (const q of proj) {
+      const a = 0.06 + q.depth * q.depth * 0.5;
+      const size = q.s * (0.7 + q.depth * 1.2);
+      ctx.beginPath();
+      ctx.arc(q.sx, q.sy, size, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(" + q.c + "," + a.toFixed(3) + ")";
+      ctx.fill();
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* ===== Card-stacking entrance — sheet 2 scales up as it covers sheet 1 ===== */
+(function () {
+  const sheet = document.getElementById("sheet-two");
+  if (!sheet) return;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) return;
+
+  let ticking = false;
+  function update() {
+    ticking = false;
+    const rect = sheet.getBoundingClientRect();
+    const vh = window.innerHeight;
+    // progress 0 → sheet top at viewport bottom; 1 → sheet top reaches viewport top
+    const p = Math.min(1, Math.max(0, 1 - rect.top / vh));
+    if (p >= 1) {
+      // 翻页完成：清除 transform，恢复内部 sticky（transform 会破坏子级 sticky 定位）
+      sheet.style.transform = "";
+      sheet.style.borderRadius = "";
+      sheet.style.willChange = "auto";
+      return;
+    }
+    const scale = 0.94 + 0.06 * p;
+    const radius = Math.round(28 - 16 * p);
+    sheet.style.willChange = "transform";
+    sheet.style.transform = "scale(" + scale.toFixed(4) + ")";
+    sheet.style.borderRadius = radius + "px " + radius + "px 0 0";
+  }
+  function onScroll() {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(update);
+    }
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
+  update();
+})();
+
+/* ===== Sheet navigation — wheel flips the whole page ===== */
+const sheetTwoEl = document.getElementById("sheet-two");
+let pageLock = false;
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function goToSheet2() {
+  if (pageLock) return;
+  pageLock = true;
+  window.scrollTo({ top: sheetTwoEl.offsetTop, behavior: reduceMotion ? "auto" : "smooth" });
+  setTimeout(() => { pageLock = false; }, 900);
+}
+function goToSheet1() {
+  if (pageLock) return;
+  pageLock = true;
+  window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+  setTimeout(() => { pageLock = false; }, 900);
+}
+
+/* 滚轮一次动作 = 翻一整页：第一页向下滚→翻到第二页；第二页顶端向上滚→翻回第一页 */
+window.addEventListener("wheel", (e) => {
+  const y = window.scrollY;
+  const top2 = sheetTwoEl.offsetTop;
+  // 第一页占据视口：向下滚 → 整页翻到第二页
+  if (y < top2 - 4) {
+    if (e.deltaY > 0) {
+      e.preventDefault();
+      goToSheet2();
+    }
+    return;
+  }
+  // 停在第二页顶端：向上滚 → 整页翻回第一页（第二页内部正常滚动不受影响）
+  if (y <= top2 + 8 && e.deltaY < 0) {
+    e.preventDefault();
+    goToSheet1();
+  }
+}, { passive: false });
+
+/* ===== App logic ===== */
+const API = "/api/v1";
+let pollTimer = null;
+let lastContext = null;
+
+/* ===== 邀请码门禁 ===== */
+let inviteCode = localStorage.getItem("sc_invite") || "";
+
+function authHeaders() {
+  return inviteCode ? {"X-Invite-Code": inviteCode} : {};
+}
+
+function apiFetch(path, options) {
+  options = options || {};
+  options.headers = Object.assign({}, options.headers || {}, authHeaders());
+  return fetch(API + path, options);
+}
+
+async function redeemInvite() {
+  const input = document.getElementById("gate-input");
+  const err = document.getElementById("gate-error");
+  const btn = document.getElementById("gate-btn");
+  const code = (input.value || "").trim().toUpperCase();
+  if (!code) { err.textContent = "请输入邀请码"; return; }
+  btn.disabled = true;
+  err.textContent = "";
+  try {
+    const resp = await fetch(API + "/invite/redeem", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({code}),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      err.textContent = data.error?.message || "邀请码校验失败";
+      btn.disabled = false;
+      return;
+    }
+    inviteCode = code;
+    localStorage.setItem("sc_invite", code);
+    document.getElementById("gate").style.display = "none";
+    if (data.remaining !== undefined && data.remaining <= 2) {
+      // 额度将尽,温和提示一次
+      console.log("邀请码剩余次数:", data.remaining);
+    }
+  } catch (e) {
+    err.textContent = "网络错误,请重试";
+    btn.disabled = false;
+  }
+}
+
+(function initGate() {
+  const gate = document.getElementById("gate");
+  const input = document.getElementById("gate-input");
+  if (inviteCode) {
+    // 已有码:静默校验有效性(不消耗额度),失效则重新弹门
+    fetch(API + "/invite/status?code=" + encodeURIComponent(inviteCode))
+      .then(r => { if (!r.ok) throw 0; return r.json(); })
+      .then(st => {
+        if (!st.active || st.remaining <= 0) {
+          localStorage.removeItem("sc_invite");
+          inviteCode = "";
+          gate.style.display = "";
+        }
+      })
+      .catch(() => { /* 网络异常时放行,后端仍会强制校验 */ });
+  } else {
+    // 支持 ?invite=CODE 预填
+    const pre = new URLSearchParams(location.search).get("invite");
+    if (pre) input.value = pre.toUpperCase();
+    gate.style.display = "";
+    input.addEventListener("keydown", e => { if (e.key === "Enter") redeemInvite(); });
+    setTimeout(() => input.focus(), 100);
+  }
+})();
+
+function selectAll(id) {
+  const el = document.getElementById(id);
+  el.focus();
+  if (el.select) el.select();
+  if (window.getSelection && document.createRange) {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges(); sel.addRange(range);
+  }
+}
+function clearText(id) {
+  const el = document.getElementById(id);
+  el.value = "";
+  el.focus();
+}
+
+function switchTab(t) {
+  document.getElementById("form-acceptance").style.display = t === "acceptance" ? "" : "none";
+  document.getElementById("form-review").style.display = t === "review" ? "" : "none";
+  document.getElementById("tab-acceptance").classList.toggle("on", t === "acceptance");
+  document.getElementById("tab-review").classList.toggle("on", t === "review");
+  document.getElementById("result").innerHTML = "";
+  // 选择模式后直接翻到第二页
+  if (window.scrollY < sheetTwoEl.offsetTop - 4) goToSheet2();
+}
+
+async function submitJob(path, body, btnId, ctx) {
+  lastContext = ctx;
+  const btn = document.getElementById(btnId);
+  btn.disabled = true;
+  document.getElementById("result").innerHTML =
+    `<div class="card"><p style="margin:0; color:var(--color-liquid-mist);">提交中<span class="spinner"></span></p></div>`;
+  try {
+    const resp = await apiFetch(path, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      document.getElementById("result").innerHTML =
+        `<div class="card"><p class="error" style="margin:0;">提交失败：${data.error?.message || resp.status}</p></div>`;
+      btn.disabled = false;
+      return;
+    }
+    pollJob(data.job_id);
+  } catch (e) {
+    document.getElementById("result").innerHTML =
+      `<div class="card"><p class="error" style="margin:0;">网络错误：${e}</p></div>`;
+    btn.disabled = false;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function submitAcceptance() {
+  const prd = document.getElementById("acc-prd").value.trim();
+  const url = document.getElementById("acc-url").value.trim();
+  const destructive = document.getElementById("acc-destructive").checked;
+  if (prd.length < 10) { alert("PRD 太短"); return; }
+  if (!url) { alert("请填写产品网址"); return; }
+  submitJob("/acceptance", {prd_text: prd, target_url: url, allow_destructive: destructive},
+    "acc-submit", {type:"acceptance", prd});
+}
+
+function submitReview() {
+  const prd = document.getElementById("rev-prd").value.trim();
+  if (prd.length < 10) { alert("PRD 太短"); return; }
+  submitJob("/review", {prd_text: prd}, "rev-submit", {type:"review", prd});
+}
+
+function pollJob(jobId) {
+  document.getElementById("result").innerHTML =
+    `<div class="card">
+       <p style="margin:0 0 8px; color:var(--color-silver-mist);">Job：<code>${jobId}</code></p>
+       <p style="margin:0; color:var(--color-silver-mist);">
+         状态：<span class="status pending" id="status">排队中…</span>
+         <span class="spinner" style="margin-left:4px;"></span>
+       </p>
+     </div>`;
+  if (pollTimer) clearInterval(pollTimer);
+  const tick = async () => {
+    try {
+      const resp = await fetch(API + "/jobs/" + jobId);
+      const j = await resp.json();
+      const st = document.getElementById("status");
+      if (st) {
+        const label = {pending:"排队中…", running:"运行中…", done:"完成 ✔", failed:"失败 ✗"}[j.status] || j.status;
+        st.textContent = label;
+        st.className = "status " + j.status;
+        if (j.status === "running" || j.status === "pending") {
+          st.classList.add("spinner");
+        }
+      }
+      if (j.status === "done" || j.status === "failed") {
+        clearInterval(pollTimer); pollTimer = null;
+        renderResult(j);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+  tick();
+  pollTimer = setInterval(tick, 2000);
+}
+
+function buildSuggestionsText(j) {
+  const r = j.result_json || {};
+  if (j.type === "review") {
+    return (r.findings || []).map((f,i)=>`${i+1}. [${f.severity}/${f.category}] ${f.message} → 建议:${f.suggestion}`).join("\n");
+  }
+  const failed = (r.fix_tasks || []).map((f,i)=>`${i+1}. 修复任务:${f.fix}`).join("\n");
+  const other = (r.checklist || []).filter(c=>c.status!=="passed")
+    .map(c=>`- ${c.status.toUpperCase()}: ${c.description} (期望:${c.expected},理由:${c.judge_reason||""})`).join("\n");
+  return (failed + "\n" + other).trim();
+}
+
+async function rewritePRD() {
+  if (!lastContext) return;
+  const btn = document.getElementById("btn-rewrite");
+  if (!btn) return;
+  const suggestionsText = lastContext.suggestionsText || "";
+  if (!suggestionsText) { alert("没有可落实的建议"); return; }
+  btn.disabled = true;
+  const outBox = document.getElementById("rewrite-out");
+  outBox.value = "改写中……";
+  try {
+    const resp = await apiFetch("/rewrite-prd", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({original_prd: lastContext.prd, suggestions_text: suggestionsText}),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      outBox.value = "改写失败：" + (data.error?.message || resp.status);
+      return;
+    }
+    outBox.value = data.rewritten_prd;
+    document.getElementById("rewrite-card").style.display = "";
+  } catch (e) {
+    outBox.value = "网络错误：" + e;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function copyRewritten() {
+  const v = document.getElementById("rewrite-out").value;
+  navigator.clipboard.writeText(v).then(()=>{
+    const hint = document.getElementById("copy-hint");
+    hint.textContent = "✓ 已复制";
+    setTimeout(()=>hint.textContent="", 1500);
+  }).catch(()=>alert("复制失败"));
+}
+
+function renderResult(j) {
+  const el = document.getElementById("result");
+  if (j.status === "failed") {
+    el.innerHTML = `<div class="card"><h2 class="card-title" style="margin:0 0 12px;">任务失败</h2><p class="error" style="margin:0;">${esc(j.error_message || "未知错误")}</p></div>`;
+    return;
+  }
+  if (lastContext) { lastContext.suggestionsText = buildSuggestionsText(j); }
+
+  const r = j.result_json || {};
+  let body = "";
+
+  if (j.type === "acceptance") {
+    const s = r.summary || {};
+    let rows = (r.checklist || []).map(i => `
+      <tr>
+        <td class="seq">#${i.seq}</td>
+        <td class="desc">${esc(i.description)}</td>
+        <td>${esc(i.expected)}</td>
+        <td style="white-space:nowrap;"><span class="pill ${i.status}">${i.status}</span></td>
+        <td>
+          <div style="font-size:13px; line-height:1.6;">${esc(i.judge_reason || "—")}</div>
+          ${(i.evidence || []).filter(e=>e.kind==="screenshot"&&e.url).map(e=>`
+            <a href="${e.url}" target="_blank">
+              <img class="ev-img" src="${e.url}" />
+            </a>`).join("")}
+          ${(i.evidence || []).filter(e=>e.kind!=="screenshot").map(e=>`
+            <details><summary>${esc(e.kind)} 证据</summary><pre>${esc(e.content||"")}</pre></details>`).join("")}
+        </td>
+      </tr>`).join("");
+
+    const total = s.total ?? 0;
+    const passed = s.passed ?? 0;
+    const failed = s.failed ?? 0;
+    const skipped = s.skipped ?? 0;
+
+    let fixes = (r.fix_tasks || []).map(f => `
+      <li>
+        <b>${esc(f.description)}</b>
+        <small>${esc(f.fix)}</small>
+      </li>`).join("");
+
+    body = `
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">验收报告</h2>
+          <p class="card-sub">逐条核验结果</p>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>${total}</b><span>总项</span></div>
+        <div class="stat"><b>${passed}</b><span>通过</span></div>
+        <div class="stat"><b>${failed}</b><span>失败</span></div>
+        ${skipped ? `<div class="stat"><b>${skipped}</b><span>跳过</span></div>` : ""}
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>检查项</th>
+              <th>期望</th>
+              <th>状态</th>
+              <th>判定 & 证据</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      ${fixes ? `
+        <div class="section-title">修复任务</div>
+        <ol class="fix-list">${fixes}</ol>` : ""}
+    `;
+  } else {
+    const s = r.summary || {};
+    let items = (r.findings || []).map(f => `
+      <li>
+        <span class="pill ${f.severity}">${f.severity}</span>
+        <b>[${esc(f.category)}]</b>
+        ${esc(f.message)}
+        <small>${esc(f.suggestion)}</small>
+      </li>`).join("");
+
+    const total = s.total_findings ?? 0;
+    const high = s.high ?? 0;
+    const med = s.medium ?? 0;
+    const low = s.low ?? 0;
+
+    body = `
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">审查报告</h2>
+          <p class="card-sub">逻辑问题与风险</p>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>${total}</b><span>总问题</span></div>
+        ${high ? `<div class="stat"><b>${high}</b><span>高</span></div>` : ""}
+        ${med ? `<div class="stat"><b>${med}</b><span>中</span></div>` : ""}
+        ${low ? `<div class="stat"><b>${low}</b><span>低</span></div>` : ""}
+      </div>
+      <ul class="findings-list">${items || '<li style="color:#cbfffc;">未发现明显问题，可放心进入开发 / 验收阶段</li>'}</ul>
+    `;
+  }
+
+  el.innerHTML = `
+    <div class="card">
+      ${body}
+      <div class="rewrite-intro">
+        <button class="btn-primary" id="btn-rewrite" onclick="rewritePRD()">修改 PRD</button>
+        <span class="hint">原 PRD + 建议 → 整改版</span>
+      </div>
+    </div>
+
+    <div class="card" id="rewrite-card" style="display:none;">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">整改后的 PRD</h2>
+          <p class="card-sub">复制使用</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="btn-ghost" onclick="copyRewritten()">复制</button>
+          <span id="copy-hint" class="hint" style="min-width:64px;"></span>
+        </div>
+      </div>
+      <textarea id="rewrite-out" class="rewritten-out" readonly></textarea>
+    </div>`;
+}
+
+function esc(s) {
+  return (s||"").replace(/[&<>"']/g,
+    c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+</script>
+</body>
+</html>
