@@ -1,0 +1,8 @@
+anthropic>=0.60,<1
+fastapi>=0.115,<1
+httpx>=0.27,<1
+openai>=1.100,<3
+pydantic-settings>=2.5,<3
+psycopg[binary]>=3.2,<4
+sqlalchemy>=2.0,<3
+uvicorn[standard]>=0.30,<1
