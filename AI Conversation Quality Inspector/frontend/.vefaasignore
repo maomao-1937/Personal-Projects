@@ -1,0 +1,10 @@
+node_modules
+.next/cache
+coverage
+playwright-report
+test-results
+.env*
+.vefaas/
+e2e
+src/**/*.test.ts
+src/**/*.test.tsx
