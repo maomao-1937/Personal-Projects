@@ -1,4 +1,3 @@
-node_modules
 .next/cache
 coverage
 playwright-report
