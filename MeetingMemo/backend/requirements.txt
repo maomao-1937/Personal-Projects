@@ -1,0 +1,10 @@
+alembic==1.19.1
+fastapi==0.141.1
+httpx[socks]==0.28.1
+psycopg[binary]==3.3.4
+pysqlite3-binary==0.5.4.post2; sys_platform == "linux"
+pydantic==2.13.4
+pydantic-settings==2.15.0
+python-multipart==0.0.32
+sqlalchemy==2.0.52
+uvicorn[standard]==0.52.4
