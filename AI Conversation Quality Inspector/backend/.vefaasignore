@@ -1,0 +1,16 @@
+.env*
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.venv-backend/
+.vefaas/
+__pycache__/
+data/
+htmlcov/
+tests/
+*.db
+*.py[cod]

@@ -1,0 +1,10 @@
+alembic==1.19.1
+boto3==1.43.55
+fastapi==0.141.1
+itsdangerous==2.2.0
+openai==3.3.1
+pydantic==2.13.4
+pydantic-settings==2.15.0
+SQLAlchemy==2.0.52
+socksio==1.0.0
+uvicorn[standard]==0.52.4
