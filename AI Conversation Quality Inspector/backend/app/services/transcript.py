@@ -1,6 +1,7 @@
 import re
 from dataclasses import dataclass
 from itertools import pairwise
+from typing import Literal
 
 from app.core.errors import TranscriptInvalid
 from app.models import QAType
@@ -106,7 +107,10 @@ def parse_transcript(
     )
 
 
-def _classify_role(speaker_label: str, qa_type: QAType) -> str | None:
+def _classify_role(
+    speaker_label: str,
+    qa_type: QAType,
+) -> Literal["customer", "employee"] | None:
     if _matches_label(speaker_label, CUSTOMER_BASE_LABELS):
         return "customer"
     if _matches_label(speaker_label, EMPLOYEE_BASE_LABELS[qa_type]):
