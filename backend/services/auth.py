@@ -35,6 +35,20 @@ class AuthService:
                 (_hash(plaintext), max_uses),
             )
 
+    def add_invite_code_hash(self, code_hash: str, *, max_uses: int = 100) -> None:
+        normalized = code_hash.strip().lower()
+        if len(normalized) != 64 or any(character not in "0123456789abcdef" for character in normalized):
+            raise ValueError("invite code hash must be a SHA-256 hex digest")
+        with self.database.transaction() as connection:
+            connection.execute(
+                """
+                INSERT OR IGNORE INTO invite_codes(
+                    code_hash, status, expires_at, max_uses, used_count
+                ) VALUES (?, 'active', NULL, ?, 0)
+                """,
+                (normalized, max_uses),
+            )
+
     def login(self, plaintext: str) -> tuple[User, str]:
         now = _now()
         code_hash = _hash(plaintext)
@@ -95,4 +109,3 @@ class AuthService:
         if not authorization or not authorization.startswith("Bearer "):
             raise DomainError("authentication_required", "请先登录。", status_code=401)
         return self.authenticate(authorization.removeprefix("Bearer ").strip())
-

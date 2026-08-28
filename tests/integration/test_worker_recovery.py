@@ -1,5 +1,6 @@
 import pytest
 
+from backend.domain.errors import DomainError
 from backend.jobs.handlers import HandlerRegistry
 from backend.jobs.recovery import RecoveryService
 from backend.jobs.service import JobService
@@ -85,3 +86,32 @@ async def test_worker_runs_registered_handler_once(services) -> None:
     assert await JobWorker(jobs, registry, worker_id="worker-a").run_once() is True
     assert calls == [job.id]
     assert jobs.get(job.id).status == "succeeded"
+
+
+@pytest.mark.asyncio
+async def test_worker_persists_structured_provider_failure(services) -> None:
+    jobs, project_id = services
+    job = jobs.create("audio_analysis", project_id, {}, "worker-failure", max_attempts=2)
+    jobs.transition(job.id, "queued")
+    registry = HandlerRegistry()
+
+    async def handler(_):
+        raise DomainError(
+            "provider_rate_limited",
+            "Provider is busy",
+            status_code=502,
+            retryable=True,
+            details={"provider_status": 429},
+        )
+
+    registry.register("audio_analysis", handler)
+    await JobWorker(jobs, registry, worker_id="worker-a").run_once()
+
+    failed = jobs.get(job.id)
+    assert failed.status == "failed_retryable"
+    assert failed.error == {
+        "code": "provider_rate_limited",
+        "message": "Provider is busy",
+        "retryable": True,
+        "details": {"provider_status": 429},
+    }

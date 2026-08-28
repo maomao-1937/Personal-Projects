@@ -30,10 +30,17 @@ class JobWorker:
         try:
             await handler(job)
         except DomainError as exc:
-            target = "failed_retryable" if exc.retryable else "failed_terminal"
-            self.jobs.transition(job.id, target, progress=job.progress)
+            self.jobs.fail(job.id, exc)
         except Exception:
-            self.jobs.transition(job.id, "failed_terminal", progress=job.progress)
+            self.jobs.fail(
+                job.id,
+                DomainError(
+                    "internal_job_error",
+                    "任务执行失败。",
+                    status_code=500,
+                    retryable=False,
+                ),
+            )
         else:
             if self.jobs.get(job.id).status == "running":
                 self.jobs.transition(job.id, "succeeded", progress=1.0)

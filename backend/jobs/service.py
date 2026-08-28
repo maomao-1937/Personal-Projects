@@ -140,6 +140,44 @@ class JobService:
             updated = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
         return _job_from_row(updated)
 
+    def fail(self, job_id: str, error: DomainError) -> Job:
+        target = (
+            JobStatus.FAILED_RETRYABLE.value
+            if error.retryable
+            else JobStatus.FAILED_TERMINAL.value
+        )
+        error_payload = {
+            "code": error.code,
+            "message": error.message,
+            "retryable": error.retryable,
+            "details": error.details,
+        }
+        with self.database.transaction() as connection:
+            row = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+            if row is None:
+                raise DomainError("job_not_found", "任务不存在。", status_code=404)
+            if not can_transition(row["status"], target):
+                raise DomainError(
+                    "invalid_job_transition",
+                    f"任务不能从 {row['status']} 变为 {target}。",
+                    status_code=409,
+                )
+            now = _now()
+            finished_at = now if target == JobStatus.FAILED_TERMINAL.value else None
+            connection.execute(
+                "UPDATE jobs SET status = ?, error_json = ?, finished_at = ? WHERE id = ?",
+                (target, _canonical_json(error_payload), finished_at, job_id),
+            )
+            self._append_event(
+                connection,
+                job_id,
+                "job_failed",
+                {"status": target, "error": error_payload},
+                now,
+            )
+            updated = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+        return _job_from_row(updated)
+
     def events(self, job_id: str, *, after: int = 0) -> list[JobEvent]:
         with self.database.connect() as connection:
             rows = connection.execute(
