@@ -1,0 +1,37 @@
+[project]
+name = "ai-song-to-mv-backend"
+version = "3.0.0a1"
+description = "Recoverable backend for AI song-to-MV generation"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "aiofiles==24.1.0",
+  "fastapi==0.115.0",
+  "httpx==0.28.1",
+  "librosa==0.10.2",
+  "numpy<3",
+  "pydantic==2.10.0",
+  "pydantic-settings==2.7.1",
+  "python-multipart==0.0.20",
+  "soundfile==0.13.0",
+  "uvicorn[standard]==0.34.0",
+  "yt-dlp>=2026.1.0",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest==8.3.5",
+  "pytest-asyncio==0.25.3",
+]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+pythonpath = [".", "backend"]
+testpaths = ["tests"]
+markers = [
+  "real_model: invokes a paid external model and requires explicit opt-in",
+]
+
+[tool.uv]
+package = false
