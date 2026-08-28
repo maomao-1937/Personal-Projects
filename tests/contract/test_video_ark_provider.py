@@ -104,6 +104,29 @@ def test_download_rejects_private_or_non_https_result_urls() -> None:
         assert exc_info.value.code == "video_download_url_rejected"
 
 
+def test_rejected_request_exposes_only_safe_provider_error_code() -> None:
+    provider = _provider(
+        lambda _: httpx.Response(
+            400,
+            json={"error": {"code": "ModelNotActivated", "message": "secret details"}},
+        )
+    )
+
+    with pytest.raises(DomainError) as exc_info:
+        provider.create(
+            prompt="测试",
+            duration_seconds=4,
+            ratio="16:9",
+            resolution="480p",
+        )
+
+    assert exc_info.value.details == {
+        "provider_status": 400,
+        "provider_error_code": "ModelNotActivated",
+    }
+    assert "secret details" not in str(exc_info.value.details)
+
+
 def _provider(handler) -> ArkVideoProvider:
     return ArkVideoProvider(
         api_key="ark-secret",

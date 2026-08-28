@@ -243,12 +243,16 @@ class ArkVideoProvider:
                 details={"provider_status": response.status_code},
             )
         if response.status_code >= 400:
+            details: dict[str, object] = {"provider_status": response.status_code}
+            provider_error_code = _safe_provider_error_code(response)
+            if provider_error_code:
+                details["provider_error_code"] = provider_error_code
             raise DomainError(
                 "video_provider_rejected",
                 "Seedance 拒绝了本次视频生成请求。",
                 status_code=502,
                 retryable=False,
-                details={"provider_status": response.status_code},
+                details=details,
             )
         return response
 
@@ -287,3 +291,15 @@ def _too_large(max_bytes: int) -> DomainError:
         retryable=False,
         details={"max_bytes": max_bytes},
     )
+
+
+def _safe_provider_error_code(response: httpx.Response) -> str | None:
+    try:
+        code = response.json().get("error", {}).get("code")
+    except (ValueError, AttributeError):
+        return None
+    if not isinstance(code, str) or not 1 <= len(code) <= 128:
+        return None
+    if not all(character.isalnum() or character in "._-" for character in code):
+        return None
+    return code
