@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.0.0a1] - 2026-08-28
+
+### Added
+- SQLite-backed Project, Job, Event, Audio, Storyboard, Cut, Timeline, Preview and Export state.
+- Invite authentication, owner isolation and safe local Artifact storage.
+- Provider abstractions for librosa, OpenAI Compatible Storyboard, Ark Seedance and FFmpeg.
+- Independent Cut retry/regenerate semantics with partial-success aggregation.
+- Immutable TimelineVersion and stale Preview/Export enforcement.
+- Persistent SSE replay and startup recovery.
+- Minimal backend acceptance page and Python 3.11 pytest suite.
+
+### Changed
+- Backend version and run command now have one documented source of truth.
+- 16:9 and 9:16 exports are independent H.264/AAC MP4 tasks.
+
+### Known issue
+- Seedance real smoke creation was rejected by Ark with HTTP 400 and no task ID; account-side activation/balance/policy requires verification before a paid retry.
+
 ## [2.0.1] - 2026-02-09
 
 ### Fixed

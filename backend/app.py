@@ -165,7 +165,7 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
     app.include_router(build_cuts_router(cuts, auth))
     app.include_router(build_previews_router(rendering, auth))
     app.include_router(build_exports_router(rendering, auth))
-    app.include_router(build_jobs_router(jobs))
+    app.include_router(build_jobs_router(jobs, auth=auth, projects=projects))
     app.include_router(build_artifacts_router(database, projects, auth, artifacts))
 
     from backend.routers import download, process, status

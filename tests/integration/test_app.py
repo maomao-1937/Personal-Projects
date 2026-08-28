@@ -47,3 +47,34 @@ def test_acceptance_page_is_minimal_server_rendered_harness(tmp_path) -> None:
     assert "上传音频" in response.text
     assert "生成 Storyboard" in response.text
     assert "React" not in response.text
+
+
+def test_job_status_is_owner_scoped_in_assembled_app(tmp_path) -> None:
+    settings = Settings(
+        _env_file=None,
+        app_env="test",
+        app_database_path=tmp_path / "app.db",
+        app_artifact_root=tmp_path / "artifacts",
+    )
+    app = create_app(settings)
+    with TestClient(app) as client:
+        auth = app.state.services["auth"]
+        auth.add_invite_code("invite-a")
+        auth.add_invite_code("invite-b")
+        token_a = client.post("/api/v1/auth/invite", json={"invite_code": "invite-a"}).json()["session_token"]
+        token_b = client.post("/api/v1/auth/invite", json={"invite_code": "invite-b"}).json()["session_token"]
+        project_id = client.post(
+            "/api/v1/projects",
+            headers={"Authorization": f"Bearer {token_a}"},
+            json={"name": "Private"},
+        ).json()["id"]
+        job = app.state.jobs.create("audio_analysis", project_id, {}, "private-job")
+
+        anonymous = client.get(f"/api/v1/jobs/{job.id}")
+        other_user = client.get(
+            f"/api/v1/jobs/{job.id}",
+            headers={"Authorization": f"Bearer {token_b}"},
+        )
+
+    assert anonymous.status_code == 401
+    assert other_user.status_code == 404
