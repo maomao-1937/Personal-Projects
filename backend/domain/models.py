@@ -53,3 +53,16 @@ class JobEvent:
     event_type: str
     payload: dict[str, object]
     created_at: str
+
+
+@dataclass(frozen=True, slots=True)
+class AudioAsset:
+    id: str
+    project_id: str
+    artifact_id: str
+    version: int
+    checksum: str
+    duration_ms: int
+    status: str
+    is_active: bool
+    created_at: str
