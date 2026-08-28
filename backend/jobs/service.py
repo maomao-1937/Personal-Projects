@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from backend.domain.errors import DomainError
 from backend.domain.models import Job, JobEvent
@@ -143,6 +143,91 @@ class JobService:
                 (job_id, after),
             ).fetchall()
         return [_event_from_row(row) for row in rows]
+
+    def claim_next(self, worker_id: str, *, lease_seconds: int = 60) -> Job | None:
+        now = datetime.now(timezone.utc)
+        lease_expires_at = (now + timedelta(seconds=lease_seconds)).isoformat()
+        with self.database.transaction() as connection:
+            row = connection.execute(
+                "SELECT * FROM jobs WHERE status = ? ORDER BY created_at ASC LIMIT 1",
+                (JobStatus.QUEUED.value,),
+            ).fetchone()
+            if row is None:
+                return None
+            updated = connection.execute(
+                """
+                UPDATE jobs
+                SET status = ?, worker_id = ?, lease_expires_at = ?, heartbeat_at = ?,
+                    started_at = COALESCE(started_at, ?)
+                WHERE id = ? AND status = ?
+                """,
+                (
+                    JobStatus.RUNNING.value,
+                    worker_id,
+                    lease_expires_at,
+                    now.isoformat(),
+                    now.isoformat(),
+                    row["id"],
+                    JobStatus.QUEUED.value,
+                ),
+            ).rowcount
+            if updated != 1:
+                return None
+            self._append_event(
+                connection,
+                row["id"],
+                "status_changed",
+                {"status": JobStatus.RUNNING.value, "progress": row["progress"]},
+                now.isoformat(),
+            )
+            claimed = connection.execute("SELECT * FROM jobs WHERE id = ?", (row["id"],)).fetchone()
+        return _job_from_row(claimed)
+
+    def set_provider_request_id(self, job_id: str, provider_request_id: str) -> Job:
+        with self.database.transaction() as connection:
+            updated = connection.execute(
+                "UPDATE jobs SET provider_request_id = ? WHERE id = ?",
+                (provider_request_id, job_id),
+            ).rowcount
+            if updated != 1:
+                raise DomainError("job_not_found", "任务不存在。", status_code=404)
+            row = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+        return _job_from_row(row)
+
+    def recover_expired(self) -> int:
+        now = _now()
+        recovered = 0
+        with self.database.transaction() as connection:
+            rows = connection.execute(
+                """
+                SELECT * FROM jobs
+                WHERE status = ? AND lease_expires_at IS NOT NULL AND lease_expires_at < ?
+                """,
+                (JobStatus.RUNNING.value, now),
+            ).fetchall()
+            for row in rows:
+                target = (
+                    JobStatus.UNKNOWN_PROVIDER_STATE.value
+                    if row["provider_request_id"]
+                    else JobStatus.QUEUED.value
+                )
+                connection.execute(
+                    """
+                    UPDATE jobs
+                    SET status = ?, worker_id = NULL, lease_expires_at = NULL, heartbeat_at = NULL
+                    WHERE id = ?
+                    """,
+                    (target, row["id"]),
+                )
+                self._append_event(
+                    connection,
+                    row["id"],
+                    "job_recovered",
+                    {"status": target, "progress": row["progress"]},
+                    now,
+                )
+                recovered += 1
+        return recovered
 
     @staticmethod
     def _append_event(connection, job_id: str, event_type: str, payload: dict[str, object], created_at: str) -> None:
