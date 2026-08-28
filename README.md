@@ -53,7 +53,7 @@ uv run uvicorn backend.main:app --reload
 git diff --check
 ```
 
-真实模型测试默认 Skip，具体门禁见 `tests/smoke/README.md`。当前 Storyboard 真模型冒烟已通过；Seedance 使用控制台确认的标准模型 ID 创建任务时仍被上游以 HTTP 400 拒绝且没有返回任务 ID。公开文档确认本次 4 秒、16:9、480p、无水印参数均在支持范围内；再次调用前必须先获取脱敏的上游错误码，不得盲目重试。
+真实模型测试默认 Skip，具体门禁见 `tests/smoke/README.md`。当前 Storyboard 真模型冒烟已通过；Seedance 脱敏诊断返回 HTTP 404 与 `ModelNotOpen`，证明当前火山方舟账号尚未开通 `doubao-seedance-2-0-260128` 模型服务。任务未创建；完成控制台开通前不得再次调用。
 
 ## P0 边界
 

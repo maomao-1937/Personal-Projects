@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 16:9 and 9:16 exports are independent H.264/AAC MP4 tasks.
 
 ### Known issue
-- Three authorized Seedance real-smoke creation attempts were rejected by Ark with HTTP 400 and no task ID. The latest attempt used the console-confirmed standard model ID; official constraints confirm the submitted duration, ratio, resolution and watermark values are supported. The next attempt is blocked until the sanitized provider error code can be captured.
+- The authorized sanitized Seedance diagnostic returned HTTP 404 with `ModelNotOpen`; the current Ark account has not activated `doubao-seedance-2-0-260128`. No task ID was created. Further real-smoke calls are blocked until the model service is activated in Ark Console.
 
 ## [2.0.1] - 2026-02-09
 

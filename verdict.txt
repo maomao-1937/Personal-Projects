@@ -23,10 +23,11 @@ IMPLEMENTED:
 
 REAL MODEL STATUS:
 - Storyboard deepseek-v4-flash: passed one structured 6-Cut request
-- Seedance: 3 authorized create attempts were rejected with HTTP 400; no task ID returned
-- Latest attempt used console-confirmed model doubao-seedance-2-0-260128
-- Official constraints confirm duration 4s, ratio 16:9, resolution 480p and watermark=false are supported
-- Do not retry paid generation until the safe provider error code can be captured
+- Seedance: 4 authorized create attempts; no task ID returned
+- Latest sanitized diagnostic used console-confirmed model doubao-seedance-2-0-260128
+- Latest provider result: HTTP 404, ModelNotOpen
+- Root cause: the current Ark account has not activated this model service
+- Do not retry until Doubao-Seedance-2.0 is activated in Ark Console
 
 GATES:
 - Do not start formal frontend until user says: 后端核验通过，开始正式前端
