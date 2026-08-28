@@ -32,6 +32,9 @@ testpaths = ["tests"]
 markers = [
   "real_model: invokes a paid external model and requires explicit opt-in",
 ]
+filterwarnings = [
+  "ignore:Please use `import python_multipart` instead.:PendingDeprecationWarning:starlette.formparsers",
+]
 
 [tool.uv]
 package = false
