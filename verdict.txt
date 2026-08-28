@@ -14,7 +14,7 @@ IMPLEMENTED:
 - Persistent idempotent Jobs, Events, recovery and SSE replay
 - MP3/WAV upload and real librosa analysis
 - BeatPlan and OpenAI-compatible Storyboard
-- Ark Seedance async Provider contract
+- DashScope Wan async Provider contract (default) and Ark Seedance compatibility
 - Independent Cut generate/retry/regenerate and partial success
 - Immutable TimelineVersion and stale outputs
 - FFmpeg Preview and independent 16:9 / 9:16 exports
@@ -23,11 +23,13 @@ IMPLEMENTED:
 
 REAL MODEL STATUS:
 - Storyboard deepseek-v4-flash: passed one structured 6-Cut request
+- DashScope Wan: offline contract passed; paid real-model smoke not run
+- Default model: wanx2.1-t2v-turbo, fixed 5-second silent 480P/720P source clip
 - Seedance: 4 authorized create attempts; no task ID returned
 - Latest sanitized diagnostic used console-confirmed model doubao-seedance-2-0-260128
 - Latest provider result: HTTP 404, ModelNotOpen
 - Root cause: the current Ark account has not activated this model service
-- Do not retry until Doubao-Seedance-2.0 is activated in Ark Console
+- Seedance is compatibility-only; do not retry until Doubao-Seedance-2.0 is activated in Ark Console
 
 GATES:
 - Do not start formal frontend until user says: 后端核验通过，开始正式前端

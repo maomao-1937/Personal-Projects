@@ -11,6 +11,7 @@
 - librosa 分析 BPM、Beat、Downbeat、Onset、Energy 和 Waveform；
 - BeatPlan 与 OpenAI Compatible Storyboard Provider，Storyboard 草稿支持校验后的版本化微调；
 - 最多 12 个独立 Cut，视频生成并发 2，支持 Partial、Retry 和 Regenerate；
+- 默认使用百炼 `wanx2.1-t2v-turbo`：每个 Cut 生成固定 5 秒无声源片，再由 FFmpeg 按 4—12 秒目标 Cut 裁切或循环；Seedance 仅作可选兼容 Provider；
 - SQLite Job/Event、心跳租约、有限自动重试、中断恢复和可续传 SSE；
 - 不可变 TimelineVersion，旧 Preview/Export 自动 stale；
 - FFmpeg H.264/AAC Preview；
@@ -53,7 +54,7 @@ uv run uvicorn backend.main:app --reload
 git diff --check
 ```
 
-真实模型测试默认 Skip，具体门禁见 `tests/smoke/README.md`。当前 Storyboard 真模型冒烟已通过；Seedance 脱敏诊断返回 HTTP 404 与 `ModelNotOpen`，证明当前火山方舟账号尚未开通 `doubao-seedance-2-0-260128` 模型服务。任务未创建；完成控制台开通前不得再次调用。
+真实模型测试默认 Skip，具体门禁见 `tests/smoke/README.md`。当前 Storyboard 真模型冒烟已通过；默认视频 Provider 已切换为百炼 Wan，但尚未执行付费真模型冒烟。Seedance 曾返回 HTTP 404 与 `ModelNotOpen`，现仅保留兼容实现。
 
 ## P0 边界
 

@@ -33,6 +33,7 @@ from backend.providers.audio_librosa import LibrosaAudioAnalysisProvider
 from backend.providers.render_ffmpeg import FFmpegRenderProvider
 from backend.providers.storyboard_openai import OpenAICompatibleStoryboardProvider
 from backend.providers.video_ark import ArkVideoProvider
+from backend.providers.video_wan import DashScopeWanVideoProvider
 from backend.services.audio import AudioService
 from backend.services.audio_analysis import AudioAnalysisHandler, AudioAnalysisService
 from backend.services.auth import AuthService
@@ -228,7 +229,11 @@ def _storyboard_provider(config: Settings):
 
 def _video_provider(config: Settings):
     if config.video_api_key and config.video_base_url and config.video_model:
-        return ArkVideoProvider(
+        provider_class = {
+            "dashscope_wan": DashScopeWanVideoProvider,
+            "volcengine_ark": ArkVideoProvider,
+        }[config.video_provider]
+        return provider_class(
             api_key=config.video_api_key.get_secret_value(),
             base_url=config.video_base_url,
             model=config.video_model,

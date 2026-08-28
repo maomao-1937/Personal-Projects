@@ -36,10 +36,10 @@ class Settings(BaseSettings):
     storyboard_timeout_seconds: float = 60.0
     storyboard_max_attempts: int = 3
 
-    video_provider: str = "volcengine_ark"
+    video_provider: str = "dashscope_wan"
     video_api_key: SecretStr | None = None
-    video_base_url: str = ""
-    video_model: str = ""
+    video_base_url: str = "https://dashscope.aliyuncs.com"
+    video_model: str = "wanx2.1-t2v-turbo"
     video_request_timeout_seconds: float = 30.0
     video_job_deadline_seconds: int = 1200
     video_poll_interval_seconds: float = 10.0
@@ -61,6 +61,8 @@ class Settings(BaseSettings):
             raise ValueError("app_video_concurrency must be between 1 and 2")
         if self.app_asset_retention_days < 1:
             raise ValueError("app_asset_retention_days must be positive")
+        if self.video_provider not in {"dashscope_wan", "volcengine_ark"}:
+            raise ValueError("video_provider must be dashscope_wan or volcengine_ark")
         return self
 
     def safe_summary(self) -> dict[str, Any]:

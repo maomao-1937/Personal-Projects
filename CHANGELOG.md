@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - SQLite-backed Project, Job, Event, Audio, Storyboard, Cut, Timeline, Preview and Export state.
 - Invite authentication, owner isolation and safe local Artifact storage.
-- Provider abstractions for librosa, OpenAI Compatible Storyboard, Ark Seedance and FFmpeg.
+- Provider abstractions for librosa, OpenAI Compatible Storyboard, DashScope Wan, Ark Seedance and FFmpeg.
 - Independent Cut retry/regenerate semantics with partial-success aggregation.
 - Immutable TimelineVersion and stale Preview/Export enforcement.
 - Persistent SSE replay and startup recovery.
@@ -22,9 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 - Backend version and run command now have one documented source of truth.
 - 16:9 and 9:16 exports are independent H.264/AAC MP4 tasks.
+- The default Video Provider changed from Ark Seedance to low-cost DashScope `wanx2.1-t2v-turbo`; its fixed 5-second source clips are trimmed or looped by FFmpeg to match 4—12 second Cuts.
 
-### Known issue
-- The authorized sanitized Seedance diagnostic returned HTTP 404 with `ModelNotOpen`; the current Ark account has not activated `doubao-seedance-2-0-260128`. No task ID was created. Further real-smoke calls are blocked until the model service is activated in Ark Console.
+### Verification status
+- The authorized sanitized Seedance diagnostic returned HTTP 404 with `ModelNotOpen`; Seedance is no longer the default.
+- The DashScope Wan contract is covered by offline tests; a paid real-model smoke has not yet been authorized or run.
 
 ## [2.0.1] - 2026-02-09
 

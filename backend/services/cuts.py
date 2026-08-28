@@ -16,7 +16,7 @@ from backend.domain.errors import DomainError
 from backend.domain.models import Job
 from backend.jobs.service import JobService
 from backend.persistence.database import Database
-from backend.providers.video_ark import VideoTaskResult
+from backend.providers.video_common import VideoTaskResult
 from backend.services.projects import ProjectService
 from backend.storage.local_artifacts import LocalArtifactStore
 

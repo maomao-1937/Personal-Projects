@@ -10,7 +10,7 @@ from backend.jobs.service import JobService
 from backend.jobs.worker import JobWorker
 from backend.persistence.database import Database
 from backend.persistence.repositories import Repositories
-from backend.providers.video_ark import VideoTaskResult
+from backend.providers.video_common import VideoTaskResult
 from backend.services.cuts import CutGenerationHandler, CutService
 from backend.services.projects import ProjectService
 from backend.storage.local_artifacts import LocalArtifactStore
