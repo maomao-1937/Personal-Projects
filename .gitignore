@@ -36,6 +36,9 @@ npm-debug.log*
 # Uploads & output
 uploads/
 output/
+artifacts/
+data/
+.smoke/
 *.mp4
 *.mp3
 *.wav

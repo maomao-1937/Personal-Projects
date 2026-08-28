@@ -32,7 +32,7 @@ class OpenAICompatibleStoryboardProvider:
         self._model = model
         self._timeout_seconds = timeout_seconds
         self._max_attempts = max(1, max_attempts)
-        self._client = client or httpx.Client()
+        self._client = client or httpx.Client(trust_env=False)
 
     def generate(
         self,

@@ -53,7 +53,7 @@ class ArkVideoProvider:
         self._api_key = api_key
         self._model = model
         self._timeout_seconds = timeout_seconds
-        self._client = client or httpx.Client()
+        self._client = client or httpx.Client(trust_env=False)
 
     def ensure_task(
         self,
