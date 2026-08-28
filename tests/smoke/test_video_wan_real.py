@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import time
 from pathlib import Path
 
 import pytest
 
-from backend.config import Settings
+from backend.config import FFPROBE_BIN, Settings
 from backend.domain.errors import DomainError
-from backend.providers.render_ffmpeg import FFmpegRenderProvider
 from backend.providers.video_wan import DashScopeWanVideoProvider
+from backend.services.cuts import validate_mp4
 
 
 pytestmark = pytest.mark.real_model
@@ -61,19 +62,48 @@ def test_real_wan_generates_one_fixed_five_second_480p_cut() -> None:
     video = provider.download(task.video_url, max_bytes=100 * 1024 * 1024)
     output = smoke_dir / "wan_smoke.mp4"
     output.write_bytes(video)
-    metadata = FFmpegRenderProvider().probe(output)
+    assert validate_mp4(output)
+    probe = subprocess.run(
+        [
+            FFPROBE_BIN,
+            "-v",
+            "error",
+            "-show_entries",
+            "stream=codec_type,codec_name,width,height:format=duration,size",
+            "-of",
+            "json",
+            str(output),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=True,
+    )
+    payload = json.loads(probe.stdout)
+    streams = payload["streams"]
+    video_stream = next(stream for stream in streams if stream["codec_type"] == "video")
+    duration_ms = round(float(payload["format"]["duration"]) * 1000)
+    metadata = {
+        "duration_ms": duration_ms,
+        "width": int(video_stream["width"]),
+        "height": int(video_stream["height"]),
+        "video_codec": video_stream["codec_name"],
+        "audio_stream_count": sum(stream["codec_type"] == "audio" for stream in streams),
+        "bytes": int(payload["format"]["size"]),
+    }
     (smoke_dir / "wan_result.json").write_text(
         json.dumps(
             {
                 "request_id": f"{request_id[:8]}...{request_id[-4:]}",
                 "status": task.status,
                 "elapsed_seconds": round(time.monotonic() - started, 2),
-                "metadata": metadata.model_dump(),
+                "metadata": metadata,
             },
             ensure_ascii=False,
             indent=2,
         ),
         encoding="utf-8",
     )
-    assert metadata.duration_ms == pytest.approx(5_000, abs=1_000)
-    assert metadata.video_codec == "h264"
+    assert duration_ms == pytest.approx(5_000, abs=1_000)
+    assert video_stream["codec_name"] == "h264"
+    assert metadata["audio_stream_count"] == 0

@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Verification status
 - The authorized sanitized Seedance diagnostic returned HTTP 404 with `ModelNotOpen`; Seedance is no longer the default.
-- The DashScope Wan contract is covered by offline tests; a paid real-model smoke has not yet been authorized or run.
+- One authorized DashScope Wan real-model smoke passed: `wanx2.1-t2v-turbo` returned a silent 832×480 H.264 MP4 lasting about 5.37 seconds. The sanitized artifact remains Git-ignored.
 
 ## [2.0.1] - 2026-02-09
 

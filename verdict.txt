@@ -23,7 +23,8 @@ IMPLEMENTED:
 
 REAL MODEL STATUS:
 - Storyboard deepseek-v4-flash: passed one structured 6-Cut request
-- DashScope Wan: offline contract passed; paid real-model smoke not run
+- DashScope Wan: one authorized real-model smoke passed
+- Result: 832x480 H.264 silent MP4, 5.367 seconds, 4,283,674 bytes
 - Default model: wanx2.1-t2v-turbo, fixed 5-second silent 480P/720P source clip
 - Seedance: 4 authorized create attempts; no task ID returned
 - Latest sanitized diagnostic used console-confirmed model doubao-seedance-2-0-260128

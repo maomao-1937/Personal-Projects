@@ -54,7 +54,7 @@ uv run uvicorn backend.main:app --reload
 git diff --check
 ```
 
-真实模型测试默认 Skip，具体门禁见 `tests/smoke/README.md`。当前 Storyboard 真模型冒烟已通过；默认视频 Provider 已切换为百炼 Wan，但尚未执行付费真模型冒烟。Seedance 曾返回 HTTP 404 与 `ModelNotOpen`，现仅保留兼容实现。
+真实模型测试默认 Skip，具体门禁见 `tests/smoke/README.md`。当前 Storyboard 真模型冒烟已通过；默认百炼 Wan `wanx2.1-t2v-turbo` 真模型冒烟也已通过，返回 832×480、H.264、约 5.37 秒的无声 MP4。Seedance 曾返回 HTTP 404 与 `ModelNotOpen`，现仅保留兼容实现。
 
 ## P0 边界
 
