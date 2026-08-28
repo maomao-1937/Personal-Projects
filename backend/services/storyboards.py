@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import math
+import json
+import secrets
 from bisect import bisect_left
+from datetime import datetime, timezone
+from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from backend.domain.errors import DomainError
+from backend.persistence.database import Database
 from backend.providers.protocols import AudioAnalysisResult
+from backend.services.projects import ProjectService
 
 
 class PlotSpec(BaseModel):
@@ -90,6 +96,180 @@ class NormalizedStoryboardCut(BaseModel):
 class NormalizedStoryboard(BaseModel):
     plot: PlotSpec
     cuts: list[NormalizedStoryboardCut] = Field(min_length=1, max_length=12)
+
+
+class StoryboardProvider(Protocol):
+    def generate(
+        self,
+        *,
+        creative_brief: str,
+        audio_summary: dict[str, object],
+        beat_plan: BeatPlan,
+    ) -> StoryboardDraft: ...
+
+
+class PersistedStoryboardCut(BaseModel):
+    id: str
+    order_index: int
+    start_ms: int
+    end_ms: int
+    prompt: str
+    mood: str
+    camera: str
+    action: str
+    energy_label: str
+    cut_reason: str
+    status: str
+
+
+class PersistedStoryboard(BaseModel):
+    id: str
+    project_id: str
+    version: int
+    status: str
+    plot: PlotSpec
+    beat_plan: BeatPlan
+    cuts: list[PersistedStoryboardCut]
+
+
+class StoryboardService:
+    def __init__(
+        self,
+        database: Database,
+        projects: ProjectService,
+        provider: StoryboardProvider,
+        *,
+        max_cut_count: int,
+    ) -> None:
+        self.database = database
+        self.projects = projects
+        self.provider = provider
+        self.max_cut_count = max_cut_count
+
+    def create(
+        self,
+        owner_id: str,
+        project_id: str,
+        *,
+        creative_brief: str,
+    ) -> PersistedStoryboard:
+        self.projects.get(owner_id, project_id)
+        analysis = self._active_analysis(project_id)
+        beat_plan = build_beat_plan(analysis, max_cut_count=self.max_cut_count)
+        draft = self.provider.generate(
+            creative_brief=creative_brief,
+            audio_summary={
+                "duration_ms": analysis.duration_ms,
+                "bpm": analysis.bpm,
+                "beat_count": len(analysis.beats_ms),
+                "onset_count": len(analysis.onsets),
+            },
+            beat_plan=beat_plan,
+        )
+        normalized = normalize_storyboard(draft, beat_plan)
+        storyboard_id = f"stb_{secrets.token_hex(8)}"
+        now = datetime.now(timezone.utc).isoformat()
+        persisted_cuts: list[PersistedStoryboardCut] = []
+
+        with self.database.transaction() as connection:
+            version = connection.execute(
+                "SELECT COALESCE(MAX(version), 0) + 1 FROM storyboards WHERE project_id = ?",
+                (project_id,),
+            ).fetchone()[0]
+            plot_json = json.dumps(
+                {
+                    "plot": normalized.plot.model_dump(),
+                    "beat_plan": beat_plan.model_dump(),
+                    "creative_brief": creative_brief,
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+            )
+            connection.execute(
+                """
+                INSERT INTO storyboards(id, project_id, version, plot_json, status, job_id, created_at)
+                VALUES (?, ?, ?, ?, 'draft', NULL, ?)
+                """,
+                (storyboard_id, project_id, version, plot_json, now),
+            )
+            for normalized_cut in normalized.cuts:
+                cut_id = f"cut_{secrets.token_hex(8)}"
+                spec = {
+                    "prompt": normalized_cut.prompt,
+                    "mood": normalized_cut.mood,
+                    "camera": normalized_cut.camera,
+                    "action": normalized_cut.action,
+                    "energy_label": normalized_cut.energy_label,
+                    "cut_reason": normalized_cut.cut_reason,
+                }
+                connection.execute(
+                    """
+                    INSERT INTO cuts(
+                        id, storyboard_id, cut_version, order_index, start_ms, end_ms,
+                        spec_json, active_artifact_id, status, created_at
+                    ) VALUES (?, ?, 1, ?, ?, ?, ?, NULL, 'pending', ?)
+                    """,
+                    (
+                        cut_id,
+                        storyboard_id,
+                        normalized_cut.order_index,
+                        normalized_cut.start_ms,
+                        normalized_cut.end_ms,
+                        json.dumps(spec, ensure_ascii=False, sort_keys=True),
+                        now,
+                    ),
+                )
+                persisted_cuts.append(
+                    PersistedStoryboardCut(
+                        id=cut_id,
+                        order_index=normalized_cut.order_index,
+                        start_ms=normalized_cut.start_ms,
+                        end_ms=normalized_cut.end_ms,
+                        status="pending",
+                        **spec,
+                    )
+                )
+
+        return PersistedStoryboard(
+            id=storyboard_id,
+            project_id=project_id,
+            version=version,
+            status="draft",
+            plot=normalized.plot,
+            beat_plan=beat_plan,
+            cuts=persisted_cuts,
+        )
+
+    def _active_analysis(self, project_id: str) -> AudioAnalysisResult:
+        with self.database.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT analysis.result_json
+                FROM audio_analyses AS analysis
+                JOIN audio_assets AS audio ON audio.id = analysis.audio_asset_id
+                WHERE audio.project_id = ? AND audio.is_active = 1
+                  AND audio.status = 'analyzed' AND analysis.status = 'ready'
+                ORDER BY audio.version DESC, analysis.version DESC
+                LIMIT 1
+                """,
+                (project_id,),
+            ).fetchone()
+        if row is None:
+            raise DomainError(
+                "audio_analysis_required",
+                "请先完成当前音频的分析。",
+                status_code=409,
+                retryable=False,
+            )
+        try:
+            return AudioAnalysisResult.model_validate_json(row["result_json"])
+        except ValueError as exc:
+            raise DomainError(
+                "audio_analysis_invalid",
+                "当前音频分析结果不可用，请重新分析。",
+                status_code=409,
+                retryable=True,
+            ) from exc
 
 
 def build_beat_plan(
