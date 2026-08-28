@@ -23,8 +23,10 @@ IMPLEMENTED:
 
 REAL MODEL STATUS:
 - Storyboard deepseek-v4-flash: passed one structured 6-Cut request
-- Seedance doubao-seedance-2-0-fast-260128: create request rejected with HTTP 400; no task ID returned
-- Do not retry paid generation until account model activation, balance/resource pack and content policy are checked
+- Seedance: 3 authorized create attempts were rejected with HTTP 400; no task ID returned
+- Latest attempt used console-confirmed model doubao-seedance-2-0-260128
+- Official constraints confirm duration 4s, ratio 16:9, resolution 480p and watermark=false are supported
+- Do not retry paid generation until the safe provider error code can be captured
 
 GATES:
 - Do not start formal frontend until user says: 后端核验通过，开始正式前端

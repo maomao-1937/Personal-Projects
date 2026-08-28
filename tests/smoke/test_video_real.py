@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from backend.config import Settings
+from backend.domain.errors import DomainError
 from backend.providers.render_ffmpeg import FFmpegRenderProvider
 from backend.providers.video_ark import ArkVideoProvider
 
@@ -35,12 +36,18 @@ def test_real_seedance_generates_one_four_second_low_resolution_cut() -> None:
         request_id = request_file.read_text(encoding="utf-8").strip()
         task = provider.query(request_id)
     else:
-        task = provider.create(
-            prompt="电影感广角镜头，匿名舞者的剪影在雨夜空旷街道缓慢向晨光前行，无文字，无品牌，无真人肖像特征。",
-            duration_seconds=4,
-            ratio="16:9",
-            resolution="480p",
-        )
+        try:
+            task = provider.create(
+                prompt="电影感广角镜头，匿名舞者的剪影在雨夜空旷街道缓慢向晨光前行，无文字，无品牌，无真人肖像特征。",
+                duration_seconds=4,
+                ratio="16:9",
+                resolution="480p",
+            )
+        except DomainError as exc:
+            pytest.fail(
+                f"{exc.code}: {json.dumps(exc.details, ensure_ascii=True, sort_keys=True)}",
+                pytrace=False,
+            )
         request_id = task.provider_request_id
         request_file.write_text(request_id, encoding="utf-8")
     deadline = time.monotonic() + settings.video_job_deadline_seconds
