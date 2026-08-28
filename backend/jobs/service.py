@@ -94,6 +94,14 @@ class JobService:
             raise DomainError("job_not_found", "任务不存在。", status_code=404)
         return _job_from_row(row)
 
+    def get_by_idempotency_key(self, idempotency_key: str) -> Job | None:
+        with self.database.connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM jobs WHERE idempotency_key = ?",
+                (idempotency_key,),
+            ).fetchone()
+        return _job_from_row(row) if row is not None else None
+
     def transition(self, job_id: str, target: str, *, progress: float | None = None) -> Job:
         with self.database.transaction() as connection:
             row = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
@@ -149,8 +157,17 @@ class JobService:
         lease_expires_at = (now + timedelta(seconds=lease_seconds)).isoformat()
         with self.database.transaction() as connection:
             row = connection.execute(
-                "SELECT * FROM jobs WHERE status = ? ORDER BY created_at ASC LIMIT 1",
-                (JobStatus.QUEUED.value,),
+                """
+                SELECT * FROM jobs
+                WHERE status IN (?, ?)
+                ORDER BY CASE status WHEN ? THEN 0 ELSE 1 END, created_at ASC
+                LIMIT 1
+                """,
+                (
+                    JobStatus.QUEUED.value,
+                    JobStatus.UNKNOWN_PROVIDER_STATE.value,
+                    JobStatus.UNKNOWN_PROVIDER_STATE.value,
+                ),
             ).fetchone()
             if row is None:
                 return None
@@ -168,7 +185,7 @@ class JobService:
                     now.isoformat(),
                     now.isoformat(),
                     row["id"],
-                    JobStatus.QUEUED.value,
+                    row["status"],
                 ),
             ).rowcount
             if updated != 1:
@@ -188,6 +205,17 @@ class JobService:
             updated = connection.execute(
                 "UPDATE jobs SET provider_request_id = ? WHERE id = ?",
                 (provider_request_id, job_id),
+            ).rowcount
+            if updated != 1:
+                raise DomainError("job_not_found", "任务不存在。", status_code=404)
+            row = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+        return _job_from_row(row)
+
+    def set_result_artifact(self, job_id: str, artifact_id: str) -> Job:
+        with self.database.transaction() as connection:
+            updated = connection.execute(
+                "UPDATE jobs SET result_artifact_id = ? WHERE id = ?",
+                (artifact_id, job_id),
             ).rowcount
             if updated != 1:
                 raise DomainError("job_not_found", "任务不存在。", status_code=404)

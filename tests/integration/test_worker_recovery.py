@@ -49,6 +49,27 @@ async def test_recovery_resumes_remote_job_without_requeue(services) -> None:
 
 
 @pytest.mark.asyncio
+async def test_worker_claims_recovered_remote_job_for_query_only_resume(services) -> None:
+    jobs, project_id = services
+    job = jobs.create("video_generation", project_id, {}, "resume-remote")
+    jobs.transition(job.id, "queued")
+    claimed = jobs.claim_next("worker-a", lease_seconds=-1)
+    jobs.set_provider_request_id(claimed.id, "cgt_existing")
+    await RecoveryService(jobs).run_once()
+    resumed: list[str] = []
+    registry = HandlerRegistry()
+
+    async def handler(recovered_job) -> None:
+        resumed.append(recovered_job.provider_request_id)
+
+    registry.register("video_generation", handler)
+
+    assert await JobWorker(jobs, registry, worker_id="worker-b").run_once() is True
+    assert resumed == ["cgt_existing"]
+    assert jobs.get(job.id).status == "succeeded"
+
+
+@pytest.mark.asyncio
 async def test_worker_runs_registered_handler_once(services) -> None:
     jobs, project_id = services
     job = jobs.create("audio_analysis", project_id, {}, "worker-success")

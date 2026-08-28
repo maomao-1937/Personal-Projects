@@ -26,4 +26,13 @@ def build_storyboards_router(service: StoryboardService, auth: AuthService) -> A
         )
         return result.model_dump()
 
+    @router.post("/{project_id}/storyboards/{storyboard_id}/confirm")
+    def confirm_storyboard(
+        project_id: str,
+        storyboard_id: str,
+        authorization: str | None = Header(default=None),
+    ) -> dict[str, object]:
+        user = auth.authenticate_bearer(authorization)
+        return service.confirm(user.id, project_id, storyboard_id)
+
     return router

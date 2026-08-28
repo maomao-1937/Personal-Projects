@@ -240,6 +240,46 @@ class StoryboardService:
             cuts=persisted_cuts,
         )
 
+    def confirm(self, owner_id: str, project_id: str, storyboard_id: str) -> dict[str, object]:
+        self.projects.get(owner_id, project_id)
+        with self.database.transaction() as connection:
+            storyboard = connection.execute(
+                "SELECT * FROM storyboards WHERE id = ? AND project_id = ?",
+                (storyboard_id, project_id),
+            ).fetchone()
+            if storyboard is None:
+                raise DomainError("storyboard_not_found", "Storyboard 不存在。", status_code=404)
+            if storyboard["status"] == "confirmed":
+                return {"id": storyboard_id, "project_id": project_id, "status": "confirmed"}
+            if storyboard["status"] != "draft":
+                raise DomainError(
+                    "storyboard_cannot_confirm",
+                    "当前 Storyboard 状态不能确认。",
+                    status_code=409,
+                )
+            cuts = connection.execute(
+                "SELECT * FROM cuts WHERE storyboard_id = ? ORDER BY order_index",
+                (storyboard_id,),
+            ).fetchall()
+            metadata = json.loads(storyboard["plot_json"])
+            duration_ms = int(metadata["beat_plan"]["duration_ms"])
+            if not 4 <= len(cuts) <= self.max_cut_count:
+                raise _invalid_storyboard("Cut 数量必须为 4—12。")
+            if cuts[0]["start_ms"] != 0 or cuts[-1]["end_ms"] != duration_ms:
+                raise _invalid_storyboard("Storyboard 没有完整覆盖音频。")
+            for index, cut in enumerate(cuts):
+                if cut["order_index"] != index:
+                    raise _invalid_storyboard("Cut 顺序不连续。")
+                if not 4_000 <= cut["end_ms"] - cut["start_ms"] <= 6_000:
+                    raise _invalid_storyboard("Cut 时长超出当前 Provider 限制。")
+                if index and cuts[index - 1]["end_ms"] != cut["start_ms"]:
+                    raise _invalid_storyboard("Cut 之间存在空隙或重叠。")
+            connection.execute(
+                "UPDATE storyboards SET status = 'confirmed' WHERE id = ?",
+                (storyboard_id,),
+            )
+        return {"id": storyboard_id, "project_id": project_id, "status": "confirmed"}
+
     def _active_analysis(self, project_id: str) -> AudioAnalysisResult:
         with self.database.connect() as connection:
             row = connection.execute(
@@ -429,4 +469,13 @@ def _unfulfillable(
             "max_cut_ms": max_cut_ms,
             "max_cut_count": max_cut_count,
         },
+    )
+
+
+def _invalid_storyboard(message: str) -> DomainError:
+    return DomainError(
+        "storyboard_invariant_failed",
+        message,
+        status_code=422,
+        retryable=False,
     )

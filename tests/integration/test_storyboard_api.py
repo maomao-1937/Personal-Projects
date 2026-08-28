@@ -134,3 +134,24 @@ def test_invalid_provider_result_does_not_save_partial_storyboard(tmp_path) -> N
     with database.connect() as connection:
         assert connection.execute("SELECT COUNT(*) FROM storyboards").fetchone()[0] == 0
         assert connection.execute("SELECT COUNT(*) FROM cuts").fetchone()[0] == 0
+
+
+def test_storyboard_can_be_confirmed_before_cut_generation(tmp_path) -> None:
+    client, database, project_id, headers = _scenario(tmp_path, FakeStoryboardProvider())
+    created = client.post(
+        f"/api/v1/projects/{project_id}/storyboards",
+        headers=headers,
+        json={"creative_brief": "追光"},
+    ).json()
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/storyboards/{created['id']}/confirm",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "confirmed"
+    with database.connect() as connection:
+        assert connection.execute(
+            "SELECT status FROM storyboards WHERE id = ?", (created["id"],)
+        ).fetchone()[0] == "confirmed"
