@@ -3,18 +3,41 @@ from __future__ import annotations
 import json
 import subprocess
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 
 from backend.config import FFMPEG_BIN
+from backend.jobs.handlers import HandlerRegistry
 from backend.jobs.service import JobService
+from backend.jobs.worker import JobWorker
 from backend.persistence.database import Database
 from backend.persistence.repositories import Repositories
 from backend.providers.protocols import AudioAnalysisResult, EnergyPoint, OnsetPoint
-from backend.providers.render_ffmpeg import FFmpegRenderProvider, RenderCut
+from backend.providers.render_ffmpeg import FFmpegRenderProvider, RenderCut, RenderMetadata
 from backend.services.projects import ProjectService
-from backend.services.rendering import RenderingService
+from backend.services.rendering import ExportRenderHandler, RenderingService
 from backend.services.timelines import TimelineService
+from backend.storage.local_artifacts import LocalArtifactStore
+
+
+class FakeRenderProvider:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def render_preview(self, *, output_path, width, height, **_) -> RenderMetadata:
+        self.calls += 1
+        output = Path(output_path)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(b"rendered-mp4")
+        return RenderMetadata(
+            duration_ms=2_000,
+            width=width,
+            height=height,
+            video_codec="h264",
+            audio_codec="aac",
+            placeholder_cut_ids=[],
+        )
 
 
 @pytest.fixture
@@ -74,6 +97,29 @@ def test_timeline_change_makes_old_export_stale_despite_existing_artifact(export
     assert rendering.export_status(owner_id, project_id, "16:9").status == "not_created"
 
 
+def test_failed_export_can_queue_new_job_for_same_timeline_and_ratio(export_scenario) -> None:
+    database, _, rendering, owner_id, project_id = export_scenario
+    failed = rendering.create_export(
+        owner_id,
+        project_id,
+        aspect_ratio="16:9",
+        idempotency_key="export-first-attempt",
+    )
+    with database.transaction() as connection:
+        connection.execute("UPDATE exports SET status = 'failed' WHERE id = ?", (failed.id,))
+
+    retried = rendering.create_export(
+        owner_id,
+        project_id,
+        aspect_ratio="16:9",
+        idempotency_key="export-second-attempt",
+    )
+
+    assert retried.id == failed.id
+    assert retried.job_id != failed.job_id
+    assert retried.status == "queued"
+
+
 def test_portrait_export_is_deterministic_center_crop(tmp_path) -> None:
     audio = tmp_path / "audio.wav"
     video = tmp_path / "landscape.mp4"
@@ -106,6 +152,44 @@ def test_portrait_export_is_deterministic_center_crop(tmp_path) -> None:
     assert (metadata.width, metadata.height) == (180, 320)
     assert metadata.video_codec == "h264"
     assert metadata.audio_codec == "aac"
+
+
+@pytest.mark.asyncio
+async def test_export_handler_replay_reuses_completed_artifact(tmp_path) -> None:
+    database = Database(tmp_path / "app.db")
+    database.initialize()
+    repositories = Repositories(database)
+    user = repositories.users.create()
+    project = repositories.projects.create(user.id, "MV")
+    _seed(database, project.id)
+    jobs = JobService(database)
+    projects = ProjectService(repositories.projects)
+    timelines = TimelineService(database, projects)
+    rendering = RenderingService(database, projects, timelines, jobs)
+    export = rendering.create_export(
+        user.id,
+        project.id,
+        aspect_ratio="16:9",
+        idempotency_key="export-replay",
+    )
+    provider = FakeRenderProvider()
+    handler = ExportRenderHandler(
+        database,
+        jobs,
+        LocalArtifactStore(tmp_path / "artifacts"),
+        provider,
+    )
+    registry = HandlerRegistry()
+    registry.register("export_render", handler)
+
+    await JobWorker(jobs, registry, worker_id="export-worker").run_once()
+    await handler(jobs.get(export.job_id))
+
+    with database.connect() as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM artifacts WHERE type = 'export'"
+        ).fetchone()[0] == 1
+    assert provider.calls == 1
 
 
 def _seed(database: Database, project_id: str) -> None:

@@ -69,6 +69,21 @@ class ProjectRepository:
             ).fetchone()
         return _project_from_row(row) if row is not None else None
 
+    def touch_for_owner(self, project_id: str, owner_id: str) -> Project | None:
+        now = _now()
+        with self.database.transaction() as connection:
+            updated = connection.execute(
+                "UPDATE projects SET updated_at = ? WHERE id = ? AND owner_id = ?",
+                (now, project_id, owner_id),
+            ).rowcount
+            if updated != 1:
+                return None
+            row = connection.execute(
+                "SELECT * FROM projects WHERE id = ? AND owner_id = ?",
+                (project_id, owner_id),
+            ).fetchone()
+        return _project_from_row(row)
+
     def list_for_owner(self, owner_id: str) -> list[Project]:
         with self.database.connect() as connection:
             rows = connection.execute(
@@ -97,4 +112,3 @@ def _project_from_row(row: object) -> Project:
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
-

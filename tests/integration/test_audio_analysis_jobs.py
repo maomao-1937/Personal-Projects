@@ -26,7 +26,11 @@ from backend.storage.local_artifacts import LocalArtifactStore
 
 
 class FakeAudioProvider:
+    def __init__(self) -> None:
+        self.calls = 0
+
     def analyze(self, audio_path, *, sensitivity):
+        self.calls += 1
         assert audio_path.is_file()
         return AudioAnalysisResult(
             duration_ms=30_000,
@@ -80,10 +84,9 @@ async def test_audio_analysis_runs_as_persisted_job_and_is_available_afterward(t
         headers={**headers, "Idempotency-Key": "analyze-song"},
     )
     registry = HandlerRegistry()
-    registry.register(
-        "audio_analysis",
-        AudioAnalysisHandler(database, jobs, artifacts, FakeAudioProvider()),
-    )
+    provider = FakeAudioProvider()
+    handler = AudioAnalysisHandler(database, jobs, artifacts, provider)
+    registry.register("audio_analysis", handler)
     await JobWorker(jobs, registry, worker_id="audio-worker").run_once()
     result = client.get(f"/api/v1/projects/{project_id}/audio/analysis", headers=headers)
 
@@ -92,6 +95,13 @@ async def test_audio_analysis_runs_as_persisted_job_and_is_available_afterward(t
     assert result.status_code == 200
     assert result.json()["status"] == "ready"
     assert result.json()["result"]["bpm"] == 120
+
+    await handler(jobs.get(response.json()["id"]))
+    with database.connect() as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM audio_analyses WHERE job_id = ?", (response.json()["id"],)
+        ).fetchone()[0] == 1
+    assert provider.calls == 1
 
 
 def _silent_wav(seconds: int) -> bytes:

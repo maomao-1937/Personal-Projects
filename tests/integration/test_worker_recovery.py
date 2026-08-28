@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from backend.domain.errors import DomainError
@@ -85,6 +87,32 @@ async def test_worker_runs_registered_handler_once(services) -> None:
 
     assert await JobWorker(jobs, registry, worker_id="worker-a").run_once() is True
     assert calls == [job.id]
+    completed = jobs.get(job.id)
+    assert completed.status == "succeeded"
+    assert completed.worker_id is None
+    assert completed.lease_expires_at is None
+
+
+@pytest.mark.asyncio
+async def test_worker_renews_lease_while_long_handler_is_running(services) -> None:
+    jobs, project_id = services
+    job = jobs.create("audio_analysis", project_id, {}, "worker-heartbeat")
+    jobs.transition(job.id, "queued")
+    registry = HandlerRegistry()
+
+    async def handler(_) -> None:
+        await asyncio.sleep(0.12)
+
+    registry.register("audio_analysis", handler)
+    worker_task = asyncio.create_task(
+        JobWorker(jobs, registry, worker_id="worker-a", lease_seconds=0.06).run_once()
+    )
+    await asyncio.sleep(0.08)
+
+    assert await RecoveryService(jobs).run_once() == 0
+    assert jobs.get(job.id).status == "running"
+
+    await worker_task
     assert jobs.get(job.id).status == "succeeded"
 
 
@@ -95,7 +123,11 @@ async def test_worker_persists_structured_provider_failure(services) -> None:
     jobs.transition(job.id, "queued")
     registry = HandlerRegistry()
 
+    calls = 0
+
     async def handler(_):
+        nonlocal calls
+        calls += 1
         raise DomainError(
             "provider_rate_limited",
             "Provider is busy",
@@ -107,11 +139,43 @@ async def test_worker_persists_structured_provider_failure(services) -> None:
     registry.register("audio_analysis", handler)
     await JobWorker(jobs, registry, worker_id="worker-a").run_once()
 
-    failed = jobs.get(job.id)
-    assert failed.status == "failed_retryable"
-    assert failed.error == {
+    retrying = jobs.get(job.id)
+    assert retrying.status == "queued"
+    assert retrying.attempt == 2
+    assert retrying.error == {
         "code": "provider_rate_limited",
         "message": "Provider is busy",
         "retryable": True,
         "details": {"provider_status": 429},
     }
+
+    await JobWorker(jobs, registry, worker_id="worker-b").run_once()
+
+    failed = jobs.get(job.id)
+    assert calls == 2
+    assert failed.status == "failed_terminal"
+    assert failed.attempt == 2
+
+
+@pytest.mark.asyncio
+async def test_worker_records_deadline_error_as_timed_out(services) -> None:
+    jobs, project_id = services
+    job = jobs.create("preview_render", project_id, {}, "render-timeout")
+    jobs.transition(job.id, "queued")
+    registry = HandlerRegistry()
+
+    async def handler(_):
+        raise DomainError(
+            "ffmpeg_render_timed_out",
+            "Render timed out",
+            status_code=504,
+            retryable=True,
+        )
+
+    registry.register("preview_render", handler)
+    await JobWorker(jobs, registry, worker_id="worker-a").run_once()
+
+    timed_out = jobs.get(job.id)
+    assert timed_out.status == "timed_out"
+    assert timed_out.finished_at is not None
+    assert timed_out.worker_id is None

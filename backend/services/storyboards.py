@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import math
 import json
 import secrets
@@ -10,6 +11,8 @@ from typing import Protocol
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from backend.domain.errors import DomainError
+from backend.domain.models import Job
+from backend.jobs.service import JobService
 from backend.persistence.database import Database
 from backend.providers.protocols import AudioAnalysisResult
 from backend.services.projects import ProjectService
@@ -122,6 +125,22 @@ class PersistedStoryboardCut(BaseModel):
     status: str
 
 
+class StoryboardEditCut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str | None = None
+    order_index: int | None = Field(default=None, ge=0)
+    start_ms: int = Field(ge=0)
+    end_ms: int = Field(gt=0)
+    prompt: str = Field(min_length=1, max_length=4_000)
+    mood: str = Field(min_length=1, max_length=200)
+    camera: str = Field(min_length=1, max_length=500)
+    action: str = Field(min_length=1, max_length=1_000)
+    energy_label: str | None = None
+    cut_reason: str | None = None
+    status: str | None = None
+
+
 class PersistedStoryboard(BaseModel):
     id: str
     project_id: str
@@ -140,11 +159,44 @@ class StoryboardService:
         provider: StoryboardProvider,
         *,
         max_cut_count: int,
+        jobs: JobService | None = None,
     ) -> None:
         self.database = database
         self.projects = projects
         self.provider = provider
         self.max_cut_count = max_cut_count
+        self.jobs = jobs
+
+    def create_job(
+        self,
+        owner_id: str,
+        project_id: str,
+        *,
+        creative_brief: str,
+        idempotency_key: str,
+    ) -> Job:
+        self.projects.get(owner_id, project_id)
+        if self.jobs is None:
+            raise DomainError(
+                "storyboard_jobs_unavailable",
+                "Storyboard 任务服务不可用。",
+                status_code=503,
+            )
+        existing = self.jobs.get_by_idempotency_key(idempotency_key)
+        if existing is not None:
+            if existing.type != "storyboard_generation" or existing.project_id != project_id:
+                raise DomainError("idempotency_conflict", "该幂等键已用于不同请求。", status_code=409)
+            return existing
+        job = self.jobs.create(
+            "storyboard_generation",
+            project_id,
+            {"owner_id": owner_id, "creative_brief": creative_brief},
+            idempotency_key,
+            resource_type="project",
+            resource_id=project_id,
+            max_attempts=1,
+        )
+        return self.jobs.transition(job.id, "queued")
 
     def create(
         self,
@@ -152,8 +204,17 @@ class StoryboardService:
         project_id: str,
         *,
         creative_brief: str,
+        job_id: str | None = None,
     ) -> PersistedStoryboard:
         self.projects.get(owner_id, project_id)
+        if job_id is not None:
+            with self.database.connect() as connection:
+                existing = connection.execute(
+                    "SELECT id FROM storyboards WHERE project_id = ? AND job_id = ?",
+                    (project_id, job_id),
+                ).fetchone()
+            if existing is not None:
+                return self._load(project_id, storyboard_id=existing["id"])
         analysis = self._active_analysis(project_id)
         beat_plan = build_beat_plan(analysis, max_cut_count=self.max_cut_count)
         draft = self.provider.generate(
@@ -188,9 +249,9 @@ class StoryboardService:
             connection.execute(
                 """
                 INSERT INTO storyboards(id, project_id, version, plot_json, status, job_id, created_at)
-                VALUES (?, ?, ?, ?, 'draft', NULL, ?)
+                VALUES (?, ?, ?, ?, 'draft', ?, ?)
                 """,
-                (storyboard_id, project_id, version, plot_json, now),
+                (storyboard_id, project_id, version, plot_json, job_id, now),
             )
             for normalized_cut in normalized.cuts:
                 cut_id = f"cut_{secrets.token_hex(8)}"
@@ -238,6 +299,209 @@ class StoryboardService:
             plot=normalized.plot,
             beat_plan=beat_plan,
             cuts=persisted_cuts,
+        )
+
+    def latest(self, owner_id: str, project_id: str) -> PersistedStoryboard:
+        self.projects.get(owner_id, project_id)
+        return self._load(project_id)
+
+    def get(
+        self,
+        owner_id: str,
+        project_id: str,
+        storyboard_id: str,
+    ) -> PersistedStoryboard:
+        self.projects.get(owner_id, project_id)
+        return self._load(project_id, storyboard_id=storyboard_id)
+
+    def revise(
+        self,
+        owner_id: str,
+        project_id: str,
+        storyboard_id: str,
+        *,
+        plot: PlotSpec,
+        cuts: list[StoryboardEditCut],
+    ) -> PersistedStoryboard:
+        self.projects.get(owner_id, project_id)
+        with self.database.transaction() as connection:
+            source = connection.execute(
+                "SELECT * FROM storyboards WHERE id = ? AND project_id = ?",
+                (storyboard_id, project_id),
+            ).fetchone()
+            if source is None:
+                raise DomainError("storyboard_not_found", "Storyboard 不存在。", status_code=404)
+            if source["status"] != "draft":
+                raise DomainError(
+                    "storyboard_immutable",
+                    "已确认 Storyboard 不可原地修改。",
+                    status_code=409,
+                )
+            source_metadata = json.loads(source["plot_json"])
+            source_beat_plan = BeatPlan.model_validate(source_metadata["beat_plan"])
+            source_cuts = {
+                row["id"]: json.loads(row["spec_json"])
+                for row in connection.execute(
+                    "SELECT id, spec_json FROM cuts WHERE storyboard_id = ?",
+                    (storyboard_id,),
+                ).fetchall()
+            }
+            self._validate_revision(cuts, source_beat_plan.duration_ms)
+
+            version = connection.execute(
+                "SELECT COALESCE(MAX(version), 0) + 1 FROM storyboards WHERE project_id = ?",
+                (project_id,),
+            ).fetchone()[0]
+            revised_id = f"stb_{secrets.token_hex(8)}"
+            now = datetime.now(timezone.utc).isoformat()
+            segments: list[BeatPlanSegment] = []
+            resolved_cuts: list[tuple[StoryboardEditCut, str, str]] = []
+            for index, edit in enumerate(cuts):
+                source_spec = source_cuts.get(edit.id or "", {})
+                energy_label = edit.energy_label or source_spec.get("energy_label") or "medium"
+                cut_reason = edit.cut_reason or source_spec.get("cut_reason") or "user_edited"
+                resolved_cuts.append((edit, energy_label, cut_reason))
+                segments.append(
+                    BeatPlanSegment(
+                        order_index=index,
+                        start_ms=edit.start_ms,
+                        end_ms=edit.end_ms,
+                        energy_label=energy_label,
+                        cut_reason=cut_reason,
+                    )
+                )
+            beat_plan = BeatPlan(
+                duration_ms=source_beat_plan.duration_ms,
+                bpm=source_beat_plan.bpm,
+                segments=segments,
+            )
+            metadata = {
+                **source_metadata,
+                "plot": plot.model_dump(),
+                "beat_plan": beat_plan.model_dump(),
+                "source_storyboard_id": storyboard_id,
+            }
+            connection.execute(
+                """
+                INSERT INTO storyboards(id, project_id, version, plot_json, status, job_id, created_at)
+                VALUES (?, ?, ?, ?, 'draft', NULL, ?)
+                """,
+                (
+                    revised_id,
+                    project_id,
+                    version,
+                    json.dumps(metadata, ensure_ascii=False, sort_keys=True),
+                    now,
+                ),
+            )
+            persisted_cuts: list[PersistedStoryboardCut] = []
+            for index, (edit, energy_label, cut_reason) in enumerate(resolved_cuts):
+                cut_id = f"cut_{secrets.token_hex(8)}"
+                spec = {
+                    "prompt": edit.prompt,
+                    "mood": edit.mood,
+                    "camera": edit.camera,
+                    "action": edit.action,
+                    "energy_label": energy_label,
+                    "cut_reason": cut_reason,
+                }
+                connection.execute(
+                    """
+                    INSERT INTO cuts(
+                        id, storyboard_id, cut_version, order_index, start_ms, end_ms,
+                        spec_json, active_artifact_id, status, created_at
+                    ) VALUES (?, ?, 1, ?, ?, ?, ?, NULL, 'pending', ?)
+                    """,
+                    (
+                        cut_id,
+                        revised_id,
+                        index,
+                        edit.start_ms,
+                        edit.end_ms,
+                        json.dumps(spec, ensure_ascii=False, sort_keys=True),
+                        now,
+                    ),
+                )
+                persisted_cuts.append(
+                    PersistedStoryboardCut(
+                        id=cut_id,
+                        order_index=index,
+                        start_ms=edit.start_ms,
+                        end_ms=edit.end_ms,
+                        status="pending",
+                        **spec,
+                    )
+                )
+
+        return PersistedStoryboard(
+            id=revised_id,
+            project_id=project_id,
+            version=version,
+            status="draft",
+            plot=plot,
+            beat_plan=beat_plan,
+            cuts=persisted_cuts,
+        )
+
+    def _validate_revision(self, cuts: list[StoryboardEditCut], duration_ms: int) -> None:
+        if not 4 <= len(cuts) <= self.max_cut_count:
+            raise _invalid_storyboard("修订后 Cut 数量必须为 4—12。")
+        if cuts[0].start_ms != 0 or cuts[-1].end_ms != duration_ms:
+            raise _invalid_storyboard("修订后 Storyboard 必须覆盖完整音频。")
+        for index, cut in enumerate(cuts):
+            if not 4_000 <= cut.end_ms - cut.start_ms <= 6_000:
+                raise _invalid_storyboard("修订后 Cut 时长必须为 4—6 秒。")
+            if index and cuts[index - 1].end_ms != cut.start_ms:
+                raise _invalid_storyboard("修订后 Cut 存在空隙或重叠。")
+
+    def _load(
+        self,
+        project_id: str,
+        *,
+        storyboard_id: str | None = None,
+    ) -> PersistedStoryboard:
+        with self.database.connect() as connection:
+            if storyboard_id is None:
+                storyboard = connection.execute(
+                    """
+                    SELECT * FROM storyboards
+                    WHERE project_id = ?
+                    ORDER BY version DESC
+                    LIMIT 1
+                    """,
+                    (project_id,),
+                ).fetchone()
+            else:
+                storyboard = connection.execute(
+                    "SELECT * FROM storyboards WHERE id = ? AND project_id = ?",
+                    (storyboard_id, project_id),
+                ).fetchone()
+            if storyboard is None:
+                raise DomainError("storyboard_not_found", "Storyboard 不存在。", status_code=404)
+            cut_rows = connection.execute(
+                "SELECT * FROM cuts WHERE storyboard_id = ? ORDER BY order_index",
+                (storyboard["id"],),
+            ).fetchall()
+
+        metadata = json.loads(storyboard["plot_json"])
+        return PersistedStoryboard(
+            id=storyboard["id"],
+            project_id=storyboard["project_id"],
+            version=storyboard["version"],
+            status=storyboard["status"],
+            plot=PlotSpec.model_validate(metadata["plot"]),
+            beat_plan=BeatPlan.model_validate(metadata["beat_plan"]),
+            cuts=[
+                PersistedStoryboardCut(
+                    id=row["id"],
+                    order_index=row["order_index"],
+                    start_ms=row["start_ms"],
+                    end_ms=row["end_ms"],
+                    status=row["status"],
+                    **json.loads(row["spec_json"]),
+                )
+                for row in cut_rows
+            ],
         )
 
     def confirm(self, owner_id: str, project_id: str, storyboard_id: str) -> dict[str, object]:
@@ -310,6 +574,20 @@ class StoryboardService:
                 status_code=409,
                 retryable=True,
             ) from exc
+
+
+class StoryboardGenerationHandler:
+    def __init__(self, service: StoryboardService) -> None:
+        self.service = service
+
+    async def __call__(self, job: Job) -> None:
+        await asyncio.to_thread(
+            self.service.create,
+            str(job.input["owner_id"]),
+            str(job.project_id),
+            creative_brief=str(job.input["creative_brief"]),
+            job_id=job.id,
+        )
 
 
 def build_beat_plan(

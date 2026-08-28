@@ -209,18 +209,16 @@ async def test_successful_regenerate_validates_then_atomically_switches_artifact
     )
     provider = FakeVideoProvider("succeeded")
     registry = HandlerRegistry()
-    registry.register(
-        "cut_video_generation",
-        CutGenerationHandler(
-            database,
-            jobs,
-            artifacts,
-            provider,
-            poll_interval_seconds=0,
-            max_download_bytes=1_000,
-            video_validator=lambda path: path.read_bytes() == b"valid-mp4-fixture",
-        ),
+    handler = CutGenerationHandler(
+        database,
+        jobs,
+        artifacts,
+        provider,
+        poll_interval_seconds=0,
+        max_download_bytes=1_000,
+        video_validator=lambda path: path.read_bytes() == b"valid-mp4-fixture",
     )
+    registry.register("cut_video_generation", handler)
 
     await JobWorker(jobs, registry, worker_id="worker-a").run_once()
 
@@ -235,6 +233,15 @@ async def test_successful_regenerate_validates_then_atomically_switches_artifact
     assert cut["active_artifact_id"] != old_artifact_id
     assert tuple(artifact) == ("ready", "video")
     assert jobs.get(job.id).status == "succeeded"
+    assert provider.created == 1
+    assert provider.queried == ["cgt-1"]
+
+    await handler(jobs.get(job.id))
+    with database.connect() as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM artifacts WHERE type = 'video' AND storage_key LIKE ?",
+            (f"{project_id}/video/{cut_id}/%",),
+        ).fetchone()[0] == 1
     assert provider.created == 1
     assert provider.queried == ["cgt-1"]
 

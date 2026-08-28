@@ -72,3 +72,25 @@ def test_project_list_contains_only_owned_projects(tmp_path) -> None:
 
     assert response.status_code == 200
     assert [item["name"] for item in response.json()["items"]] == ["My MV"]
+
+
+def test_opening_owned_project_updates_last_activity(tmp_path) -> None:
+    client, auth, database = _client(tmp_path)
+    token = _login(client, auth, "invite-touch")
+    headers = {"Authorization": f"Bearer {token}"}
+    project_id = client.post(
+        "/api/v1/projects", json={"name": "Touched MV"}, headers=headers
+    ).json()["id"]
+    with database.transaction() as connection:
+        connection.execute(
+            "UPDATE projects SET updated_at = '2000-01-01T00:00:00+00:00' WHERE id = ?",
+            (project_id,),
+        )
+
+    response = client.get(f"/api/v1/projects/{project_id}", headers=headers)
+
+    assert response.status_code == 200
+    with database.connect() as connection:
+        assert connection.execute(
+            "SELECT updated_at FROM projects WHERE id = ?", (project_id,)
+        ).fetchone()[0] > "2000-01-01T00:00:00+00:00"

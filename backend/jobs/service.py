@@ -123,12 +123,24 @@ class JobService:
                 JobStatus.TIMED_OUT.value,
                 JobStatus.CANCELLED.value,
             } else None
+            terminal = finished_at is not None
             connection.execute(
                 """
-                UPDATE jobs SET status = ?, progress = ?, started_at = ?, finished_at = ?
+                UPDATE jobs
+                SET status = ?, progress = ?, started_at = ?, finished_at = ?,
+                    worker_id = ?, lease_expires_at = ?, heartbeat_at = ?
                 WHERE id = ?
                 """,
-                (target, resolved_progress, started_at, finished_at, job_id),
+                (
+                    target,
+                    resolved_progress,
+                    started_at,
+                    finished_at,
+                    None if terminal else row["worker_id"],
+                    None if terminal else row["lease_expires_at"],
+                    None if terminal else row["heartbeat_at"],
+                    job_id,
+                ),
             )
             self._append_event(
                 connection,
@@ -141,11 +153,6 @@ class JobService:
         return _job_from_row(updated)
 
     def fail(self, job_id: str, error: DomainError) -> Job:
-        target = (
-            JobStatus.FAILED_RETRYABLE.value
-            if error.retryable
-            else JobStatus.FAILED_TERMINAL.value
-        )
         error_payload = {
             "code": error.code,
             "message": error.message,
@@ -156,6 +163,12 @@ class JobService:
             row = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
             if row is None:
                 raise DomainError("job_not_found", "任务不存在。", status_code=404)
+            if error.status_code == 504 or error.code.endswith("_timed_out"):
+                target = JobStatus.TIMED_OUT.value
+            elif error.retryable and row["attempt"] < row["max_attempts"]:
+                target = JobStatus.FAILED_RETRYABLE.value
+            else:
+                target = JobStatus.FAILED_TERMINAL.value
             if not can_transition(row["status"], target):
                 raise DomainError(
                     "invalid_job_transition",
@@ -163,10 +176,26 @@ class JobService:
                     status_code=409,
                 )
             now = _now()
-            finished_at = now if target == JobStatus.FAILED_TERMINAL.value else None
+            finished_at = now if target in {
+                JobStatus.FAILED_TERMINAL.value,
+                JobStatus.TIMED_OUT.value,
+            } else None
             connection.execute(
-                "UPDATE jobs SET status = ?, error_json = ?, finished_at = ? WHERE id = ?",
-                (target, _canonical_json(error_payload), finished_at, job_id),
+                """
+                UPDATE jobs
+                SET status = ?, error_json = ?, finished_at = ?,
+                    worker_id = ?, lease_expires_at = ?, heartbeat_at = ?
+                WHERE id = ?
+                """,
+                (
+                    target,
+                    _canonical_json(error_payload),
+                    finished_at,
+                    None if finished_at else row["worker_id"],
+                    None if finished_at else row["lease_expires_at"],
+                    None if finished_at else row["heartbeat_at"],
+                    job_id,
+                ),
             )
             self._append_event(
                 connection,
@@ -177,6 +206,59 @@ class JobService:
             )
             updated = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
         return _job_from_row(updated)
+
+    def requeue_retryable(self, job_id: str) -> Job:
+        with self.database.transaction() as connection:
+            row = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+            if row is None:
+                raise DomainError("job_not_found", "任务不存在。", status_code=404)
+            if row["status"] != JobStatus.FAILED_RETRYABLE.value:
+                raise DomainError(
+                    "job_not_retryable",
+                    "当前任务状态不能重试。",
+                    status_code=409,
+                )
+            if row["attempt"] >= row["max_attempts"]:
+                raise DomainError("job_attempts_exhausted", "任务重试次数已用尽。", status_code=409)
+            now = _now()
+            connection.execute(
+                """
+                UPDATE jobs
+                SET status = ?, attempt = attempt + 1, worker_id = NULL,
+                    lease_expires_at = NULL, heartbeat_at = NULL, finished_at = NULL
+                WHERE id = ?
+                """,
+                (JobStatus.QUEUED.value, job_id),
+            )
+            self._append_event(
+                connection,
+                job_id,
+                "job_retry_queued",
+                {"status": JobStatus.QUEUED.value, "attempt": row["attempt"] + 1},
+                now,
+            )
+            updated = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+        return _job_from_row(updated)
+
+    def heartbeat(self, job_id: str, worker_id: str, *, lease_seconds: float) -> bool:
+        now = datetime.now(timezone.utc)
+        lease_expires_at = (now + timedelta(seconds=lease_seconds)).isoformat()
+        with self.database.transaction() as connection:
+            updated = connection.execute(
+                """
+                UPDATE jobs
+                SET heartbeat_at = ?, lease_expires_at = ?
+                WHERE id = ? AND status = ? AND worker_id = ?
+                """,
+                (
+                    now.isoformat(),
+                    lease_expires_at,
+                    job_id,
+                    JobStatus.RUNNING.value,
+                    worker_id,
+                ),
+            ).rowcount
+        return updated == 1
 
     def events(self, job_id: str, *, after: int = 0) -> list[JobEvent]:
         with self.database.connect() as connection:
@@ -190,7 +272,7 @@ class JobService:
             ).fetchall()
         return [_event_from_row(row) for row in rows]
 
-    def claim_next(self, worker_id: str, *, lease_seconds: int = 60) -> Job | None:
+    def claim_next(self, worker_id: str, *, lease_seconds: float = 60) -> Job | None:
         now = datetime.now(timezone.utc)
         lease_expires_at = (now + timedelta(seconds=lease_seconds)).isoformat()
         with self.database.transaction() as connection:

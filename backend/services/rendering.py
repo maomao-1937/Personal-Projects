@@ -154,10 +154,10 @@ class RenderingService:
                 "SELECT * FROM exports WHERE timeline_version_id = ? AND aspect_ratio = ?",
                 (timeline.id, aspect_ratio),
             ).fetchone()
-        if existing is not None:
+        if existing is not None and existing["status"] != "failed":
             return _export_from_row(existing)
 
-        export_id = f"exp_{secrets.token_hex(8)}"
+        export_id = existing["id"] if existing is not None else f"exp_{secrets.token_hex(8)}"
         job = self.jobs.create(
             "export_render",
             project_id,
@@ -173,15 +173,26 @@ class RenderingService:
         )
         now = datetime.now(timezone.utc).isoformat()
         with self.database.transaction() as connection:
-            connection.execute(
-                """
-                INSERT INTO exports(
-                    id, project_id, timeline_version_id, aspect_ratio, resolution,
-                    status, job_id, artifact_id, stale_reason, created_at, completed_at
-                ) VALUES (?, ?, ?, ?, ?, 'queued', ?, NULL, NULL, ?, NULL)
-                """,
-                (export_id, project_id, timeline.id, aspect_ratio, resolution, job.id, now),
-            )
+            if existing is None:
+                connection.execute(
+                    """
+                    INSERT INTO exports(
+                        id, project_id, timeline_version_id, aspect_ratio, resolution,
+                        status, job_id, artifact_id, stale_reason, created_at, completed_at
+                    ) VALUES (?, ?, ?, ?, ?, 'queued', ?, NULL, NULL, ?, NULL)
+                    """,
+                    (export_id, project_id, timeline.id, aspect_ratio, resolution, job.id, now),
+                )
+            else:
+                connection.execute(
+                    """
+                    UPDATE exports
+                    SET status = 'queued', job_id = ?, artifact_id = NULL,
+                        stale_reason = NULL, completed_at = NULL
+                    WHERE id = ?
+                    """,
+                    (job.id, export_id),
+                )
         self.jobs.transition(job.id, "queued")
         return ExportRecord(
             id=export_id,
@@ -244,6 +255,13 @@ class PreviewRenderHandler:
 
     async def __call__(self, job: Job) -> None:
         preview_id = str(job.input["preview_id"])
+        with self.database.connect() as connection:
+            completed = connection.execute(
+                "SELECT artifact_id FROM previews WHERE id = ?", (preview_id,)
+            ).fetchone()
+        if completed and completed["artifact_id"]:
+            self.jobs.set_result_artifact(job.id, completed["artifact_id"])
+            return
         with self.database.transaction() as connection:
             preview = connection.execute(
                 "SELECT * FROM previews WHERE id = ?", (preview_id,)
@@ -363,6 +381,13 @@ class ExportRenderHandler:
 
     async def __call__(self, job: Job) -> None:
         export_id = str(job.input["export_id"])
+        with self.database.connect() as connection:
+            completed = connection.execute(
+                "SELECT artifact_id FROM exports WHERE id = ?", (export_id,)
+            ).fetchone()
+        if completed and completed["artifact_id"]:
+            self.jobs.set_result_artifact(job.id, completed["artifact_id"])
+            return
         with self.database.transaction() as connection:
             export = connection.execute("SELECT * FROM exports WHERE id = ?", (export_id,)).fetchone()
             if export is None:

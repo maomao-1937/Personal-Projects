@@ -20,6 +20,7 @@ from backend.api.jobs import build_jobs_router
 from backend.api.previews import build_previews_router
 from backend.api.projects import build_projects_router
 from backend.api.storyboards import build_storyboards_router
+from backend.api.timelines import build_timelines_router
 from backend.config import Settings
 from backend.domain.errors import DomainError
 from backend.jobs.handlers import HandlerRegistry
@@ -38,7 +39,8 @@ from backend.services.auth import AuthService
 from backend.services.cuts import CutGenerationHandler, CutService
 from backend.services.projects import ProjectService
 from backend.services.rendering import ExportRenderHandler, PreviewRenderHandler, RenderingService
-from backend.services.storyboards import StoryboardService
+from backend.services.retention import RetentionService
+from backend.services.storyboards import StoryboardGenerationHandler, StoryboardService
 from backend.services.timelines import TimelineService
 from backend.storage.local_artifacts import LocalArtifactStore
 from backend.version import APP_VERSION
@@ -91,6 +93,7 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
         projects,
         _storyboard_provider(config),
         max_cut_count=config.app_cut_max_count,
+        jobs=jobs,
     )
     cuts = CutService(database, projects, jobs, max_cut_count=config.app_cut_max_count)
     timelines = TimelineService(database, projects)
@@ -102,6 +105,7 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
         "audio_analysis",
         AudioAnalysisHandler(database, jobs, artifacts, LibrosaAudioAnalysisProvider()),
     )
+    registry.register("storyboard_generation", StoryboardGenerationHandler(storyboards))
     registry.register(
         "cut_video_generation",
         CutGenerationHandler(
@@ -125,6 +129,15 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
         for code_hash in hashes:
             auth.add_invite_code_hash(code_hash)
         app.state.recovered_jobs = await RecoveryService(jobs).run_once()
+        app.state.expired_artifacts = (
+            RetentionService(
+                database,
+                artifacts,
+                retention_days=config.app_asset_retention_days,
+            ).purge_inactive()
+            if config.app_env == "production"
+            else 0
+        )
         stop = asyncio.Event()
         workers = [
             asyncio.create_task(
@@ -137,6 +150,8 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
             yield
         finally:
             stop.set()
+            for worker in workers:
+                worker.cancel()
             await asyncio.gather(*workers, return_exceptions=True)
 
     app = FastAPI(title="AI Song to MV Backend", version=APP_VERSION, lifespan=lifespan)
@@ -162,6 +177,7 @@ def create_app(app_settings: Settings | None = None) -> FastAPI:
     app.include_router(build_audio_router(audio, auth))
     app.include_router(build_audio_analysis_router(audio_analyses, auth))
     app.include_router(build_storyboards_router(storyboards, auth))
+    app.include_router(build_timelines_router(timelines, auth))
     app.include_router(build_cuts_router(cuts, auth))
     app.include_router(build_previews_router(rendering, auth))
     app.include_router(build_exports_router(rendering, auth))

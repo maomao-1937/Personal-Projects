@@ -32,3 +32,19 @@ class AudioAnalysisProvider(Protocol):
     def analyze(self, audio_path: str | Path, *, sensitivity: int) -> AudioAnalysisResult:
         ...
 
+
+class TranscriptSegment(BaseModel):
+    start_ms: int = Field(ge=0)
+    end_ms: int = Field(gt=0)
+    text: str = Field(min_length=1)
+
+
+class TranscriptionResult(BaseModel):
+    language: str | None = None
+    text: str
+    segments: list[TranscriptSegment]
+
+
+class TranscriptionProvider(Protocol):
+    def transcribe(self, audio_path: str | Path) -> TranscriptionResult:
+        ...

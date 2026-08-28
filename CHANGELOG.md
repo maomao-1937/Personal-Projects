@@ -14,7 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Independent Cut retry/regenerate semantics with partial-success aggregation.
 - Immutable TimelineVersion and stale Preview/Export enforcement.
 - Persistent SSE replay and startup recovery.
-- Minimal backend acceptance page and Python 3.11 pytest suite.
+- Worker heartbeat, bounded retry, replay-safe handlers and explicit timeout terminal state.
+- Validated Storyboard draft revisions, Timeline read API and failed Export retry.
+- Optional disabled Transcription Provider boundary and 30-day production Artifact retention.
+- Minimal backend acceptance page with Preview playback/download and Python 3.11 pytest suite.
 
 ### Changed
 - Backend version and run command now have one documented source of truth.

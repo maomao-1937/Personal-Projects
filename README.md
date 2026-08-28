@@ -9,13 +9,14 @@
 - 邀请码登录、用户数据隔离和项目持久化；
 - 30—60 秒 MP3/WAV 上传，单文件不超过 100 MB；
 - librosa 分析 BPM、Beat、Downbeat、Onset、Energy 和 Waveform；
-- BeatPlan 与 OpenAI Compatible Storyboard Provider；
+- BeatPlan 与 OpenAI Compatible Storyboard Provider，Storyboard 草稿支持校验后的版本化微调；
 - 最多 12 个独立 Cut，视频生成并发 2，支持 Partial、Retry 和 Regenerate；
-- SQLite Job/Event、租约恢复和可续传 SSE；
+- SQLite Job/Event、心跳租约、有限自动重试、中断恢复和可续传 SSE；
 - 不可变 TimelineVersion，旧 Preview/Export 自动 stale；
 - FFmpeg H.264/AAC Preview；
-- 16:9 与 9:16 两个独立 MP4 Export，9:16 为确定性中心裁切/缩放；
-- `/acceptance` 原生最小验收页；
+- 16:9 与 9:16 两个独立 MP4 Export，支持失败任务重试，9:16 为确定性中心裁切/缩放；
+- 生产环境按项目最后活动时间执行 30 天 Artifact 保留策略；
+- `/acceptance` 原生最小验收页，可播放 Preview 并下载两种比例 MP4；
 - 旧 `/api/process`、`/api/status/{job_id}` 和 `/api/download/{job_id}` 暂时保留。
 
 ## 环境要求
@@ -39,6 +40,8 @@ uv run uvicorn backend.main:app --reload
 - 后端最小验收：`http://127.0.0.1:8000/acceptance`
 
 环境变量模板见 `.env.example`。API Key 只允许写入本地 `.env`，不得进入前端、README、日志或 Git。
+
+`APP_ASSET_RETENTION_DAYS=30` 是已确认的生产默认值。自动过期清理只在 `APP_ENV=production` 时执行，开发和测试环境不自动删除本地产物。
 
 邀请码以 SHA-256 哈希配置到 `APP_INVITE_CODE_HASHES`，多个哈希使用英文逗号分隔。生成哈希时不要把明文邀请码写入命令历史或仓库文件。
 

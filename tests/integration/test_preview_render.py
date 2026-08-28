@@ -123,17 +123,15 @@ async def test_preview_job_persists_verified_artifact_for_exact_timeline(fixed_m
         idempotency_key="preview-current",
     )
     registry = HandlerRegistry()
-    registry.register(
-        "preview_render",
-        PreviewRenderHandler(
-            database,
-            jobs,
-            artifacts,
-            FFmpegRenderProvider(),
-            width=320,
-            height=180,
-        ),
+    handler = PreviewRenderHandler(
+        database,
+        jobs,
+        artifacts,
+        FFmpegRenderProvider(),
+        width=320,
+        height=180,
     )
+    registry.register("preview_render", handler)
 
     await JobWorker(jobs, registry, worker_id="render-worker").run_once()
 
@@ -148,6 +146,12 @@ async def test_preview_job_persists_verified_artifact_for_exact_timeline(fixed_m
     output_path = artifacts.resolve(artifact["storage_key"])
     metadata = FFmpegRenderProvider().probe(output_path)
     assert metadata.duration_ms == pytest.approx(2_000, abs=500)
+
+    await handler(jobs.get(preview.job_id))
+    with database.connect() as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM artifacts WHERE type = 'preview'"
+        ).fetchone()[0] == 1
 
 
 def _run(command: list[str]) -> None:

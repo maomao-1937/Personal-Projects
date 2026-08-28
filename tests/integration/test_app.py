@@ -25,9 +25,14 @@ def test_app_factory_starts_migrations_and_registers_new_and_legacy_routes(tmp_p
     assert health.status_code == 200
     assert health.json()["version"] == APP_VERSION
     assert "/api/v1/projects" in schema["paths"]
+    assert "/api/v1/projects/{project_id}/storyboard-jobs" in schema["paths"]
+    assert "/api/v1/projects/{project_id}/storyboards/latest" in schema["paths"]
+    assert "/api/v1/projects/{project_id}/storyboards" not in schema["paths"]
+    assert "/api/v1/projects/{project_id}/timeline" in schema["paths"]
     assert "/api/process" in schema["paths"]
     assert settings.app_database_path.is_file()
     assert app.state.recovered_jobs == 0
+    assert app.state.expired_artifacts == 0
     assert app.state.worker_count == 2
 
 
@@ -46,6 +51,12 @@ def test_acceptance_page_is_minimal_server_rendered_harness(tmp_path) -> None:
     assert "后端最小验收" in response.text
     assert "上传音频" in response.text
     assert "生成 Storyboard" in response.text
+    assert "/storyboard-jobs" in response.text
+    assert "/storyboards/latest" in response.text
+    assert "watchJob" in response.text
+    assert "downloadArtifact" in response.text
+    assert 'id="downloads"' in response.text
+    assert 'id="previewPlayer"' in response.text
     assert "React" not in response.text
 
 

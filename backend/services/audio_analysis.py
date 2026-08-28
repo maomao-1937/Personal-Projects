@@ -117,6 +117,16 @@ class AudioAnalysisHandler:
     async def __call__(self, job: Job) -> None:
         audio_asset_id = str(job.input["audio_asset_id"])
         with self.database.transaction() as connection:
+            existing = connection.execute(
+                "SELECT id FROM audio_analyses WHERE job_id = ? AND status = 'ready'",
+                (job.id,),
+            ).fetchone()
+            if existing is not None:
+                connection.execute(
+                    "UPDATE audio_assets SET status = 'analyzed' WHERE id = ?",
+                    (audio_asset_id,),
+                )
+                return
             row = connection.execute(
                 """
                 SELECT audio.*, artifacts.storage_key FROM audio_assets AS audio

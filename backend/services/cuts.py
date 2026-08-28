@@ -281,6 +281,14 @@ class CutGenerationHandler:
 
     async def __call__(self, job: Job) -> None:
         cut_id = str(job.input["cut_id"])
+        with self.database.connect() as connection:
+            completed = connection.execute(
+                "SELECT status, active_artifact_id FROM cuts WHERE id = ?",
+                (cut_id,),
+            ).fetchone()
+        if completed and completed["status"] == "ready" and completed["active_artifact_id"]:
+            self.jobs.set_result_artifact(job.id, completed["active_artifact_id"])
+            return
         with self.database.transaction() as connection:
             connection.execute(
                 "UPDATE cuts SET status = ? WHERE id = ?",

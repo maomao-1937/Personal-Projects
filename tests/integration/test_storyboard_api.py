@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -11,12 +12,21 @@ from backend.api.errors import install_error_handlers
 from backend.api.projects import build_projects_router
 from backend.api.storyboards import build_storyboards_router
 from backend.domain.errors import DomainError
+from backend.jobs.handlers import HandlerRegistry
+from backend.jobs.service import JobService
+from backend.jobs.worker import JobWorker
 from backend.persistence.database import Database
 from backend.persistence.repositories import Repositories
 from backend.providers.protocols import AudioAnalysisResult, EnergyPoint, OnsetPoint
 from backend.services.auth import AuthService
 from backend.services.projects import ProjectService
-from backend.services.storyboards import PlotSpec, StoryboardCutDraft, StoryboardDraft, StoryboardService
+from backend.services.storyboards import (
+    PlotSpec,
+    StoryboardCutDraft,
+    StoryboardDraft,
+    StoryboardGenerationHandler,
+    StoryboardService,
+)
 
 
 class FakeStoryboardProvider:
@@ -69,12 +79,15 @@ def _scenario(tmp_path, provider) -> tuple[TestClient, Database, str, dict[str, 
     repositories = Repositories(database)
     auth = AuthService(database)
     projects = ProjectService(repositories.projects)
-    service = StoryboardService(database, projects, provider, max_cut_count=12)
+    jobs = JobService(database)
+    service = StoryboardService(database, projects, provider, max_cut_count=12, jobs=jobs)
     app = FastAPI()
     install_error_handlers(app)
     app.include_router(build_auth_router(auth))
     app.include_router(build_projects_router(projects, auth))
     app.include_router(build_storyboards_router(service, auth))
+    app.state.jobs = jobs
+    app.state.storyboards = service
     client = TestClient(app)
     auth.add_invite_code("invite-a")
     token = client.post("/api/v1/auth/invite", json={"invite_code": "invite-a"}).json()["session_token"]
@@ -101,36 +114,39 @@ def _persist_analysis(database: Database, project_id: str) -> None:
         )
 
 
+def _owner_id(database: Database, project_id: str) -> str:
+    with database.connect() as connection:
+        return connection.execute(
+            "SELECT owner_id FROM projects WHERE id = ?", (project_id,)
+        ).fetchone()[0]
+
+
 def test_storyboard_api_persists_normalized_storyboard_and_cuts(tmp_path) -> None:
     client, database, project_id, headers = _scenario(tmp_path, FakeStoryboardProvider())
 
-    response = client.post(
-        f"/api/v1/projects/{project_id}/storyboards",
-        headers=headers,
-        json={"creative_brief": "一场城市追光之旅"},
+    payload = client.app.state.storyboards.create(
+        _owner_id(database, project_id),
+        project_id,
+        creative_brief="一场城市追光之旅",
     )
 
-    assert response.status_code == 201
-    payload = response.json()
-    assert payload["status"] == "draft"
-    assert payload["cuts"][0]["start_ms"] == 0
-    assert payload["cuts"][-1]["end_ms"] == 30_000
+    assert payload.status == "draft"
+    assert payload.cuts[0].start_ms == 0
+    assert payload.cuts[-1].end_ms == 30_000
     with database.connect() as connection:
         assert connection.execute("SELECT COUNT(*) FROM storyboards").fetchone()[0] == 1
-        assert connection.execute("SELECT COUNT(*) FROM cuts").fetchone()[0] == len(payload["cuts"])
+        assert connection.execute("SELECT COUNT(*) FROM cuts").fetchone()[0] == len(payload.cuts)
 
 
 def test_invalid_provider_result_does_not_save_partial_storyboard(tmp_path) -> None:
     client, database, project_id, headers = _scenario(tmp_path, FakeStoryboardProvider(fail=True))
 
-    response = client.post(
-        f"/api/v1/projects/{project_id}/storyboards",
-        headers=headers,
-        json={"creative_brief": "测试"},
-    )
+    with pytest.raises(DomainError) as failure:
+        client.app.state.storyboards.create(
+            _owner_id(database, project_id), project_id, creative_brief="测试"
+        )
 
-    assert response.status_code == 502
-    assert response.json()["error"]["code"] == "storyboard_invalid_response"
+    assert failure.value.code == "storyboard_invalid_response"
     with database.connect() as connection:
         assert connection.execute("SELECT COUNT(*) FROM storyboards").fetchone()[0] == 0
         assert connection.execute("SELECT COUNT(*) FROM cuts").fetchone()[0] == 0
@@ -138,14 +154,12 @@ def test_invalid_provider_result_does_not_save_partial_storyboard(tmp_path) -> N
 
 def test_storyboard_can_be_confirmed_before_cut_generation(tmp_path) -> None:
     client, database, project_id, headers = _scenario(tmp_path, FakeStoryboardProvider())
-    created = client.post(
-        f"/api/v1/projects/{project_id}/storyboards",
-        headers=headers,
-        json={"creative_brief": "追光"},
-    ).json()
+    created = client.app.state.storyboards.create(
+        _owner_id(database, project_id), project_id, creative_brief="追光"
+    )
 
     response = client.post(
-        f"/api/v1/projects/{project_id}/storyboards/{created['id']}/confirm",
+        f"/api/v1/projects/{project_id}/storyboards/{created.id}/confirm",
         headers=headers,
     )
 
@@ -153,5 +167,95 @@ def test_storyboard_can_be_confirmed_before_cut_generation(tmp_path) -> None:
     assert response.json()["status"] == "confirmed"
     with database.connect() as connection:
         assert connection.execute(
-            "SELECT status FROM storyboards WHERE id = ?", (created["id"],)
+            "SELECT status FROM storyboards WHERE id = ?", (created.id,)
         ).fetchone()[0] == "confirmed"
+
+
+def test_draft_storyboard_edit_creates_validated_new_version(tmp_path) -> None:
+    client, database, project_id, headers = _scenario(tmp_path, FakeStoryboardProvider())
+    original = client.app.state.storyboards.create(
+        _owner_id(database, project_id), project_id, creative_brief="追光"
+    )
+    cuts = [cut.model_dump() for cut in original.cuts]
+    cuts[0]["prompt"] = "修改后的第一镜"
+
+    response = client.patch(
+        f"/api/v1/projects/{project_id}/storyboards/{original.id}",
+        headers=headers,
+        json={
+            "plot": {**original.plot.model_dump(), "theme": "新的追光主题"},
+            "cuts": cuts,
+        },
+    )
+
+    assert response.status_code == 201
+    revised = response.json()
+    assert revised["id"] != original.id
+    assert revised["version"] == 2
+    assert revised["plot"]["theme"] == "新的追光主题"
+    assert revised["cuts"][0]["prompt"] == "修改后的第一镜"
+    assert revised["cuts"][0]["start_ms"] == 0
+    assert revised["cuts"][-1]["end_ms"] == 30_000
+    original_again = client.get(
+        f"/api/v1/projects/{project_id}/storyboards/{original.id}", headers=headers
+    )
+    assert original_again.status_code == 200
+    assert original_again.json()["cuts"][0]["prompt"] == "镜头 1"
+
+
+def test_storyboard_edit_rejects_gap_without_saving_partial_version(tmp_path) -> None:
+    client, database, project_id, headers = _scenario(tmp_path, FakeStoryboardProvider())
+    original = client.app.state.storyboards.create(
+        _owner_id(database, project_id), project_id, creative_brief="追光"
+    )
+    cuts = [cut.model_dump() for cut in original.cuts]
+    cuts[1]["start_ms"] += 500
+
+    response = client.patch(
+        f"/api/v1/projects/{project_id}/storyboards/{original.id}",
+        headers=headers,
+        json={"plot": original.plot.model_dump(), "cuts": cuts},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "storyboard_invariant_failed"
+    with database.connect() as connection:
+        assert connection.execute("SELECT COUNT(*) FROM storyboards").fetchone()[0] == 1
+
+
+@pytest.mark.asyncio
+async def test_storyboard_can_run_as_persisted_recoverable_job(tmp_path) -> None:
+    client, database, project_id, headers = _scenario(tmp_path, FakeStoryboardProvider())
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/storyboard-jobs",
+        headers={**headers, "Idempotency-Key": "storyboard-job"},
+        json={"creative_brief": "追光"},
+    )
+    registry = HandlerRegistry()
+    handler = StoryboardGenerationHandler(client.app.state.storyboards)
+    registry.register("storyboard_generation", handler)
+    await JobWorker(client.app.state.jobs, registry, worker_id="storyboard-worker").run_once()
+
+    assert response.status_code == 202
+    assert client.app.state.jobs.get(response.json()["id"]).status == "succeeded"
+    with database.connect() as connection:
+        storyboard = connection.execute(
+            "SELECT id, status, job_id FROM storyboards ORDER BY version DESC LIMIT 1"
+        ).fetchone()
+    assert (storyboard["status"], storyboard["job_id"]) == ("draft", response.json()["id"])
+
+    latest = client.get(
+        f"/api/v1/projects/{project_id}/storyboards/latest",
+        headers=headers,
+    )
+    assert latest.status_code == 200
+    assert latest.json()["id"] == storyboard["id"]
+    assert latest.json()["status"] == "draft"
+    assert len(latest.json()["cuts"]) == 6
+
+    await handler(client.app.state.jobs.get(response.json()["id"]))
+    with database.connect() as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM storyboards WHERE job_id = ?", (response.json()["id"],)
+        ).fetchone()[0] == 1

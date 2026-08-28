@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     app_audio_max_seconds: int = 60
     app_cut_max_count: int = 12
     app_video_concurrency: int = 2
+    app_asset_retention_days: int = 30
     app_session_ttl_seconds: int = 7 * 24 * 60 * 60
     app_invite_code_hashes: str = ""
 
@@ -58,6 +59,8 @@ class Settings(BaseSettings):
             raise ValueError("app_cut_max_count must be between 1 and 12")
         if not 1 <= self.app_video_concurrency <= 2:
             raise ValueError("app_video_concurrency must be between 1 and 2")
+        if self.app_asset_retention_days < 1:
+            raise ValueError("app_asset_retention_days must be positive")
         return self
 
     def safe_summary(self) -> dict[str, Any]:

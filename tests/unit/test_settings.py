@@ -15,6 +15,24 @@ def test_settings_reject_audio_bounds_in_wrong_order(tmp_path) -> None:
         )
 
 
+def test_settings_keep_confirmed_30_day_asset_retention(tmp_path) -> None:
+    settings = Settings(
+        app_database_path=tmp_path / "app.db",
+        app_artifact_root=tmp_path / "artifacts",
+        _env_file=None,
+    )
+
+    assert settings.app_asset_retention_days == 30
+
+    with pytest.raises(ValidationError):
+        Settings(
+            app_database_path=tmp_path / "app.db",
+            app_artifact_root=tmp_path / "artifacts",
+            app_asset_retention_days=0,
+            _env_file=None,
+        )
+
+
 def test_settings_safe_summary_never_contains_keys(tmp_path) -> None:
     settings = Settings(
         app_database_path=tmp_path / "app.db",
