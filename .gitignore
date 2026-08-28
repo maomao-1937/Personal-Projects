@@ -9,6 +9,7 @@ env/
 # Build output
 dist/
 build/
+.worktrees/
 *.egg-info/
 
 # IDE
@@ -24,6 +25,7 @@ desktop.ini
 
 # Environment
 .env
+.env.save
 .env.local
 .env.*.local
 
