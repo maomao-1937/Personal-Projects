@@ -32,8 +32,8 @@ TDD 红灯记录：状态函数测试先因缺少 `fixtures/state` 失败；结�
 
 ## 访问与截图
 
-- 本地地址：`http://127.0.0.1:3000/projects/demo/storyboard`
-- 开发服务 PID：`64019`（已以可终止的本地进程运行）
+- 本地地址：`http://127.0.0.1:3100/projects/demo/storyboard`
+- 开发服务 PID：`65371`（`3000` 已被本机其他项目占用，因此使用独立端口 `3100`）
 - 1440 主截图：`docs/frontend/screenshots/implementation-1440x900.png`
 - 其他视口：`implementation-390x844.png`、`implementation-768x1024.png`、`implementation-1280x800.png`
 - 视觉核对：`docs/frontend/fidelity-ledger.md`
@@ -42,7 +42,9 @@ TDD 红灯记录：状态函数测试先因缺少 `fixtures/state` 失败；结�
 
 1. Cut 媒体图使用无版权风险的 CSS 色块，未使用概念图的具体影像；状态、层级和交互已对齐。
 2. Playwright 截图为 dev server，左下可出现 Next.js dev indicator；production build 不包含该标记。
-3. `npm audit --omit=dev` 对 Next.js 15 的传递 PostCSS 报告 1 moderate / 1 high，修复建议要求跨主版升级到 Next.js 16；Next.js 16 会强制改写本计划明确要求的 `jsx: preserve`。鉴于 F1 仅本地预览且禁止部署，本轮保留 Next.js 15 并将其列为后续技术债，不在本轮扩展迁移范围。
+3. `npm audit --omit=dev` 对 Next.js 15 的传递 PostCSS 报告 1 moderate / 1 high，自动修复建议要求跨主版升级到 Next.js 16，并需要重新验证配置、构建和兼容性。鉴于 F1 只处理仓库内静态 CSS、仅绑定本地预览且禁止部署，本轮记录为发布门禁；接入不可信内容或部署前必须完成升级并重新审计。
+4. “生成全部”“进入预览”和 Cut 卡片的预览/更多操作只用于本轮视觉占位，尚未接入真实行为；UI 优化时应决定禁用态或未接入说明，F2 才能绑定真实业务。
+5. Fixture 初始 Preview 为 `ready`，用于演示 `ready → stale → building` 的本地状态转换；批准概念图的初始画面为“预览需要更新”。
 
 ## 停止点
 

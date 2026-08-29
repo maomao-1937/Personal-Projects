@@ -21,3 +21,4 @@
 - Playwright fallback：2/2 通过，覆盖四个批准视口、无水平溢出、平板 Inspector 抽屉、Cut 06 重试、Cut 04 保留、本地保存、Preview stale 与 rebuild。
 - 响应式截图：`implementation-390x844.png`、`implementation-768x1024.png`、`implementation-1280x800.png`、`implementation-1440x900.png`。
 - 开发截图左下角可能包含 Next.js dev indicator；这是本地开发工具标记，不属于产品 UI，production build 不显示。
+- 初始 Fixture 显示“预览已就绪”以便演示 `ready → stale → building`；概念图初始显示“预览需要更新”，这是已记录的交互演示偏差。
