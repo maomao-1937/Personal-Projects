@@ -10,12 +10,13 @@ const sceneStatus = {
 interface SceneNavigatorProps {
   scenes: Scene[];
   selectedSceneId: string;
+  open: boolean;
   onSelectScene: (sceneId: string) => void;
 }
 
-export function SceneNavigator({ scenes, selectedSceneId, onSelectScene }: SceneNavigatorProps) {
+export function SceneNavigator({ scenes, selectedSceneId, open, onSelectScene }: SceneNavigatorProps) {
   return (
-    <nav className="scene-nav" aria-label="场景">
+    <nav className={`scene-nav ${open ? "is-panel-open" : ""}`} aria-label="场景" id="scene-panel">
       <div className="panel-heading">
         <h2>场景</h2>
         <button type="button" className="icon-button" aria-label="添加场景">
@@ -30,6 +31,7 @@ export function SceneNavigator({ scenes, selectedSceneId, onSelectScene }: Scene
             <button
               type="button"
               aria-label={`选择场景 ${String(scene.number).padStart(2, "0")} ${scene.title}`}
+              aria-pressed={scene.id === selectedSceneId}
               className={`scene-item ${scene.id === selectedSceneId ? "is-selected" : ""}`}
               key={scene.id}
               onClick={() => onSelectScene(scene.id)}

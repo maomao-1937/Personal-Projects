@@ -10,7 +10,11 @@ export function ProjectProgress() {
           const complete = index < 3;
           const active = index === 3;
           return (
-            <li className={active ? "is-active" : complete ? "is-complete" : ""} key={step}>
+            <li
+              aria-current={active ? "step" : undefined}
+              className={active ? "is-active" : complete ? "is-complete" : ""}
+              key={step}
+            >
               <span className="step-node" aria-hidden="true">
                 {complete ? <Check size={14} /> : index + 1}
               </span>

@@ -1,5 +1,6 @@
 "use client";
 
+import { PanelLeft, PanelRight } from "lucide-react";
 import { useState } from "react";
 import { AppHeader } from "./app-header";
 import { AudioContextBar } from "./audio-context-bar";
@@ -22,6 +23,8 @@ export function StoryboardWorkspace() {
   const initialCut = workspaceFixture.cuts.find((cut) => cut.id === workspaceFixture.selectedCutId);
   const [draftPrompt, setDraftPrompt] = useState(() => initialCut?.prompt ?? "");
   const [savedMessage, setSavedMessage] = useState("");
+  const [scenePanelOpen, setScenePanelOpen] = useState(true);
+  const [inspectorPanelOpen, setInspectorPanelOpen] = useState(false);
 
   const selectedScene = workspace.scenes.find((scene) => scene.id === workspace.selectedSceneId);
   const sceneCuts = workspace.cuts.filter((cut) => cut.sceneId === workspace.selectedSceneId);
@@ -62,10 +65,33 @@ export function StoryboardWorkspace() {
       <AppHeader />
       <ProjectProgress />
       <AudioContextBar />
+      <div className="mobile-panel-toggles" aria-label="工作区面板控制">
+        <button
+          type="button"
+          aria-controls="scene-panel"
+          aria-expanded={scenePanelOpen}
+          aria-label="展开或收起场景面板"
+          onClick={() => setScenePanelOpen((open) => !open)}
+        >
+          <PanelLeft aria-hidden="true" size={18} />
+          场景
+        </button>
+        <button
+          type="button"
+          aria-controls="inspector-panel"
+          aria-expanded={inspectorPanelOpen}
+          aria-label="展开或收起 Cut 编辑面板"
+          onClick={() => setInspectorPanelOpen((open) => !open)}
+        >
+          <PanelRight aria-hidden="true" size={18} />
+          Cut 编辑
+        </button>
+      </div>
       <main className="workspace-grid" id="main-content">
         <SceneNavigator
           scenes={workspace.scenes}
           selectedSceneId={workspace.selectedSceneId}
+          open={scenePanelOpen}
           onSelectScene={selectScene}
         />
         <section className="cut-canvas" aria-label="Cut 画布">
@@ -99,6 +125,7 @@ export function StoryboardWorkspace() {
           cut={selectedCut}
           draftPrompt={draftPrompt}
           savedMessage={savedMessage}
+          open={inspectorPanelOpen}
           onDraftChange={setDraftPrompt}
           onSave={handleSave}
           onRetry={handleRetry}

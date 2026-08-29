@@ -40,6 +40,7 @@ export function CutCard({ cut, selected, onSelect, onRetry }: CutCardProps) {
         type="button"
         className={`cut-preview visual-${cut.visualTone}`}
         aria-label={`选择 Cut ${String(cut.number).padStart(2, "0")}`}
+        aria-pressed={selected}
         onClick={() => onSelect(cut.id)}
       >
         {cut.status === "succeeded" ? (

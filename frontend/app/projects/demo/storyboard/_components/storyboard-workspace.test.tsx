@@ -53,4 +53,24 @@ describe("StoryboardWorkspace shell", () => {
     await user.click(screen.getByRole("button", { name: "重新构建预览" }));
     expect(screen.getByText("预览构建中")).toBeInTheDocument();
   });
+
+  it("exposes the current step, selected items, and responsive panel controls", () => {
+    render(<StoryboardWorkspace />);
+
+    expect(screen.getByText("镜头").closest("li")).toHaveAttribute("aria-current", "step");
+    expect(screen.getByRole("button", { name: /选择场景 02/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "选择 Cut 06" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "展开或收起场景面板" })).toHaveAttribute(
+      "aria-expanded",
+    );
+    expect(screen.getByRole("button", { name: "展开或收起 Cut 编辑面板" })).toHaveAttribute(
+      "aria-expanded",
+    );
+  });
 });

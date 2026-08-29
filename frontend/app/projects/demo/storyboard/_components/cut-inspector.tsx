@@ -5,6 +5,7 @@ interface CutInspectorProps {
   cut: Cut | undefined;
   draftPrompt: string;
   savedMessage: string;
+  open: boolean;
   onDraftChange: (value: string) => void;
   onSave: () => void;
   onRetry: (cutId: string) => void;
@@ -14,13 +15,14 @@ export function CutInspector({
   cut,
   draftPrompt,
   savedMessage,
+  open,
   onDraftChange,
   onSave,
   onRetry,
 }: CutInspectorProps) {
   if (!cut) {
     return (
-      <aside className="cut-inspector" aria-label="Cut 编辑">
+      <aside className={`cut-inspector ${open ? "is-panel-open" : ""}`} aria-label="Cut 编辑" id="inspector-panel">
         <h2>未选择 Cut</h2>
         <p>当前场景没有可编辑的界面预览数据。</p>
       </aside>
@@ -30,7 +32,7 @@ export function CutInspector({
   const failed = cut.status === "failed_retryable";
 
   return (
-    <aside className="cut-inspector" aria-label="Cut 编辑">
+    <aside className={`cut-inspector ${open ? "is-panel-open" : ""}`} aria-label="Cut 编辑" id="inspector-panel">
       <div className="inspector-heading">
         <h2>Cut {String(cut.number).padStart(2, "0")}</h2>
         <span className={failed ? "inspector-failed" : "inspector-status"}>
