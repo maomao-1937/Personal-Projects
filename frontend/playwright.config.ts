@@ -1,11 +1,15 @@
 import { defineConfig, devices } from "@playwright/test";
+import { resolvePlaywrightPort } from "./playwright-port";
+
+const port = resolvePlaywrightPort(process.env.PLAYWRIGHT_PORT);
+const baseURL = `http://127.0.0.1:${port}`;
 
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   reporter: "line",
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL,
     trace: "retain-on-failure",
   },
   projects: [
@@ -15,8 +19,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev -- --hostname 127.0.0.1",
-    url: "http://127.0.0.1:3000/projects/demo/storyboard",
+    command: `npm run dev -- --hostname 127.0.0.1 --port ${port}`,
+    url: `${baseURL}/projects/demo/storyboard`,
     reuseExistingServer: true,
   },
 });
