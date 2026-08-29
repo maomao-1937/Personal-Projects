@@ -10,9 +10,10 @@ const sceneStatus = {
 interface SceneNavigatorProps {
   scenes: Scene[];
   selectedSceneId: string;
+  onSelectScene: (sceneId: string) => void;
 }
 
-export function SceneNavigator({ scenes, selectedSceneId }: SceneNavigatorProps) {
+export function SceneNavigator({ scenes, selectedSceneId, onSelectScene }: SceneNavigatorProps) {
   return (
     <nav className="scene-nav" aria-label="场景">
       <div className="panel-heading">
@@ -28,8 +29,10 @@ export function SceneNavigator({ scenes, selectedSceneId }: SceneNavigatorProps)
           return (
             <button
               type="button"
+              aria-label={`选择场景 ${String(scene.number).padStart(2, "0")} ${scene.title}`}
               className={`scene-item ${scene.id === selectedSceneId ? "is-selected" : ""}`}
               key={scene.id}
+              onClick={() => onSelectScene(scene.id)}
             >
               <span className="scene-main">
                 <strong><span className="scene-number">{String(scene.number).padStart(2, "0")}</span>{scene.title}</strong>
