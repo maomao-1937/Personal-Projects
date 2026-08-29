@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# Build output
+dist/
+build/
+.worktrees/
+.superpowers/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment
+.env
+.env.save
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Uploads & output
+uploads/
+output/
+artifacts/
+data/
+.smoke/
+*.mp4
+*.mp3
+*.wav
+!frontend/public/**
+
+# Coverage
+coverage/
+.nyc_output/
