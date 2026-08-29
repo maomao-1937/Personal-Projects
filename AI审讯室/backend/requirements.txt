@@ -1,0 +1,8 @@
+alembic==1.16.5
+fastapi==0.141.1
+httpx==0.28.1
+pydantic-settings==2.10.1
+pytest==8.4.2
+sqlalchemy==2.0.43
+tos==2.9.2
+uvicorn[standard]==0.35.0
