@@ -1,0 +1,48 @@
+import { Check, CircleDashed, Clock3, Plus } from "lucide-react";
+import type { Scene } from "../_lib/types";
+
+const sceneStatus = {
+  succeeded: { label: "已完成", icon: Check },
+  partial: { label: "部分成功", icon: CircleDashed },
+  queued: { label: "待生成", icon: Clock3 },
+} as const;
+
+interface SceneNavigatorProps {
+  scenes: Scene[];
+  selectedSceneId: string;
+}
+
+export function SceneNavigator({ scenes, selectedSceneId }: SceneNavigatorProps) {
+  return (
+    <nav className="scene-nav" aria-label="场景">
+      <div className="panel-heading">
+        <h2>场景</h2>
+        <button type="button" className="icon-button" aria-label="添加场景">
+          <Plus aria-hidden="true" size={18} />
+        </button>
+      </div>
+      <div className="scene-list">
+        {scenes.map((scene) => {
+          const status = sceneStatus[scene.status];
+          const StatusIcon = status.icon;
+          return (
+            <button
+              type="button"
+              className={`scene-item ${scene.id === selectedSceneId ? "is-selected" : ""}`}
+              key={scene.id}
+            >
+              <span className="scene-main">
+                <strong><span className="scene-number">{String(scene.number).padStart(2, "0")}</span>{scene.title}</strong>
+                <span>{scene.range}<small>{scene.cutCount} 镜头</small></span>
+              </span>
+              <span className={`scene-state state-${scene.status}`}>
+                <StatusIcon aria-hidden="true" size={18} />
+                {status.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
