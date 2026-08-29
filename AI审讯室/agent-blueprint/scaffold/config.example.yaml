@@ -1,0 +1,8 @@
+# Declarative config for the production agent skeleton.
+# Environment variables take precedence over values here.
+
+model: claude-sonnet-4-6
+max_tokens: 8000
+timeout_seconds: 120
+max_retries: 3
+base_delay_seconds: 0.5

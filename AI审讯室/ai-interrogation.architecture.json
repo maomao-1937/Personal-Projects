@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "AI审讯室｜系统架构与关键链路",
+    "locale": "zh-CN",
+    "output": "ai-interrogation.architecture.html",
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "viewBox": [1380, 680],
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "frontend": { "label": "前端体验层" },
+        "backend": { "label": "后端业务层" },
+        "database": { "label": "持久化状态" },
+        "cloud": { "label": "云服务" },
+        "security": { "label": "安全边界" },
+        "messagebus": { "label": "异步任务" },
+        "external": { "label": "用户端" }
+      }
+    },
+    "views": [
+      {
+        "id": "launch-flow",
+        "label": "案件启动",
+        "focus": ["browser", "caddy", "nextjs", "launch_machine", "fastapi", "generation_jobs", "qwen", "sqlite"],
+        "note": "点击后立即并行启动 4 秒仪式动效与异步案件生成；完成后创建会话。"
+      },
+      {
+        "id": "interrogation-flow",
+        "label": "审讯闭环",
+        "focus": ["browser", "nextjs", "fastapi", "game_service", "qwen", "sqlite"],
+        "note": "提问、嫌疑人回复、证据发现与结案评分围绕版本化会话快照运行。"
+      },
+      {
+        "id": "trust-boundary",
+        "label": "鉴权与数据",
+        "focus": ["caddy", "fastapi", "cookie_auth", "sqlite"],
+        "note": "生产环境使用签名 HttpOnly Cookie；SQLite 快照周期备份至 TOS。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "external",
+      "label": "玩家浏览器",
+      "sublabel": "访问、启动、审讯、结案",
+      "pos": [28, 280],
+      "size": [142, 66]
+    },
+    {
+      "id": "caddy",
+      "type": "security",
+      "label": "Caddy HTTPS 网关",
+      "sublabel": "TLS · 同源反向代理",
+      "tag": "ECS :443",
+      "pos": [198, 280],
+      "size": [152, 66]
+    },
+    {
+      "id": "nextjs",
+      "type": "frontend",
+      "label": "Next.js Web",
+      "sublabel": "React 19 · GSAP 交互",
+      "tag": "web :3011",
+      "pos": [378, 280],
+      "size": [152, 66]
+    },
+    {
+      "id": "launch_machine",
+      "type": "frontend",
+      "label": "案件启动状态机",
+      "sublabel": "4 秒仪式 × 网络并行",
+      "tag": "IDLE → COMPLETED",
+      "pos": [558, 280],
+      "size": [160, 66]
+    },
+    {
+      "id": "fastapi",
+      "type": "backend",
+      "label": "FastAPI API",
+      "sublabel": "/api/v1 · 组合根",
+      "tag": "api :8000",
+      "pos": [746, 280],
+      "size": [148, 66]
+    },
+    {
+      "id": "generation_jobs",
+      "type": "messagebus",
+      "label": "案件生成任务",
+      "sublabel": "202 接收 · 1.5 秒轮询",
+      "tag": "单工作线程",
+      "pos": [910, 140],
+      "size": [158, 66]
+    },
+    {
+      "id": "game_service",
+      "type": "backend",
+      "label": "审讯与评分服务",
+      "sublabel": "回合 · 模型回复 · 评分",
+      "tag": "版本化写入",
+      "pos": [910, 400],
+      "size": [158, 66]
+    },
+    {
+      "id": "cookie_auth",
+      "type": "security",
+      "label": "访问令牌鉴权",
+      "sublabel": "SHA-256 · HMAC Cookie",
+      "tag": "7 天 TTL",
+      "pos": [746, 520],
+      "size": [148, 66]
+    },
+    {
+      "id": "qwen",
+      "type": "cloud",
+      "label": "DashScope / Qwen",
+      "sublabel": "案件、对话、复核模型",
+      "tag": "OpenAI 兼容接口",
+      "pos": [1160, 50],
+      "size": [164, 66]
+    },
+    {
+      "id": "sqlite",
+      "type": "database",
+      "label": "SQLite 主状态库",
+      "sublabel": "案件 · 会话 · TOS 备份",
+      "tag": "/data 持久卷",
+      "pos": [1100, 400],
+      "size": [164, 66]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "用户设备",
+      "wraps": ["browser"],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "ECS 前端容器",
+      "wraps": ["caddy", "nextjs", "launch_machine"],
+      "pad": 20
+    },
+    {
+      "kind": "security-group",
+      "label": "ECS 后端私有网络",
+      "wraps": ["fastapi", "generation_jobs", "game_service", "cookie_auth", "sqlite"],
+      "pad": 16
+    },
+    {
+      "kind": "region",
+      "label": "外部 AI 服务",
+      "wraps": ["qwen"],
+      "pad": 18
+    }
+  ],
+  "connections": [
+    { "from": "browser", "to": "caddy", "label": "HTTPS", "variant": "emphasis", "labelAt": [184, 360] },
+    { "from": "caddy", "to": "nextjs", "label": "页面与静态资源", "variant": "emphasis", "labelAt": [364, 264] },
+    { "from": "nextjs", "to": "launch_machine", "label": "点击启动", "variant": "emphasis", "labelAt": [544, 264] },
+    { "from": "launch_machine", "to": "fastapi", "label": "同源 /api", "variant": "emphasis", "labelAt": [732, 264] },
+    { "from": "fastapi", "to": "generation_jobs", "label": "POST 202", "variant": "emphasis" },
+    { "from": "generation_jobs", "to": "qwen", "label": "生成 + 复核", "variant": "emphasis" },
+    { "from": "fastapi", "to": "game_service", "label": "会话 / 回合 / 报告", "variant": "emphasis" },
+    { "from": "game_service", "to": "sqlite", "label": "乐观并发写入", "variant": "emphasis", "labelAt": [1084, 480] },
+    { "from": "fastapi", "to": "cookie_auth", "label": "每次请求验签", "variant": "security", "route": "orthogonal-v" }
+  ]
+}

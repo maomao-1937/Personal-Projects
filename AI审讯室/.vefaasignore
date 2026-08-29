@@ -1,0 +1,12 @@
+.env
+.venv
+data
+__pycache__
+.pytest_cache
+.git
+.vefaas
+node_modules
+.next/cache
+test-results
+playwright-report
+

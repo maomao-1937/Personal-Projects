@@ -1,0 +1,13 @@
+.env
+.env.*
+node_modules
+.next/cache
+.git
+.vefaas
+tests
+test-results
+playwright-report
+coverage
+*.log
+*.tsbuildinfo
+.DS_Store
