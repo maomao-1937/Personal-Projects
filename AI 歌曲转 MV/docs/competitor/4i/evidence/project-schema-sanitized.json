@@ -1,0 +1,146 @@
+{
+  "id": "<projectId>",
+  "title": "audio",
+  "audioUrl": "<mediaUrl>",
+  "referenceImageUrl": "",
+  "previewImageUrl": "<mediaUrl>",
+  "aspectRatio": "16:9",
+  "pVideoModelId": "<timelineVideoModelId>",
+  "defaultIllustrativeModelId": "<imageModelId>",
+  "audioDuration": 8,
+  "transcript": {
+    "text": "<transcriptText>",
+    "language": "en",
+    "duration": 8,
+    "words": [
+      {
+        "word": "The",
+        "start": 1.12,
+        "end": 1.16
+      }
+    ],
+    "segments": [
+      {
+        "start": 1.12,
+        "end": 6.66,
+        "text": "<segmentText>"
+      }
+    ],
+    "lyricSubtitles": []
+  },
+  "rows": [
+    {
+      "id": "<rowId>",
+      "start": 0,
+      "duration": 8,
+      "kind": "lipsync",
+      "modelId": "<expressVideoModelId>",
+      "prompt": "",
+      "imageInputs": {
+        "image": "",
+        "last_frame_image": ""
+      },
+      "firstImage": "<mediaUrl>",
+      "lastImage": "",
+      "audioSegmentUrl": "<mediaUrl>",
+      "jobId": "<jobId>",
+      "status": "succeeded",
+      "videoUrl": "<mediaUrl>",
+      "videoDuration": 8,
+      "generating": false,
+      "error": ""
+    }
+  ],
+  "discountStoryboard": {
+    "started": true,
+    "activeStep": 5,
+    "modelMode": "express",
+    "summary": "<plotSummary>",
+    "storyInput": "<plotText>",
+    "completedSteps": [0, 1, 2, 3, 4, 5],
+    "characters": [
+      {
+        "id": "<characterId>",
+        "name": "Main character",
+        "role": "",
+        "description": "<characterDescription>",
+        "imageUrl": "<mediaUrlOrEmpty>",
+        "source": "auto",
+        "stylized3d": false,
+        "busy": false
+      }
+    ],
+    "environments": [
+      {
+        "id": "<environmentId>",
+        "name": "<environmentName>",
+        "description": "<environmentDescription>",
+        "imageUrl": "<mediaUrl>",
+        "busy": false
+      }
+    ],
+    "segments": [
+      {
+        "id": "<segmentId>",
+        "title": "<segmentTitle>",
+        "start": 0,
+        "duration": 8,
+        "summary": "<segmentSummary>",
+        "detail": "",
+        "characterIds": ["<characterId>"],
+        "environmentIds": ["<environmentId>"],
+        "cutDescriptions": ["<cutDescription>"],
+        "gridImageUrl": "<mediaUrl>",
+        "gridImageError": "",
+        "imageSteer": "",
+        "lipsync": true,
+        "busy": false,
+        "cuts": [
+          {
+            "id": "<cutId>",
+            "index": 0,
+            "imageUrl": "<mediaUrl>",
+            "selected": true,
+            "order": 0,
+            "duration": 2,
+            "prompt": "<cutPrompt>",
+            "lipsync": true,
+            "audioSegmentUrl": "<mediaUrl>",
+            "jobId": "<jobId>",
+            "status": "succeeded",
+            "videoUrl": "<mediaUrl>",
+            "videoDuration": 2,
+            "error": "",
+            "busy": false,
+            "loadingLabel": ""
+          }
+        ],
+        "previewBusy": false,
+        "previewProgress": 100,
+        "previewUrl": "<blobOrMediaUrl>",
+        "previewError": "",
+        "castEnvReviewed": true
+      }
+    ],
+    "navPhase": 2,
+    "navSetupStep": 5,
+    "navBuildTab": "videos"
+  },
+  "generatedImages": ["<mediaUrl>"],
+  "exportUrl": "<mediaUrl>",
+  "cloudExportStartedAt": "<timestamp>",
+  "durationReductionPreference": "<valueOrNull>",
+  "exportNeedsAudioMux": false,
+  "exportError": "",
+  "pendingExportJobId": null,
+  "uiState": {
+    "workspaceMode": "editor",
+    "configCollapsed": false,
+    "editorSetupCollapsed": false,
+    "storyboardCollapsed": false,
+    "skipGenerateCostConfirm": false
+  },
+  "contentVersion": "<version>",
+  "createdAt": "<timestamp>",
+  "updatedAt": "<timestamp>"
+}

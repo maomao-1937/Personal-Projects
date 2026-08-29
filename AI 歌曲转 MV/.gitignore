@@ -1,0 +1,39 @@
+# 依赖与构建产物
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+*.tsbuildinfo
+
+# Worktree / 工具缓存
+.worktrees/
+.superpowers/
+.turbo/
+test-results/
+playwright-report/
+
+# 环境变量（保留 .env.example）
+.env
+.env.*
+!.env.example
+
+# 运行时产物
+uploads/
+output/
+artifacts/
+data/
+.smoke/
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini

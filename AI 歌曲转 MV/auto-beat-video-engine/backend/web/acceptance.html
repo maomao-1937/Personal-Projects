@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI 歌曲转 MV · 后端最小验收</title>
+  <style>body{font:14px system-ui;max-width:920px;margin:32px auto;padding:0 20px;background:#101217;color:#e8ebf2}section{border:1px solid #303642;border-radius:10px;padding:16px;margin:12px 0}input,textarea,button{box-sizing:border-box;margin:5px 0;padding:9px;border-radius:6px;border:1px solid #465064;background:#191d26;color:#fff}input,textarea{width:100%}button{cursor:pointer;margin-right:8px}pre{white-space:pre-wrap;background:#090a0d;padding:12px;min-height:100px}</style>
+</head>
+<body>
+  <h1>AI 歌曲转 MV · 后端最小验收</h1><p>仅用于验证真实后端链路，不代表正式前端。</p>
+  <section><h2>1. 登录与项目</h2><input id="invite" placeholder="邀请码"><button onclick="login()">邀请码登录</button><input id="projectName" value="我的 MV"><button onclick="createProject()">新建项目</button></section>
+  <section><h2>2. 上传音频与分析</h2><input id="audio" type="file" accept="audio/mpeg,audio/wav"><button onclick="uploadAudio()">上传音频</button><button onclick="analyze()">librosa 分析</button></section>
+  <section><h2>3. Storyboard 与 Cut</h2><textarea id="brief" placeholder="创意描述"></textarea><button onclick="storyboard()">生成 Storyboard</button><button onclick="confirmStoryboard()">确认 Storyboard</button><button onclick="generateAll()">生成全部 Cut</button></section>
+  <section><h2>4. Preview 与 Export</h2><button onclick="preview()">生成 Preview</button><button onclick="exportVideo('16:9')">导出 16:9</button><button onclick="exportVideo('9:16')">导出 9:16</button><video id="previewPlayer" controls style="display:none;width:100%;margin-top:12px"></video><div id="downloads"></div></section>
+  <section><h2>状态</h2><pre id="log">等待操作…</pre></section>
+  <script>
+    let token='',projectId='',storyboardId='';const log=x=>document.querySelector('#log').textContent=JSON.stringify(x,null,2);const headers=()=>({'Authorization':`Bearer ${token}`});const idem=p=>`${p}-${Date.now()}`;
+    async function request(url,options={}){const r=await fetch(url,options);const data=await r.json();log(data);if(!r.ok)throw data;return data}
+    async function watchJob(jobId){for(;;){const job=await request(`/api/v1/jobs/${jobId}`,{headers:headers()});if(job.status==='succeeded')return job;if(['failed_terminal','timed_out','cancelled'].includes(job.status))throw job;await new Promise(resolve=>setTimeout(resolve,1000))}}
+    async function artifactUrl(artifactId){const r=await fetch(`/api/v1/projects/${projectId}/artifacts/${artifactId}/download`,{headers:headers()});if(!r.ok)throw await r.json();return URL.createObjectURL(await r.blob())}
+    async function downloadArtifact(artifactId,label){const r=await fetch(`/api/v1/projects/${projectId}/artifacts/${artifactId}/download`,{headers:headers()});if(!r.ok)throw await r.json();const url=URL.createObjectURL(await r.blob());const a=document.createElement('a');a.href=url;a.download=`music-video-${label.replace(':','x')}.mp4`;a.textContent=`下载 ${label} MP4`;a.style.display='block';document.querySelector('#downloads').appendChild(a)}
+    async function login(){const d=await request('/api/v1/auth/invite',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({invite_code:invite.value})});token=d.session_token}
+    async function createProject(){const d=await request('/api/v1/projects',{method:'POST',headers:{...headers(),'Content-Type':'application/json'},body:JSON.stringify({name:projectName.value})});projectId=d.id}
+    async function uploadAudio(){const f=new FormData();f.append('audio',audio.files[0]);await request(`/api/v1/projects/${projectId}/audio`,{method:'POST',headers:headers(),body:f})}
+    async function analyze(){const job=await request(`/api/v1/projects/${projectId}/audio/analysis`,{method:'POST',headers:{...headers(),'Idempotency-Key':idem('audio')}});await watchJob(job.id)}
+    async function storyboard(){const job=await request(`/api/v1/projects/${projectId}/storyboard-jobs`,{method:'POST',headers:{...headers(),'Content-Type':'application/json','Idempotency-Key':idem('storyboard')},body:JSON.stringify({creative_brief:brief.value})});await watchJob(job.id);const d=await request(`/api/v1/projects/${projectId}/storyboards/latest`,{headers:headers()});storyboardId=d.id}
+    async function confirmStoryboard(){await request(`/api/v1/projects/${projectId}/storyboards/${storyboardId}/confirm`,{method:'POST',headers:headers()})}
+    async function generateAll(){const result=await request(`/api/v1/projects/${projectId}/storyboards/${storyboardId}/cuts/generate-all`,{method:'POST',headers:{...headers(),'Idempotency-Key':idem('cuts')}});await Promise.all(result.jobs.map(job=>watchJob(job.id)))}
+    async function preview(){const record=await request(`/api/v1/projects/${projectId}/previews`,{method:'POST',headers:{...headers(),'Idempotency-Key':idem('preview')}});const job=await watchJob(record.job_id);previewPlayer.src=await artifactUrl(job.result_artifact_id);previewPlayer.style.display='block'}
+    async function exportVideo(ratio){const record=await request(`/api/v1/projects/${projectId}/exports`,{method:'POST',headers:{...headers(),'Content-Type':'application/json','Idempotency-Key':idem('export')},body:JSON.stringify({aspect_ratio:ratio})});const job=await watchJob(record.job_id);await downloadArtifact(job.result_artifact_id,ratio)}
+  </script>
+</body></html>

@@ -1,0 +1,74 @@
+# AI 歌曲转 MV
+
+当前后端版本：`3.0.0a1`
+
+这是“AI 歌曲转 MV”第 1 阶段的后端工程。当前交付重点是可持久、可恢复、可测试的真实能力链路；仓库中的旧 React 页面仅作为历史底座保留，不代表已开始正式前端阶段。
+
+## 当前真实能力
+
+- 邀请码登录、用户数据隔离和项目持久化；
+- 30—60 秒 MP3/WAV 上传，单文件不超过 100 MB；
+- librosa 分析 BPM、Beat、Downbeat、Onset、Energy 和 Waveform；
+- BeatPlan 与 OpenAI Compatible Storyboard Provider，Storyboard 草稿支持校验后的版本化微调；
+- 最多 12 个独立 Cut，视频生成并发 2，支持 Partial、Retry 和 Regenerate；
+- 默认使用百炼 `wanx2.1-t2v-turbo`：每个 Cut 生成固定 5 秒无声源片，再由 FFmpeg 按 4—12 秒目标 Cut 裁切或循环；Seedance 仅作可选兼容 Provider；
+- SQLite Job/Event、心跳租约、有限自动重试、中断恢复和可续传 SSE；
+- 不可变 TimelineVersion，旧 Preview/Export 自动 stale；
+- FFmpeg H.264/AAC Preview；
+- 16:9 与 9:16 两个独立 MP4 Export，支持失败任务重试，9:16 为确定性中心裁切/缩放；
+- 生产环境按项目最后活动时间执行 30 天 Artifact 保留策略；
+- `/acceptance` 原生最小验收页，可播放 Preview 并下载两种比例 MP4；
+- 旧 `/api/process`、`/api/status/{job_id}` 和 `/api/download/{job_id}` 暂时保留。
+
+## 环境要求
+
+- Python 3.11；
+- FFmpeg 与 ffprobe；
+- `uv`；
+- 本地 `.env`，该文件必须保持在 Git 忽略范围内。
+
+## 启动
+
+```bash
+uv sync --extra test
+uv run uvicorn backend.main:app --reload
+```
+
+打开：
+
+- 健康检查：`http://127.0.0.1:8000/api/v1/health`
+- API 文档：`http://127.0.0.1:8000/docs`
+- 后端最小验收：`http://127.0.0.1:8000/acceptance`
+
+环境变量模板见 `.env.example`。API Key 只允许写入本地 `.env`，不得进入前端、README、日志或 Git。
+
+`APP_ASSET_RETENTION_DAYS=30` 是已确认的生产默认值。自动过期清理只在 `APP_ENV=production` 时执行，开发和测试环境不自动删除本地产物。
+
+邀请码以 SHA-256 哈希配置到 `APP_INVITE_CODE_HASHES`，多个哈希使用英文逗号分隔。生成哈希时不要把明文邀请码写入命令历史或仓库文件。
+
+## 测试
+
+```bash
+.venv/bin/python -m pytest -m 'not real_model' -q
+.venv/bin/python -m compileall -q backend
+git diff --check
+```
+
+真实模型测试默认 Skip，具体门禁见 `tests/smoke/README.md`。当前 Storyboard 真模型冒烟已通过；默认百炼 Wan `wanx2.1-t2v-turbo` 真模型冒烟也已通过，返回 832×480、H.264、约 5.37 秒的无声 MP4。Seedance 曾返回 HTTP 404 与 `ModelNotOpen`，现仅保留兼容实现。
+
+## P0 边界
+
+P0 不包含专业多轨剪辑器、完整 Characters/Environments、多候选图片、复杂 Lipsync Timeline、社区、会员积分、在线支付和多人协作。正式前端与部署必须通过后续人工闸门后才能开始。
+
+## 安全与本地数据
+
+以下内容不进入 Git：
+
+- `.env` 和任何本地 Key 备份；
+- `.venv/`；
+- `data/` SQLite 数据库；
+- `artifacts/`、上传文件、生成视频和真实模型冒烟产物。
+
+## License
+
+MIT
