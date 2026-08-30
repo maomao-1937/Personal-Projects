@@ -1,27 +1,47 @@
-# 系统文件
-.DS_Store
-Thumbs.db
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+*.egg-info/
+dist/
+build/
 
-# 依赖
+# Node
 node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
 
-# 环境变量 / 密钥（严禁提交）
+# Environment
 .env
 .env.local
 .env.*.local
-*.key
-*.pem
 
-# 日志
-*.log
-npm-debug.log*
+# Database
+*.db
+*.sqlite3
 
-# 编辑器
+# Uploads & Generated (runtime data)
+backend/uploads/
+backend/generated/
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# 构建产物
-dist/
-build/
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+coverage/
+.coverage
+htmlcov/

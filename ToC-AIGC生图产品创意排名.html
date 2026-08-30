@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ToC AIGC 生图产品创意排名</title>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface-hover: #1a1a26;
+  --border: #2a2a3a;
+  --text: #e8e8f0;
+  --text-dim: #8888a0;
+  --accent: #6366f1;
+  --accent-glow: rgba(99, 102, 241, 0.15);
+  --gold: #fbbf24;
+  --silver: #94a3b8;
+  --green: #10b981;
+  --red: #ef4444;
+  --orange: #f59e0b;
+  --pink: #ec4899;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  line-height: 1.6;
+}
+
+.hero {
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 40%, #0a0a0f 100%);
+  padding: 70px 40px 50px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -40%; left: 30%;
+  width: 120%; height: 180%;
+  background: radial-gradient(ellipse, var(--accent-glow) 0%, transparent 50%);
+  animation: drift 25s ease-in-out infinite;
+}
+
+@keyframes drift {
+  0%, 100% { transform: translate(-10%, 0) rotate(0deg); }
+  50% { transform: translate(0, -5%) rotate(3deg); }
+}
+
+.hero-content { position: relative; z-index: 1; }
+
+.hero h1 {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 14px;
+  background: linear-gradient(135deg, #fff 0%, #c4b5fd 50%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero .subtitle {
+  font-size: 17px;
+  color: var(--text-dim);
+  margin-bottom: 28px;
+}
+
+.hero .meta {
+  display: flex;
+  justify-content: center;
+  gap: 36px;
+  font-size: 14px;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+
+.hero .meta span { display: flex; align-items: center; gap: 6px; }
+
+.hero .highlight {
+  margin-top: 24px;
+  display: inline-flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.hero .stat-pill {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 13px;
+  color: #a5b4fc;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.section-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  padding-left: 16px;
+  border-left: 3px solid var(--accent);
+}
+
+/* Methodology */
+.methodology {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 32px;
+  margin-bottom: 40px;
+}
+
+.methodology h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  color: var(--accent);
+}
+
+.methodology p {
+  color: var(--text-dim);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.criteria-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.criteria-item {
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.criteria-item .label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.criteria-item .desc {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* Summary Table */
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 40px;
+  font-size: 14px;
+}
+
+.summary-table th {
+  text-align: left;
+  padding: 12px 14px;
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+  white-space: nowrap;
+}
+
+.summary-table td {
+  padding: 14px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.summary-table tr:hover td { background: var(--surface); }
+
+.rank-cell {
+  font-weight: 800;
+  font-size: 16px;
+  width: 40px;
+  text-align: center;
+}
+
+.total-cell {
+  font-weight: 700;
+  color: var(--gold);
+  font-size: 16px;
+}
+
+/* Ranking Cards */
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rank-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 32px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.rank-card:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.rank-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+}
+
+.rank-card[data-rank="1"]::before { background: var(--gold); }
+.rank-card[data-rank="2"]::before { background: var(--silver); }
+.rank-card[data-rank="3"]::before { background: #cd7f32; }
+.rank-card[data-rank]::before { background: var(--accent); }
+
+.rank-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.rank-number {
+  flex-shrink: 0;
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.rank-card[data-rank="1"] .rank-number { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1a1a00; }
+.rank-card[data-rank="2"] .rank-number { background: linear-gradient(135deg, #cbd5e1, #94a3b8); color: #1a1a2a; }
+.rank-card[data-rank="3"] .rank-number { background: linear-gradient(135deg, #cd7f32, #a0522d); color: #fff; }
+.rank-card .rank-number { background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; }
+
+.rank-title { flex: 1; }
+
+.rank-title h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.rank-title .tagline {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.rank-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.rank-body .col h4 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.rank-body .col p {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.rank-body .col .data-point {
+  font-size: 13px;
+  color: var(--gold);
+  font-weight: 500;
+  margin-top: 6px;
+}
+
+.score-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.score-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.score-label { color: var(--text-dim); }
+
+.score-bar {
+  width: 72px;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.score-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.score-fill.high { background: var(--green); }
+.score-fill.mid { background: var(--orange); }
+.score-fill.low { background: var(--red); }
+
+.score-val { font-weight: 700; min-width: 24px; }
+
+.market-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.chip {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.chip.hot { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+.chip.warm { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+.chip.cool { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+.chip.neutral { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+.chip.pink { background: rgba(236, 72, 153, 0.15); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.3); }
+
+/* Strategy Section */
+.strategy {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 32px;
+  margin-top: 48px;
+}
+
+.strategy h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--accent);
+}
+
+.strategy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.strategy-item {
+  padding: 18px;
+  background: var(--bg);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.strategy-item .num {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--accent);
+  opacity: 0.4;
+  margin-bottom: 8px;
+}
+
+.strategy-item h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.strategy-item p {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.footer {
+  text-align: center;
+  padding: 40px 24px;
+  color: var(--text-dim);
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+  margin-top: 60px;
+}
+
+@media (max-width: 768px) {
+  .hero h1 { font-size: 26px; }
+  .rank-body { grid-template-columns: 1fr; }
+  .container { padding: 24px 16px; }
+  .hero .meta { flex-direction: column; gap: 10px; }
+  .summary-table { font-size: 12px; }
+  .summary-table th, .summary-table td { padding: 8px 6px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <h1>ToC AIGC 生图产品创意排名</h1>
+    <p class="subtitle">15 个消费者方向 × 5 维度评分 × 全球 + 中国市场调研</p>
+    <div class="meta">
+      <span>面向消费者 (ToC)</span>
+      <span>数据截至 2026年8月</span>
+      <span>覆盖产品 50+</span>
+    </div>
+    <div class="highlight">
+      <span class="stat-pill">AI 写真 4120 万活跃用户</span>
+      <span class="stat-pill">AI 婚纱照 2800 亿市场</span>
+      <span class="stat-pill">生图 App 下载量 = 6.5× 聊天机器人</span>
+      <span class="stat-pill">75% 使用为"修图"而非"创作"</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="methodology">
+    <h3>评估方法论</h3>
+    <p>基于 2025-2026 年全球及中国 ToC AIGC 生图市场调研，从 5 个维度对每个产品创意进行 1-10 分评分，加权计算综合得分后排名。</p>
+    <div class="criteria-grid">
+      <div class="criteria-item">
+        <div class="label">市场潜力 (25%)</div>
+        <div class="desc">目标用户规模、增长趋势、付费意愿</div>
+      </div>
+      <div class="criteria-item">
+        <div class="label">竞争空白 (25%)</div>
+        <div class="desc">现有竞品覆盖度、差异化空间</div>
+      </div>
+      <div class="criteria-item">
+        <div class="label">技术可行性 (20%)</div>
+        <div class="desc">当前模型能力能否支撑核心场景</div>
+      </div>
+      <div class="criteria-item">
+        <div class="label">商业变现 (20%)</div>
+        <div class="desc">付费转化率、ARPU、变现模式清晰度</div>
+      </div>
+      <div class="criteria-item">
+        <div class="label">时机窗口 (10%)</div>
+        <div class="desc">是否处于最佳进入期、病毒传播潜力</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-title">完整排名</h2>
+
+  <table class="summary-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>产品方向</th>
+        <th>市场</th>
+        <th>竞争</th>
+        <th>技术</th>
+        <th>变现</th>
+        <th>时机</th>
+        <th>综合</th>
+      </tr>
+    </thead>
+    <tbody id="summary-body"></tbody>
+  </table>
+
+  <h2 class="section-title">详细分析</h2>
+
+  <div class="ranking-list" id="ranking-list"></div>
+
+  <!-- 关键洞察 -->
+  <div class="strategy">
+    <h3>给 ToC 创业者的 5 条关键洞察</h3>
+    <div class="strategy-grid">
+      <div class="strategy-item">
+        <div class="num">01</div>
+        <h4>修图 > 创作</h4>
+        <p>75% 的用户行为是"上传已有照片修改"而非"从零创作"。产品设计应以"编辑已有照片"为核心入口，而非空白的文生图画布。</p>
+      </div>
+      <div class="strategy-item">
+        <div class="num">02</div>
+        <h4>情绪价值 = 付费意愿</h4>
+        <p>用户愿意为"像自己但更美"的结果付费。AI 写真 12.9% 付费转化率远超行业 8% 均值。"咖啡可以少喝，情绪价值必须要有。"</p>
+      </div>
+      <div class="strategy-item">
+        <div class="num">03</div>
+        <h4>病毒传播是增长引擎</h4>
+        <p>AI 生图天然具备社交分享属性。设计"分享即获客"机制——用户每次分享到朋友圈/小红书都是免费推广。豆包 P 图口令分享是教科书案例。</p>
+      </div>
+      <div class="strategy-item">
+        <div class="num">04</div>
+        <h4>避开 OS 级降维打击</h4>
+        <p>Apple Image Playground、Google Gemini、Samsung 已内置 AI 修图。通用修图/增强功能会被 OS 吞噬，必须在垂直场景和情感价值上建立壁垒。</p>
+      </div>
+      <div class="strategy-item">
+        <div class="num">05</div>
+        <h4>混合变现优于纯订阅</h4>
+        <p>用户订阅疲劳严重。美图"订阅 + 积分 + 单次购买"混合模式验证成功。按次付费（8.8-12 元/次）对低频高情绪场景转化更好。</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>本报告基于公开市场调研数据编制，评分仅供参考。ToC 产品的成功高度依赖执行力和运营能力。</p>
+  <p style="margin-top: 8px;">Generated 2026.08 · ToC AIGC Image Generation Product Ideation</p>
+</div>
+
+<script>
+const ideas = [
+  {
+    rank: 1,
+    name: "AI 写真平台",
+    tagline: "上传自拍 → 生成多风格个人写真，替代实体照相馆",
+    market: "AI 写真市场 2025 年活跃用户 4120 万，18-25 岁女性占 63.8%，月均使用 24.7 分钟。付费转化率 12.9%（远超行业 8% 均值）。直接对标海马体（300-600 元/次）和天真蓝，AI 写真 8.8-12 元/次，24 小时内交付。美图 AI 写真已验证需求但仍有痛点：'买了一个陌生人的脸'。",
+    opportunity: "核心痛点是身份保持——用户要的是'像自己但更美'，不是'漂亮的陌生人'。空白：①更精准的 face ID 保持 ②差异化风格（国风/赛博朋克/职场/婚纱/孕期写真）③一键多场景批量生成 ④社交分享优化（小红书/朋友圈尺寸预设）。豆包免费 P 图分流低端用户，但高质量写真仍有付费空间。按次付费（8.8 元）+ 月订阅双模式。",
+    dataPoint: "4120万活跃用户 | 12.9%付费转化 | 8.8元/次",
+    scores: { market: 9, competition: 5, tech: 8, monetization: 9, timing: 7 },
+    chips: [{text: "刚需市场", type: "hot"}, {text: "高转化率", type: "warm"}, {text: "女性主导", type: "pink"}, {text: "美图竞争", type: "cool"}]
+  },
+  {
+    rank: 2,
+    name: "AI 婚纱照生成",
+    tagline: "不用拍婚纱照，AI 帮你生成全球场景婚纱大片",
+    market: "中国婚纱摄影市场约 2800 亿元，AI 婚纱照目前占 5%，预计 2030 年达 15%。2025 年底开始兴起，价格从 50 元/张到 1000+ 元/套。传统婚纱照拍摄成本数千到数万元，需 1-3 天。AI 可在数小时内交付，成本降低 90%+。",
+    opportunity: "极早期市场，格局未定。空白：①多场景切换（教堂/海边/古堡/雪山/太空）②婚纱款式自由切换 ③双人合照身份一致性 ④交付精美电子相册 + 可打印高分辨率 ⑤结合婚礼邀请函/请柬设计。情感价值极高，用户付费意愿强。与婚庆平台（婚礼纪/美团婚庆）合作可快速获客。婚纱照是低频高客单场景，50-1000 元定价灵活。",
+    dataPoint: "2800亿市场 | 5%→15%增长 | 50-1000元/套",
+    scores: { market: 8, competition: 7, tech: 7, monetization: 8, timing: 8 },
+    chips: [{text: "蓝海市场", type: "hot"}, {text: "高客单价", type: "warm"}, {text: "情感消费", type: "pink"}, {text: "低频高价", type: "neutral"}]
+  },
+  {
+    rank: 3,
+    name: "AI 虚拟试衣间",
+    tagline: "上传一张照片，试穿全网衣服，还能分享穿搭",
+    market: "阿里巴巴 Lookie 2025 年 8 月上线，亚马逊 2026 年覆盖 20 万+ 服饰。天猫双 11 首次全面部署 AI 试衣，京东推出独立 AI 购物 App。中国女装退货率高达 60-70%，试衣是刚需。穿搭社区模式类似早期小红书。",
+    opportunity: "大平台在做基础设施，但独立社交化试衣平台仍空白。空白：①跨品牌虚拟衣橱（不受限于单一电商）②穿搭社区 + AI 试穿融合（试穿→分享→讨论→发现）③身材多样性（不同身高/体重/肤色）④穿搭日记（记录每日穿搭 + AI 优化建议）。 monetization：会员订阅 + 电商 CPS 分成 + 品牌合作。",
+    dataPoint: "女装退货率60%+ | 阿里/亚马逊入场 | 社区化机会",
+    scores: { market: 9, competition: 6, tech: 7, monetization: 8, timing: 8 },
+    chips: [{text: "巨头入场", type: "hot"}, {text: "社交化空白", type: "warm"}, {text: "CPS分成", type: "neutral"}, {text: "高频使用", type: "pink"}]
+  },
+  {
+    rank: 4,
+    name: "AI 儿童绘本定制",
+    tagline: "输入故事 → AI 生成角色一致的定制绘本，可印刷寄送",
+    market: "Neolemon 验证模式（$29/月无限或 $99 终身），中国某工作室用通义万相 3 天完成 6 个角色设计，2 周上线绘本，首月收入超 3 万元。儿童绘本市场规模超百亿，家长付费意愿强。角色跨页一致性是技术核心壁垒。",
+    opportunity: "市场早期，竞争少。空白：①角色一致性技术（同一孩子在每页保持相同发型/五官）②多画风选择（水彩/蜡笔/3D/剪纸）③自定义角色（上传孩子照片 → 绘本主角像孩子）④印刷寄送一站式 ⑤教育主题模板（安全教育/情绪管理/习惯养成）。定价：电子版 19.9-39.9 元，印刷版 99-199 元。家长群/小红书传播效果极好。",
+    dataPoint: "Neolemon $99终身 | 首月3万+ | 印刷+电子双模式",
+    scores: { market: 7, competition: 8, tech: 7, monetization: 7, timing: 8 },
+    chips: [{text: "竞争少", type: "hot"}, {text: "家长付费", type: "warm"}, {text: "印刷变现", type: "neutral"}, {text: "口碑传播", type: "pink"}]
+  },
+  {
+    rank: 5,
+    name: "AI 老照片修复与复活",
+    tagline: "修复破损老照片、黑白上色、让逝者亲人'再次微笑'",
+    market: "Nostalgia AI 拥有 100 万+ 用户，主打'Bring Memories Back to Life'。jpgHD 是国内头部老照片修复工具。ChatGPT/Gemini 2026 年已支持免费修复，但情感体验和一站式服务仍是空白。中国老龄化加速，银发经济中怀旧需求旺盛。",
+    opportunity: "技术门槛降低（通用 AI 能修复），但情感体验和产品化是空白。空白：①一站式流程（扫描→修复→上色→面部动画→视频化）②物理照片数字化扫描指导 ③家庭记忆相册（修复多人合影 + 标注亲属关系）④节日营销（清明/重阳/春节全家福修复）⑤可订购实体相册印刷。情感价值极高，用户付费意愿强。定价：单张 9.9-19.9 元，相册套餐 99-299 元。",
+    dataPoint: "Nostalgia AI 100万+用户 | 情感刚需 | 银发经济",
+    scores: { market: 7, competition: 7, tech: 8, monetization: 7, timing: 8 },
+    chips: [{text: "情感价值", type: "hot"}, {text: "银发经济", type: "warm"}, {text: "节日营销", type: "neutral"}, {text: "口碑传播", type: "pink"}]
+  },
+  {
+    rank: 6,
+    name: "AI 宠物艺术写真",
+    tagline: "宠物照片 → 文艺复兴油画/日漫风/宇航员等艺术写真",
+    market: "Etsy 创作者 CosmicPaws 用 AI 生成宠物肖像，月均收入 $8400，14 个月 2200+ 单。PetImage 提供 36+ 艺术模板。中国宠物经济超 3000 亿元，养宠家庭超 1 亿。宠物主付费意愿极强（'毛孩子'情感投射）。",
+    opportunity: "空白：①更多艺术风格（敦煌壁画/浮世绘/赛博朋克/宫崎骏）②宠物 + 主人合照风格化 ③宠物 IP 化（生成宠物漫画/表情包/周边）④实物产品对接（马克杯/抱枕/帆布画/手机壳印刷寄送）⑤宠物纪念日/生日专属模板。定价：电子版 9.9-29.9 元，实体周边 49-199 元。小红书/抖音宠物内容传播性极强。",
+    dataPoint: "$8400/月收入 | 宠物经济3000亿+ | 实物周边变现",
+    scores: { market: 6, competition: 8, tech: 8, monetization: 7, timing: 7 },
+    chips: [{text: "已验证变现", type: "hot"}, {text: "情感消费", type: "pink"}, {text: "周边变现", type: "neutral"}, {text: "社交传播", type: "warm"}]
+  },
+  {
+    rank: 7,
+    name: "AI 个人周边定制",
+    tagline: "AI 生成专属艺术图案 → 一键定制 T 恤/手机壳/帆布袋/挂画",
+    market: "个性化礼品市场 2026 年估值 $40.88 万亿，预计 2035 年达 $102.77 万亿，57%+ 企业已接入自动化定制技术。AI 生图 + 按需印刷 (POD) 模式成熟。消费者对个性化表达需求持续增长。",
+    opportunity: "空白：①AI 生成 → 实物一站式（生成图案→预览实物效果→下单印刷→寄送）②场景化模板（情侣/亲子/宠物/毕业/生日/节日）③AI 风格匹配（根据用户照片/性格生成匹配风格图案）④社群裂变（分享设计→他人可购买同款→创作者分成）。Printful/Printify 提供 POD 后端，前端体验和 AI 生成是核心壁垒。",
+    dataPoint: "$40万亿+市场 | POD后端成熟 | 一站式空白",
+    scores: { market: 6, competition: 8, tech: 7, monetization: 8, timing: 7 },
+    chips: [{text: "巨市场", type: "hot"}, {text: "实物变现", type: "warm"}, {text: "POD成熟", type: "neutral"}, {text: "裂变增长", type: "pink"}]
+  },
+  {
+    rank: 8,
+    name: "AI 时光机",
+    tagline: "穿越时空——看见自己在唐朝/民国/未来/不同国家的样子",
+    market: "AI Yearbook（90 年代毕业照）拥有'最大的持续搜索热度'。'Born in Different Countries'（一国多版本）是年度最多转发格式之一。香港电影海报风格、CCD 复古风、Y2K 翻盖手机风在 TikTok 爆火。病毒传播潜力极高。",
+    opportunity: "现有产品做单点效果（仅年款/仅国籍），无一站式平台。空白：①多时代穿越（唐朝/民国/80 年代/未来）②多国家风格（12 国造型网格）③电影海报风（王家卫/好莱坞/宝莱坞）④复古相机风（CCD/翻盖机/宝丽来）⑤一键生成网格对比图，社交分享优化。低门槛 + 高传播 = 病毒增长引擎。定价：免费生成带水印 + 9.9 元去水印/高清导出。",
+    dataPoint: "年度最火病毒格式 | 搜索热度最高 | 网格对比图",
+    scores: { market: 7, competition: 8, tech: 7, monetization: 6, timing: 7 },
+    chips: [{text: "病毒潜力", type: "hot"}, {text: "竞争空白", type: "warm"}, {text: "低变现", type: "cool"}, {text: "社交传播", type: "pink"}]
+  },
+  {
+    rank: 9,
+    name: "AI 全家福合成",
+    tagline: "异地家人 AI 合影——不在同一张照片也能拍全家福",
+    market: "春节/中秋全家福是刚需场景。传统全家福需全家到场拍摄，异地家庭难以实现。AI 合成技术成熟（多人物身份保持 + 场景融合）。中国 3 亿+ 流动人口，异地家庭占比高。",
+    opportunity: "空白：①多人身份保持（每人上传一张照片 → 合成合影）②场景选择（年夜饭/全家福画/旅行/老家院子）③服饰统一（唐装/全家同色系）④春节/中秋/父亲节/母亲节节日模板 ⑤可印刷成实体相框寄送。情感价值极高，节日营销节点明确。定价：电子版 9.9-19.9 元，实体相框 99-199 元。春节前 1 个月是爆发期。",
+    dataPoint: "3亿+流动人口 | 春节刚需 | 实体相框变现",
+    scores: { market: 7, competition: 8, tech: 6, monetization: 7, timing: 7 },
+    chips: [{text: "节日刚需", type: "hot"}, {text: "情感消费", type: "pink"}, {text: "技术挑战", type: "warm"}, {text: "实体变现", type: "neutral"}]
+  },
+  {
+    rank: 10,
+    name: "AI 情侣/闺蜜合照生成",
+    tagline: "两张单人照 → 生成亲密合照，异地恋/闺蜜的社交利器",
+    market: "AI Polaroid 加第二人是热门格式——'让不在场的人出现在照片里'。情侣/闺蜜合照需求高频。抖音/小红书上'AI 合照'相关内容传播性强。异地恋群体（中国超 2000 万对）是核心用户。",
+    opportunity: "空白：①双人身份保持（两人各自上传 → 合成自然合照）②场景选择（咖啡馆/海边/雪景/樱花/夜景）③互动姿势模板（拥抱/对视/背靠背/比心）④节日营销（情人节/520/七夕/闺蜜日）⑤生成情侣头像套装 + 朋友圈配文。定价：9.9 元/组，月订阅 19.9 元。社交分享是核心增长引擎。",
+    dataPoint: "2000万+异地恋 | Polaroid热门格式 | 社交利器",
+    scores: { market: 7, competition: 7, tech: 6, monetization: 7, timing: 7 },
+    chips: [{text: "高频需求", type: "warm"}, {text: "社交传播", type: "pink"}, {text: "节日营销", type: "neutral"}, {text: "技术挑战", type: "cool"}]
+  },
+  {
+    rank: 11,
+    name: "AI 表情包/贴纸工坊",
+    tagline: "上传自拍/宠物照 → 一键生成专属表情包套装",
+    market: "微信表情包日均发送量数十亿次。自定义表情包在年轻群体中需求旺盛。AI 贴纸生成在亚洲市场增长中。现有工具（微信表情开放平台）门槛高，需手绘。",
+    opportunity: "空白：①上传照片 → 自动抠图 → 多表情生成（开心/哭泣/生气/OK/加油/谢谢）②热门梗图模板（打工人/摸鱼/社死/真香/EMO）③文字气泡编辑器 ④一键导入微信/iMessage/Telegram ⑤套餐化（一套 12/24/48 张）。定价：免费 3 张试用，9.9 元/套。群聊分享是自然传播路径。",
+    dataPoint: "日均数十亿发送 | 年轻群体刚需 | 群聊传播",
+    scores: { market: 6, competition: 7, tech: 8, monetization: 6, timing: 6 },
+    chips: [{text: "高频使用", type: "warm"}, {text: "低客单", type: "cool"}, {text: "群聊传播", type: "pink"}, {text: "技术成熟", type: "neutral"}]
+  },
+  {
+    rank: 12,
+    name: "AI 回忆相册",
+    tagline: "选一组照片 → AI 自动排版配文生成故事相册",
+    market: "用户手机中有大量照片但缺乏整理和故事化呈现。传统相册制作工具（Canva/美图秀秀）需手动操作。AI 可自动选片、排版、配文、配乐。毕业季/旅行季/纪念日是高峰场景。",
+    opportunity: "空白：①AI 自动选片（从 100 张旅行照中选出最佳 20 张）②智能排版（根据照片内容自动选择布局/配色/字体）③AI 配文（根据场景生成文案）④动态相册（照片→短视频 with 音乐）⑤一键分享/印刷。与摄影 App/手机厂商合作预装是获客路径。定价：免费基础版 + 19.9 元高级模板/导出。",
+    dataPoint: "手机照片爆炸增长 | 手动排版痛点 | 毕业旅行场景",
+    scores: { market: 6, competition: 8, tech: 6, monetization: 6, timing: 7 },
+    chips: [{text: "场景明确", type: "warm"}, {text: "技术挑战", type: "cool"}, {text: "模板变现", type: "neutral"}, {text: "预装获客", type: "pink"}]
+  },
+  {
+    rank: 13,
+    name: "AI 博主配图助手",
+    tagline: "输入文案 → 自动生成小红书/朋友圈风格配图",
+    market: "小红书月活 3 亿+，博主日均产出 40-60 条内容。GPT Image 2 被用于生成小红书种草图（3:4 竖版、自然光、非居中构图）。FLUX 小红书真实风模型已有本地部署版。内容创作者对配图效率需求极高。",
+    opportunity: "空白：①输入文案 → 自动生成匹配配图（理解内容语义选择视觉风格）②小红书爆款排版（文字叠加/拼图/对比图）③一键多尺寸（小红书/朋友圈/抖音封面/公众号头图）④品牌色/风格锁定（系列内容视觉统一）⑤热门视觉风格追踪（每周更新爆款风格模板）。定价：月订阅 29.9-49.9 元。面向自媒体/MCN/微商群体。",
+    dataPoint: "小红书3亿+月活 | 博主日均40-60条 | 多尺寸刚需",
+    scores: { market: 7, competition: 6, tech: 7, monetization: 6, timing: 7 },
+    chips: [{text: "创作者刚需", type: "warm"}, {text: "竞争中等", type: "neutral"}, {text: "订阅变现", type: "neutral"}, {text: "多平台", type: "pink"}]
+  },
+  {
+    rank: 14,
+    name: "AI 风格化摄影",
+    tagline: "一键将照片转为油画/水彩/动漫/黏土动画风格",
+    market: "AI 黏土动画风在 TikTok 30 天超 1.3 亿播放。香港电影海报、CCD 复古风、Y2K 翻盖机风爆火。但风格化赛道竞争激烈——美图/醒图/豆包/可图均有滤镜功能。通用风格化已被 OS 和大 App 吞噬。",
+    opportunity: "竞争红海。通用风格化难以独立存活，必须绑定垂直场景。仅有空间：①极致单一风格做到最好（如仅做黏土动画风，做到行业第一）②风格 + 实物结合（风格化照片→印刷成画/手机壳）③风格 NFT/数字藏品 ④批量风格化（整本相册一键转换）。不建议作为独立产品方向，更适合作为其他产品的功能模块。",
+    dataPoint: "黏土风1.3亿播放 | 竞争红海 | OS吞噬通用功能",
+    scores: { market: 7, competition: 4, tech: 8, monetization: 6, timing: 6 },
+    chips: [{text: "竞争红海", type: "cool"}, {text: "技术成熟", type: "neutral"}, {text: "病毒潜力", type: "hot"}, {text: "不适合独立", type: "cool"}]
+  },
+  {
+    rank: 15,
+    name: "AI 证件照",
+    tagline: "手机自拍 → 一键生成各规格证件照（1 寸/2 寸/护照/签证）",
+    market: "证件照是刚需场景，美图/简单 AI/乐乐证件照等已有成熟产品。微信小程序生态中证件照工具密集。技术高度成熟（AI 抠图 + 背景替换 + 服装替换 8 秒完成）。市场已高度商品化。",
+    opportunity: "市场已饱和，竞争激烈，价格战严重。唯一差异化方向：①海外签证照（多国签证规格 + 合规检测）②求职形象照（证件照 + AI 西装 + 简历头像套装）③与企业/学校合作批量证件照。不建议作为独立创业方向，更适合作为流量入口功能。",
+    dataPoint: "市场饱和 | 8秒出图 | 价格战严重",
+    scores: { market: 7, competition: 4, tech: 9, monetization: 5, timing: 4 },
+    chips: [{text: "市场饱和", type: "cool"}, {text: "技术成熟", type: "neutral"}, {text: "价格战", type: "cool"}, {text: "流量入口", type: "warm"}]
+  }
+];
+
+function calcTotal(s) {
+  return (s.market * 0.25 + s.competition * 0.25 + s.tech * 0.20 + s.monetization * 0.20 + s.timing * 0.10).toFixed(1);
+}
+
+function scoreClass(v) {
+  if (v >= 8) return 'high';
+  if (v >= 6) return 'mid';
+  return 'low';
+}
+
+// 渲染汇总表
+const summaryBody = document.getElementById('summary-body');
+ideas.forEach(idea => {
+  const total = calcTotal(idea.scores);
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td class="rank-cell">${idea.rank}</td>
+    <td><strong>${idea.name}</strong></td>
+    <td>${idea.scores.market}</td>
+    <td>${idea.scores.competition}</td>
+    <td>${idea.scores.tech}</td>
+    <td>${idea.scores.monetization}</td>
+    <td>${idea.scores.timing}</td>
+    <td class="total-cell">${total}</td>
+  `;
+  summaryBody.appendChild(row);
+});
+
+// 渲染详细卡片
+const list = document.getElementById('ranking-list');
+ideas.forEach(idea => {
+  const total = calcTotal(idea.scores);
+  const card = document.createElement('div');
+  card.className = 'rank-card';
+  card.dataset.rank = idea.rank;
+
+  const scores = [
+    { label: '市场潜力', val: idea.scores.market },
+    { label: '竞争空白', val: idea.scores.competition },
+    { label: '技术可行', val: idea.scores.tech },
+    { label: '商业变现', val: idea.scores.monetization },
+    { label: '时机窗口', val: idea.scores.timing }
+  ];
+
+  const scoreChips = scores.map(s => `
+    <div class="score-chip">
+      <span class="score-label">${s.label}</span>
+      <div class="score-bar"><div class="score-fill ${scoreClass(s.val)}" style="width: ${s.val * 10}%"></div></div>
+      <span class="score-val">${s.val}</span>
+    </div>
+  `).join('');
+
+  const chips = idea.chips.map(c => `<span class="chip ${c.type}">${c.text}</span>`).join('');
+  const dataPoint = idea.dataPoint ? `<div class="data-point">📊 ${idea.dataPoint}</div>` : '';
+
+  card.innerHTML = `
+    <div class="rank-header">
+      <div class="rank-number">${idea.rank}</div>
+      <div class="rank-title">
+        <h3>${idea.name} <span style="color: var(--gold); font-size: 16px; margin-left: 8px;">★ ${total}</span></h3>
+        <p class="tagline">${idea.tagline}</p>
+      </div>
+    </div>
+    <div class="rank-body">
+      <div class="col">
+        <h4>市场分析</h4>
+        <p>${idea.market}</p>
+        ${dataPoint}
+      </div>
+      <div class="col">
+        <h4>机会空白</h4>
+        <p>${idea.opportunity}</p>
+      </div>
+    </div>
+    <div class="market-chips">${chips}</div>
+    <div class="score-row">${scoreChips}</div>
+  `;
+  list.appendChild(card);
+});
+</script>
+
+</body>
+</html>
