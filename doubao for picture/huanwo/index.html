@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="幻我 AI 造像馆 — 上传照片，AI 一键生成你的专属 IP 头像与写真。二次元、国风、Q版、赛博朋克等 8 大风格任选。">
+<meta name="theme-color" content="#FF5A79">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23FF5A79'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='800'>幻</text></svg>">
+<title>幻我 · AI 造像馆 — 一张自拍，千面人生</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== 顶部栏 ===== -->
+  <header class="app-header">
+    <div class="app-header__inner">
+      <div class="brand">
+        <span class="brand__logo">幻</span>
+        <span class="brand__name">幻我 <em>AI 造像</em></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== 主内容区 ===== -->
+  <main class="app-main">
+
+    <!-- ========== 首页 ========== -->
+    <section class="view is-active" id="view-home" aria-label="首页">
+
+      <div class="hero">
+        <span class="hero__eyebrow">AI 造像馆</span>
+        <h1 class="hero__title">一张自拍，<br>千面人生</h1>
+        <p class="hero__sub">上传照片，AI 一键生成你的专属 IP 头像与写真 · 8 大风格任选</p>
+        <div class="hero__actions">
+          <button class="btn btn--primary btn--lg" data-goto="studio">
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.9 4.8L18.7 9.7l-4.8 1.9L12 16.4l-1.9-4.8L5.3 9.7l4.8-1.9L12 3Z"/><path d="M19 14l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z"/></svg>
+            立即创作
+          </button>
+          <button class="btn btn--ghost btn--lg" data-goto="gallery">看我的作品</button>
+        </div>
+      </div>
+
+      <section class="home-sec" aria-label="使用场景">
+        <div class="sec-head"><h2>他们都在用</h2></div>
+        <div class="scenario-grid">
+          <div class="scenario">
+            <span class="scenario__ico">
+              <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6.5 8-6.5s8 2.5 8 6.5v1H4v-1Z"/></svg>
+            </span>
+            <h4>头像焕新</h4>
+            <p>社交平台换上新形象，告别万年旧照</p>
+          </div>
+          <div class="scenario">
+            <span class="scenario__ico">
+              <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.7-7-10a4.5 4.5 0 0 1 8-2.6l1 1 1-1A4.5 4.5 0 0 1 19 11c0 5.3-7 10-7 10Z"/></svg>
+            </span>
+            <h4>情侣合照</h4>
+            <p>异地也能有一张「同框」纪念照</p>
+          </div>
+          <div class="scenario">
+            <span class="scenario__ico">
+              <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="15" rx="4.5" ry="3.5"/><circle cx="6.5" cy="10" r="1.8"/><circle cx="10" cy="6.5" r="1.8"/><circle cx="14" cy="6.5" r="1.8"/><circle cx="17.5" cy="10" r="1.8"/></svg>
+            </span>
+            <h4>宠物拟人</h4>
+            <p>把毛孩子变成可爱的卡通人物</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="home-sec home-sec--cta">
+        <p class="cta-lead">上传一张照片，开启你的千面人生</p>
+        <button class="btn btn--primary btn--lg" data-goto="studio">立即创作</button>
+      </section>
+    </section>
+
+    <!-- ========== 创作 ========== -->
+    <section class="view" id="view-studio" aria-label="创作">
+
+      <div class="view__head">
+        <h2>创作</h2>
+        <p>上传照片 → 选择风格 → 一键生成</p>
+      </div>
+
+      <div class="steps" aria-hidden="true">
+        <span class="step is-done" data-step="1">1 上传</span>
+        <span class="step" data-step="2">2 风格</span>
+        <span class="step" data-step="3">3 生成</span>
+      </div>
+
+      <section class="panel" aria-label="第一步 上传照片">
+        <h3><em>1</em> 上传照片</h3>
+        <div class="upload" id="uploadZone" role="button" tabindex="0" aria-label="上传照片">
+          <input type="file" id="fileInput" accept="image/*" multiple hidden>
+          <div class="upload__hint">
+            <span class="upload__ico">
+              <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 4 9.5 2.5h5L16 4h3a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3Zm4 4a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z"/></svg>
+            </span>
+            <span>点击或拖拽上传</span>
+            <small>1–3 张 · 正面清晰照片效果最佳</small>
+          </div>
+        </div>
+        <div class="upload__thumbs" id="uploadThumbs"></div>
+      </section>
+
+      <section class="panel" id="stepStyle" aria-label="第二步 选择风格">
+        <h3><em>2</em> 选择风格</h3>
+        <div class="style-grid" id="styleGrid"><!-- 由 JS 渲染 --></div>
+      </section>
+
+      <section class="panel" id="stepOptions" aria-label="附加描述与生成设置">
+        <h3><em>3</em> 附加描述 <span class="panel__optional">（可选）</span></h3>
+        <div class="prompt-box">
+          <textarea id="promptInput" rows="2" placeholder="想让画面里有什么？例如：戴眼镜的男生，校园背景，微笑表情" maxlength="200"></textarea>
+          <span class="prompt-box__count" id="promptCount">0/200</span>
+        </div>
+
+        <div class="gen-settings">
+          <div class="gen-settings__group">
+            <label class="gen-settings__label">数量</label>
+            <div class="seg" id="countSeg" role="radiogroup" aria-label="生成数量">
+              <button class="seg__item" data-count="2">2 张</button>
+              <button class="seg__item is-active" data-count="4">4 张</button>
+              <button class="seg__item" data-count="6">6 张</button>
+            </div>
+          </div>
+          <div class="gen-settings__group">
+            <label class="gen-settings__label">比例</label>
+            <div class="seg" id="ratioSeg" role="radiogroup" aria-label="图片比例">
+              <button class="seg__item is-active" data-ratio="1:1">1:1</button>
+              <button class="seg__item" data-ratio="3:4">3:4</button>
+              <button class="seg__item" data-ratio="9:16">9:16</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <button class="fab" id="genFab" role="button" tabindex="0" aria-label="开始生成" hidden>
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.9 4.8L18.7 9.7l-4.8 1.9L12 16.4l-1.9-4.8L5.3 9.7l4.8-1.9L12 3Z"/><path d="M19 14l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z"/></svg>
+        开始生成
+      </button>
+
+      <section class="panel" id="stepResult" aria-label="第三步 生成结果" hidden>
+        <h3><em>3</em> 生成结果</h3>
+        <p class="result-tip">点击图片可放大 · 下载或收藏到「我的作品」</p>
+        <div class="result-grid" id="resultGrid"><!-- 由 JS 渲染 --></div>
+        <div class="result-actions">
+          <button class="btn btn--ghost" id="btnRegen">
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7Z"/></svg>
+            换一批
+          </button>
+          <button class="btn btn--primary" id="btnMore">再生成一组</button>
+        </div>
+      </section>
+
+      <div class="demo-banner" id="demoBanner" hidden>当前为预览模式，结果图为示例占位；接入大模型 API 后即可真实生成。</div>
+    </section>
+
+    <!-- ========== 作品 ========== -->
+    <section class="view" id="view-gallery" aria-label="我的作品">
+      <div class="view__head">
+        <h2>我的作品</h2>
+        <p>收藏的每一次生成</p>
+      </div>
+      <div class="empty" id="galleryEmpty" hidden>
+        <span class="empty__ico">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5Zm3.5 3.5a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6ZM5 16l3.5-3 2.5 2 3-2.5L19 16H5Z"/></svg>
+        </span>
+        <p>还没有收藏的作品</p>
+        <button class="btn btn--primary" data-goto="studio">去创作一张</button>
+      </div>
+      <div class="result-grid" id="galleryGrid"></div>
+    </section>
+
+    <!-- ========== 我的 ========== -->
+    <section class="view" id="view-me" aria-label="我的">
+      <div class="view__head"><h2>我的</h2></div>
+
+      <div class="panel profile">
+        <div class="profile__avatar">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6.5 8-6.5s8 2.5 8 6.5v1H4v-1Z"/></svg>
+        </div>
+        <div class="profile__info">
+          <h3>创作者</h3>
+          <p>邀请码用户</p>
+        </div>
+      </div>
+
+      <section class="panel" aria-label="邀请码">
+        <h3>我的邀请码</h3>
+        <p class="panel__desc">当前使用的邀请码</p>
+        <div class="invite-code-display" id="inviteCodeDisplay">—</div>
+        <button class="btn btn--ghost btn--block" id="btnChangeInvite" style="margin-top:12px;">更换邀请码</button>
+      </section>
+
+      <section class="panel" aria-label="关于">
+        <h3>关于</h3>
+        <ul class="plain-list">
+          <li>隐私说明：照片仅用于本次生成，不对外存储</li>
+          <li>内容合规：生成内容遵循平台规范与相关法规</li>
+          <li>版本：v0.1 · 前端预览版</li>
+        </ul>
+      </section>
+    </section>
+  </main>
+
+  <!-- ===== 底部导航 ===== -->
+  <nav class="tabbar" aria-label="主导航">
+    <button class="tabbar__item is-active" data-view="home" aria-label="首页">
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 3 10.5V21h6v-6h6v6h6V10.5L12 3Z"/></svg>
+      首页
+    </button>
+    <button class="tabbar__item" data-view="studio" aria-label="创作">
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 19.5 15 9l-3-3L1.5 16.5l3 3Z"/><circle cx="18" cy="6" r="1.8"/><circle cx="20.5" cy="10" r="1.2"/><circle cx="14" cy="3.5" r="1.2"/></svg>
+      创作
+    </button>
+    <button class="tabbar__item" data-view="gallery" aria-label="作品">
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5Zm3.5 3.5a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6ZM5 16l3.5-3 2.5 2 3-2.5L19 16H5Z"/></svg>
+      作品
+    </button>
+    <button class="tabbar__item" data-view="me" aria-label="我的">
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6.5 8-6.5s8 2.5 8 6.5v1H4v-1Z"/></svg>
+      我的
+    </button>
+  </nav>
+</div>
+
+<!-- ===== 邀请码弹窗 ===== -->
+<div class="invite-modal" id="inviteModal" hidden>
+  <div class="invite-modal__panel">
+    <div class="invite-modal__logo">幻</div>
+    <h2 class="invite-modal__title">欢迎使用幻我</h2>
+    <p class="invite-modal__sub">请输入邀请码开启创作</p>
+    <div class="invite-modal__input-wrap">
+      <input type="text" id="inviteInput" class="invite-modal__input" placeholder="请输入邀请码" autocomplete="off" maxlength="32">
+    </div>
+    <p class="invite-modal__error" id="inviteError" hidden>邀请码无效，请重试</p>
+    <button class="btn btn--primary btn--block" id="inviteSubmit">验证并进入</button>
+  </div>
+</div>
+
+<!-- ===== 大图预览弹窗 ===== -->
+<div class="modal" id="modal" hidden>
+  <div class="modal__backdrop" data-close-modal></div>
+  <div class="modal__panel" role="dialog" aria-modal="true" aria-label="作品预览">
+    <button class="modal__close" data-close-modal aria-label="关闭">
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M6.7 5.3a1 1 0 0 0-1.4 1.4L10.6 12l-5.3 5.3a1 1 0 1 0 1.4 1.4L12 13.4l5.3 5.3a1 1 0 0 0 1.4-1.4L13.4 12l5.3-5.3a1 1 0 0 0-1.4-1.4L12 10.6 6.7 5.3Z"/></svg>
+    </button>
+    <img class="modal__img" id="modalImg" alt="作品预览">
+    <div class="modal__actions">
+      <button class="btn btn--ghost" id="modalDownload">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a1 1 0 0 1 1 1v10.6l3.3-3.3a1 1 0 0 1 1.4 1.4l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.4L11 13.6V3a1 1 0 0 1 1-1ZM4 20a1 1 0 0 1 1-1h14a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Z"/></svg>
+        下载
+      </button>
+      <button class="btn btn--ghost" id="modalSave" hidden>
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3 2.6 5.6 6 .8-4.4 4.2 1.1 6L12 16.8 6.7 19.6l1.1-6L3.4 9.4l6-.8L12 3Z"/></svg>
+        收藏
+      </button>
+      <button class="btn btn--ghost btn--danger" id="modalDelete" hidden>
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M7 6h10v1H7V6Zm1.2 2h7.6l-.6 9.2a2 2 0 0 1-2 1.8h-2.4a2 2 0 0 1-2-1.8L8.2 8ZM9 3h6l.7 1.5H8.3L9 3Z"/></svg>
+        删除
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 轻提示 ===== -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/data.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
