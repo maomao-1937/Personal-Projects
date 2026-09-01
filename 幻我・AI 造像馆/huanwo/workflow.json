@@ -1,0 +1,92 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "幻我 · AI 造像馆 — 专属 IP 头像生成工作流",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "happy-path",
+        "label": "完整创作路径",
+        "focus": ["visitor", "invite", "gate", "upload", "style", "proxy", "wanx", "result", "download"],
+        "note": "从输入邀请码开始，完成一张专属 IP 头像的生成与下载。"
+      },
+      {
+        "id": "gate",
+        "label": "邀请码门禁",
+        "focus": ["visitor", "invite", "gate", "reject"],
+        "note": "未验证邀请码的用户被拦截，只有通过门禁才能进入创作。"
+      },
+      {
+        "id": "pipeline",
+        "label": "生成管道",
+        "focus": ["style", "proxy", "wanx", "result"],
+        "note": "前端把照片与风格交给服务端代理，由万相模型异步生成结果。"
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "user", "label": "用户端" },
+    { "id": "frontend", "label": "幻我前端" },
+    { "id": "backend", "label": "服务端代理" },
+    { "id": "ai", "label": "阿里万相" }
+  ],
+  "phases": [
+    { "id": "entry", "label": "准入", "fromCol": 0, "toCol": 1, "variant": "security" },
+    { "id": "create", "label": "创作配置", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "generate", "label": "生成与交付", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "gate_path", "label": "邀请码门禁", "lane": "backend", "fromCol": 0, "toCol": 1, "variant": "security" },
+    { "id": "authoring", "label": "创作配置", "lane": "frontend", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "proxy_path", "label": "API 代理", "lane": "backend", "fromCol": 4, "toCol": 4, "variant": "dashed" },
+    { "id": "gen_path", "label": "万相生成", "lane": "ai", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["visitor", "invite", "gate", "upload", "style", "proxy", "wanx", "result", "download"],
+  "nodes": [
+    { "id": "visitor", "lane": "user", "col": 0, "type": "external", "label": "访客", "sublabel": "打开网页", "width": 150 },
+    { "id": "invite", "lane": "frontend", "col": 0, "type": "frontend", "label": "邀请码弹窗", "sublabel": "输入邀请码", "width": 150 },
+    { "id": "gate", "lane": "backend", "col": 1, "type": "security", "label": "邀请码校验", "sublabel": "POST /api/verify-invite", "tag": "有效则放行", "width": 150 },
+    { "id": "reject", "lane": "backend", "col": 0, "type": "security", "label": "无效拦截", "sublabel": "提示重试", "width": 150 },
+    { "id": "upload", "lane": "frontend", "col": 2, "type": "frontend", "label": "上传照片", "sublabel": "1–3 张 · 拖拽或点击", "width": 150 },
+    { "id": "style", "lane": "frontend", "col": 3, "type": "frontend", "label": "选择风格", "sublabel": "8 大风格 · 附加描述", "width": 150 },
+    { "id": "proxy", "lane": "backend", "col": 4, "type": "backend", "label": "服务端代理", "sublabel": "POST /api/generate", "tag": "OpenAI 兼容", "width": 150 },
+    { "id": "wanx", "lane": "ai", "col": 4, "type": "cloud", "label": "万相 wanx-v1", "sublabel": "图生图 · 异步任务", "width": 150 },
+    { "id": "result", "lane": "frontend", "col": 5, "type": "frontend", "label": "生成结果", "sublabel": "多图网格 · 放大预览", "width": 150 },
+    { "id": "works", "lane": "frontend", "col": 4, "type": "database", "label": "我的作品", "sublabel": "localStorage 收藏", "width": 150 },
+    { "id": "download", "lane": "user", "col": 5, "type": "external", "label": "下载 / 分享", "sublabel": "PNG 保存到本地", "width": 150 }
+  ],
+  "edges": [
+    { "id": "open-site", "from": "visitor", "to": "invite", "variant": "default" },
+    { "id": "submit-code", "from": "invite", "to": "gate", "label": "提交邀请码", "variant": "security" },
+    { "id": "gate-ok", "from": "gate", "to": "upload", "label": "验证通过", "variant": "emphasis", "role": "main" },
+    { "id": "gate-deny", "from": "gate", "to": "reject", "label": "验证失败", "variant": "security", "role": "error" },
+    { "id": "retry-code", "from": "reject", "to": "invite", "label": "重新输入", "variant": "dashed", "role": "branch" },
+    { "id": "upload-photos", "from": "upload", "to": "style", "label": "照片就绪", "variant": "default" },
+    { "id": "pick-style", "from": "style", "to": "proxy", "label": "发起生成", "variant": "emphasis" },
+    { "id": "proxy-call", "from": "proxy", "to": "wanx", "label": "图生图请求", "variant": "default" },
+    { "id": "wanx-back", "from": "wanx", "to": "result", "label": "返回成图", "variant": "emphasis", "role": "return", "fromSide": "right", "toSide": "right", "route": "outside-right", "width": 1.2 },
+    { "id": "result-save", "from": "result", "to": "works", "label": "收藏", "variant": "dashed", "role": "branch" },
+    { "id": "result-dl", "from": "result", "to": "download", "label": "保存", "variant": "emphasis", "role": "main" },
+    { "id": "works-dl", "from": "works", "to": "download", "label": "下载", "variant": "dashed", "role": "branch" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "核心链路",
+      "items": [
+        "邀请码门禁 → 上传照片 → 选风格 → 服务端代理 → 万相生成",
+        "照片与风格经服务端中转，API Key 不暴露到前端"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "产品定位",
+      "items": [
+        "C 端「专属 IP 头像」AIGC 生成产品",
+        "前端原生 HTML/CSS/JS，后端零依赖 Node"
+      ]
+    }
+  ]
+}
