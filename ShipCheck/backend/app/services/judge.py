@@ -32,20 +32,17 @@ def judge_item(
         f"期望: {expected}",
         "证据:",
     ]
-    shot_path = None
     for e in ev_dicts:
-        if e["kind"] == "screenshot" and e.get("path"):
-            shot_path = e["path"]
-        elif e["kind"] != "screenshot":
+        if e["kind"] == "screenshot":
+            # 不走视觉模型:截图仅标注存档,判定基于文本证据
+            user_lines.append(f"- [screenshot] 已截图存档: {e.get('path', '')}")
+        else:
             content = (e.get("content") or "")[:800]
             user_lines.append(f"- [{e['kind']}] {content}")
     user = "\n".join(user_lines)
 
     try:
-        if shot_path:
-            data = llm.vision_complete_json(system, user, shot_path)
-        else:
-            data = llm.complete_json(system, user)
+        data = llm.complete_json(system, user)
     except AppError as e:
         logger.warning("judge LLM failed: %s", e.message)
         return "fail", f"判定调用失败: {e.message}"

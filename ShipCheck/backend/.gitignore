@@ -1,0 +1,10 @@
+# veFaaS 部署 & git 排除
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.env
+data/
+*.db
+.DS_Store
+.vefaas/

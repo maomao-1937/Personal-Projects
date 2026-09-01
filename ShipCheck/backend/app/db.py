@@ -42,6 +42,24 @@ def init_db() -> None:
     # 确保所有模型已导入,Base.metadata 才有表
     from app.models import models  # noqa: F401
     Base.metadata.create_all(bind=engine)
+    _seed_invite_codes()
+
+
+def _seed_invite_codes() -> None:
+    """启动时确保默认邀请码存在(线上 /tmp 易失,重启自动恢复,额度重置)。"""
+    from app.models.models import InviteCode
+    with session_scope() as s:
+        if s.query(InviteCode).filter(InviteCode.code == "SHIP-2026-LAUNCH").first():
+            return
+        s.add(
+            InviteCode(
+                code="SHIP-2026-LAUNCH",
+                max_uses=50,
+                used_count=0,
+                active=True,
+                note="default seed",
+            )
+        )
 
 
 def get_db() -> Iterator[Session]:
