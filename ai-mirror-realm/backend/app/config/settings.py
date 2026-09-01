@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
+
     UPLOAD_DIR: Path = Path(__file__).resolve().parent.parent / "uploads"
     GENERATED_DIR: Path = Path(__file__).resolve().parent.parent / "generated"
 

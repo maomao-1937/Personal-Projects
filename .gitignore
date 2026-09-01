@@ -30,6 +30,13 @@ build/
 # Uploads & Generated (runtime data)
 backend/uploads/
 backend/generated/
+ai-mirror-realm/backend/app/uploads/
+ai-mirror-realm/backend/app/generated/
+backend/test_images/
+ai-mirror-realm/backend/test_images/
+
+# Test artifacts
+test_ai_api.py
 
 # IDE
 .vscode/
