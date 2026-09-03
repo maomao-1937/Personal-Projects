@@ -6,8 +6,15 @@ const baseURL = `http://127.0.0.1:${port}`;
 
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: process.env.PLAYWRIGHT_IGNORE_VISUAL === "1" ? "**/visual.spec.ts" : undefined,
   fullyParallel: false,
-  reporter: "line",
+  workers: process.env.CI ? 1 : undefined,
+  reporter: process.env.CI
+    ? [
+        ["line"],
+        ["html", { open: "never", outputFolder: "playwright-report" }],
+      ]
+    : "line",
   use: {
     baseURL,
     trace: "retain-on-failure",
@@ -21,6 +28,6 @@ export default defineConfig({
   webServer: {
     command: `npm run dev -- --hostname 127.0.0.1 --port ${port}`,
     url: `${baseURL}/projects/demo/storyboard`,
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
   },
 });

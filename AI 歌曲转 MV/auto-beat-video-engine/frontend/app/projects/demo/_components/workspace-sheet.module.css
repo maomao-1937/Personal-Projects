@@ -1,0 +1,66 @@
+.backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  background: color-mix(in srgb, #131826 58%, transparent);
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  color: var(--text-primary);
+  background: var(--bg-panel);
+  box-shadow: -16px 0 48px rgb(0 0 0 / 22%);
+  outline: none;
+}
+
+.right { width: min(480px, 100vw); height: 100%; }
+
+.bottom {
+  align-self: flex-end;
+  width: 100%;
+  max-height: min(78dvh, 720px);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -16px 48px rgb(0 0 0 / 22%);
+}
+
+.full { width: 100%; height: 100%; }
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.title { margin: 0; font-size: 17px; font-weight: 650; }
+
+.closeButton {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  place-items: center;
+  color: var(--text-secondary);
+  background: transparent;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.closeButton:hover { color: var(--text-primary); background: var(--bg-hover); }
+.closeButton:focus-visible { border-color: var(--brand-primary); outline: 2px solid var(--brand-primary); outline-offset: 2px; }
+
+.content { min-height: 0; overflow: auto; padding: 20px; }
+
+@media (max-width: 767px) {
+  .right { width: min(100%, 480px); }
+}
