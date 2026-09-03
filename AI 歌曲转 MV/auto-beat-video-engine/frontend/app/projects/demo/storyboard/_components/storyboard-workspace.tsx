@@ -1,139 +1,104 @@
 "use client";
 
-import { PanelLeft, PanelRight } from "lucide-react";
-import { useState } from "react";
-import { AppHeader } from "./app-header";
-import { AudioContextBar } from "./audio-context-bar";
-import { CutCard } from "./cut-card";
-import { CutInspector } from "./cut-inspector";
-import { PreviewStatusBar } from "./preview-status-bar";
-import { ProjectProgress } from "./project-progress";
-import { SceneNavigator } from "./scene-navigator";
-import { workspaceFixture } from "../_lib/fixtures";
-import { rebuildPreview, retryCut, saveCutDraft } from "../_lib/state";
-
-const sceneCopy: Record<string, string> = {
-  "scene-01": "雨声与灯光中，一辆末班车驶进站台，开启夜幕下的旅程。",
-  "scene-02": "繁华的霁虹街区，行人穿梭，光影交错，表现城市的活力与孤独感。",
-  "scene-03": "雨渐止，清晨的光从天台边缘升起，留下安静而开放的尾声。",
-};
+import { Clapperboard } from "lucide-react";
+import { useRef, useState } from "react";
+import { useDemoProject } from "../../_components/demo-project-provider";
+import type { Shot } from "../../_lib/types";
+import { QuickEditSheet } from "./quick-edit-sheet";
+import { StoryboardCard } from "./storyboard-card";
+import { StoryboardControls } from "./storyboard-controls";
+import styles from "./storyboard-workspace.module.css";
 
 export function StoryboardWorkspace() {
-  const [workspace, setWorkspace] = useState(() => workspaceFixture);
-  const initialCut = workspaceFixture.cuts.find((cut) => cut.id === workspaceFixture.selectedCutId);
-  const [draftPrompt, setDraftPrompt] = useState(() => initialCut?.prompt ?? "");
-  const [savedMessage, setSavedMessage] = useState("");
-  const [scenePanelOpen, setScenePanelOpen] = useState(true);
-  const [inspectorPanelOpen, setInspectorPanelOpen] = useState(false);
+  const { applyShotEdits, project, retryShot } = useDemoProject();
+  const triggerRef = useRef<HTMLElement>(null);
+  const [quickEditShotId, setQuickEditShotId] = useState<string | null>(null);
+  const [quickEditOpen, setQuickEditOpen] = useState(false);
+  const [previewShotId, setPreviewShotId] = useState<string | null>(null);
+  const [generationMessage, setGenerationMessage] = useState("");
+  const selectedModelTier = project.modelTiers.find(
+    (tier) => tier.id === project.selectedModelTierId,
+  ) ?? project.modelTiers[0];
+  const quickEditShot = project.shots.find((shot) => shot.id === quickEditShotId) ?? null;
+  const availableShotCount = project.shots.filter(
+    (shot) => shot.artifactStatus === "available",
+  ).length;
+  const totalDuration = project.shots.reduce((total, shot) => total + shot.durationSec, 0);
+  const durationLabel = `${String(Math.floor(totalDuration / 60)).padStart(2, "0")}:${String(totalDuration % 60).padStart(2, "0")}`;
 
-  const selectedScene = workspace.scenes.find((scene) => scene.id === workspace.selectedSceneId);
-  const sceneCuts = workspace.cuts.filter((cut) => cut.sceneId === workspace.selectedSceneId);
-  const selectedCut = workspace.cuts.find((cut) => cut.id === workspace.selectedCutId);
-
-  function selectScene(sceneId: string) {
-    const firstCut = workspace.cuts.find((cut) => cut.sceneId === sceneId);
-    setWorkspace((current) => ({
-      ...current,
-      selectedSceneId: sceneId,
-      selectedCutId: firstCut?.id ?? "",
-    }));
-    setDraftPrompt(firstCut?.prompt ?? "");
-    setSavedMessage("");
+  function openQuickEdit(shot: Shot, trigger: HTMLElement) {
+    triggerRef.current = trigger;
+    setQuickEditShotId(shot.id);
+    setQuickEditOpen(true);
   }
 
-  function selectCut(cutId: string) {
-    const cut = workspace.cuts.find((item) => item.id === cutId);
-    setWorkspace((current) => ({ ...current, selectedCutId: cutId }));
-    setDraftPrompt(cut?.prompt ?? "");
-    setSavedMessage("");
-  }
-
-  function handleRetry(cutId: string) {
-    setWorkspace((current) => retryCut(current, cutId));
-    setSavedMessage("");
-  }
-
-  function handleSave() {
-    if (!selectedCut) return;
-    setWorkspace((current) => saveCutDraft(current, selectedCut.id, { prompt: draftPrompt }));
-    setSavedMessage("修改已保存到界面预览（未发送到服务端）");
+  function deactivatePreview(shotId: string) {
+    setPreviewShotId((current) => (current === shotId ? null : current));
   }
 
   return (
-    <div className="app-shell">
-      <a className="skip-link" href="#main-content">跳到主内容</a>
-      <AppHeader />
-      <ProjectProgress />
-      <AudioContextBar />
-      <div className="mobile-panel-toggles" aria-label="工作区面板控制">
-        <button
-          type="button"
-          aria-controls="scene-panel"
-          aria-expanded={scenePanelOpen}
-          aria-label="展开或收起场景面板"
-          onClick={() => setScenePanelOpen((open) => !open)}
-        >
-          <PanelLeft aria-hidden="true" size={18} />
-          场景
-        </button>
-        <button
-          type="button"
-          aria-controls="inspector-panel"
-          aria-expanded={inspectorPanelOpen}
-          aria-label="展开或收起 Cut 编辑面板"
-          onClick={() => setInspectorPanelOpen((open) => !open)}
-        >
-          <PanelRight aria-hidden="true" size={18} />
-          Cut 编辑
-        </button>
-      </div>
-      <main className="workspace-grid" id="main-content">
-        <SceneNavigator
-          scenes={workspace.scenes}
-          selectedSceneId={workspace.selectedSceneId}
-          open={scenePanelOpen}
-          onSelectScene={selectScene}
-        />
-        <section className="cut-canvas" aria-label="Cut 画布">
-          <div className="canvas-heading">
-            <div>
-              <h1>{selectedScene?.title ?? "场景"} <span>{selectedScene?.range}</span></h1>
-              <p>剧情描述：{sceneCopy[workspace.selectedSceneId]}</p>
-            </div>
-            <button type="button" className="primary-button">生成全部</button>
+    <div aria-label="故事板工作区" className={styles.workspace} role="region">
+      <header className={styles.pageHeader}>
+        <div>
+          <span className={styles.kicker}>
+            <Clapperboard aria-hidden="true" size={15} />
+            Production board
+          </span>
+          <h1>故事板</h1>
+          <p>将节奏拆成清晰镜头，先看画面，再决定哪些值得生成。</p>
+        </div>
+        <div aria-label={`${project.shots.length} 个镜头 · ${durationLabel}`} className={styles.shotCount}>
+          <strong>{project.shots.length}</strong>
+          <span>{`个镜头 · ${durationLabel}`}</span>
+        </div>
+      </header>
+
+      <StoryboardControls
+        generationTier={selectedModelTier}
+        onGenerateAll={() => {
+          if (!selectedModelTier) return;
+          setGenerationMessage(
+            `将处理 ${project.shots.length} 个镜头，${selectedModelTier.estimatedDuration}。`,
+          );
+        }}
+        visualConcept={project.globalStyle}
+      />
+      {generationMessage ? (
+        <p className={styles.generationStatus} role="status">
+          {generationMessage}
+        </p>
+      ) : null}
+
+      <section aria-label="镜头序列" className={styles.sequence}>
+        <div className={styles.sequenceHeading}>
+          <div>
+            <span>镜头序列</span>
+            <small>单击快速编辑 · 双击或 Enter 打开完整编辑器</small>
           </div>
-          {sceneCuts.length > 0 ? (
-            <div className="cut-grid">
-              {sceneCuts.map((cut) => (
-                <CutCard
-                  cut={cut}
-                  key={cut.id}
-                  selected={cut.id === workspace.selectedCutId}
-                  onSelect={selectCut}
-                  onRetry={handleRetry}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="empty-cuts">
-              <strong>该场景暂无 Cut 预览</strong>
-              <span>F1 仅为霁虹街区提供 4 个可交互镜头。</span>
-            </div>
-          )}
-        </section>
-        <CutInspector
-          cut={selectedCut}
-          draftPrompt={draftPrompt}
-          savedMessage={savedMessage}
-          open={inspectorPanelOpen}
-          onDraftChange={setDraftPrompt}
-          onSave={handleSave}
-          onRetry={handleRetry}
-        />
-      </main>
-      <PreviewStatusBar
-        state={workspace}
-        onRebuild={() => setWorkspace((current) => rebuildPreview(current))}
+          <span className={styles.readySummary}>{availableShotCount} 个画面已就绪</span>
+        </div>
+        <div aria-label="故事板网格" className={styles.grid} role="group">
+          {project.shots.map((shot, index) => (
+            <StoryboardCard
+              key={shot.id}
+              onActivatePreview={setPreviewShotId}
+              onDeactivatePreview={deactivatePreview}
+              onOpenQuickEdit={openQuickEdit}
+              onRetry={retryShot}
+              previewActive={previewShotId === shot.id}
+              priority={index === 0}
+              shot={shot}
+            />
+          ))}
+        </div>
+      </section>
+
+      <QuickEditSheet
+        onApply={applyShotEdits}
+        onOpenChange={setQuickEditOpen}
+        open={quickEditOpen}
+        shot={quickEditShot}
+        triggerRef={triggerRef}
       />
     </div>
   );

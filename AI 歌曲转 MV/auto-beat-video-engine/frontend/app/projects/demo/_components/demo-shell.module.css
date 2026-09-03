@@ -1,0 +1,169 @@
+.shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-rows: 64px minmax(0, 1fr);
+  background: var(--bg-app);
+  color: var(--text-primary);
+}
+
+.skipLink {
+  position: fixed;
+  z-index: 10;
+  top: 8px;
+  left: 8px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: var(--radius-control);
+  color: #fff;
+  background: var(--action-primary-default);
+  transform: translateY(-160%);
+}
+
+.skipLink:hover { background: var(--action-primary-hover); }
+.skipLink:focus-visible {
+  background: var(--action-primary-focus);
+  outline: 2px solid var(--action-primary-focus-ring);
+  outline-offset: 2px;
+  transform: translateY(0);
+}
+
+.workspaceNav {
+  grid-row: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0;
+  border-right: 1px solid var(--border-default);
+  background: var(--bg-panel);
+}
+
+.brand,
+.destination,
+.accountButton {
+  display: grid;
+  place-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  color: #fff;
+  background: var(--brand-primary);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.brand:hover { background: var(--brand-hover); }
+
+.destinations { display: grid; width: 100%; gap: 8px; margin-top: 36px; }
+
+.destination {
+  position: relative;
+  width: 100%;
+  min-height: 48px;
+  gap: 3px;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.destination::before {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  width: 2px;
+  border-radius: 2px;
+  background: transparent;
+  content: "";
+}
+
+.destination:hover { color: var(--text-primary); background: var(--bg-hover); }
+.destination[aria-current="page"] { color: var(--text-primary); background: var(--brand-soft); }
+.destination[aria-current="page"]::before { background: var(--brand-primary); }
+
+.topbar {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-panel);
+}
+
+.projectName,
+.projectStatus { display: flex; align-items: center; }
+.projectName { min-width: 0; gap: 10px; }
+.projectName span,
+.projectStatus { color: var(--text-secondary); font-size: 13px; }
+
+.projectName strong {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectStatus { gap: 18px; }
+.connection { display: flex; align-items: center; gap: 6px; }
+
+.connection::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  content: "";
+}
+
+.accountButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border-default);
+  border-radius: 50%;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: default;
+}
+
+.main { grid-column: 2; min-width: 0; background: var(--bg-app); }
+
+@media (max-width: 767px) {
+  .shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: 52px minmax(0, 1fr); }
+  .workspaceNav {
+    position: fixed;
+    z-index: 20;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: calc(64px + env(safe-area-inset-bottom));
+    flex-direction: row;
+    justify-content: center;
+    padding: 0 0 env(safe-area-inset-bottom);
+    border-top: 1px solid var(--border-default);
+    border-right: 0;
+  }
+  .brand { display: none; }
+  .destinations { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; height: 100%; margin: 0; }
+  .destination { min-height: 64px; }
+  .destination::before { top: 0; right: 22%; bottom: auto; left: 22%; width: auto; height: 2px; }
+  .topbar, .main { grid-column: 1; }
+  .topbar { padding: 0 16px; }
+  .connection { font-size: 0; }
+  .projectStatus { gap: 12px; }
+}
