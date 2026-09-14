@@ -1,0 +1,103 @@
+Warning: truncated output (original token count: 3371)
+Total output lines: 129
+
+DIRECTION CONCEPT SEED (key: 90f58484; mode: operate; source: api; approved pool: c3b204a1eed6; 306/564 human-approved; rerun with --scope direction --mode operate --from 90f58484 --candidate-count 7 to reproduce this roll against this catalog revision)
+ASSIGNED INDEX: 7
+  After ordering the grounded directions by resonance, build candidate
+  7 of your own grounded list; the assignment never points at a
+  challenger. The assignment is the roll, not a suggestion: your top-ranked
+  direction is what every run would ship, so the script decides which grounded
+  direction gets built. Each direction joins a durable visual system to a
+  concrete expression for the requested first surface, decided as one. It must
+  survive the current task plus navigation, quiet and dense content,
+  interaction and state, and a substantially different future surface. In an
+  attended run, present the assigned direction fully committed and offer
+  re-roll. You may add ONE card for your top-ranked grounded candidate when
+  it is not the assigned direction, kicker IMPECCABLE’S PICK, with an honest risk line
+  naming its familiarity; one pick card, never a ranked lineup, and the pick
+  never takes the lead position. When the assignment IS your top candidate,
+  there is no pick card. Re-roll yourself only
+  on named factual grounds, when the assignment cannot carry the product's
+  truth or task; taste is never grounds.
+  The assignment exists to refuse the model's ranking rut, never to outrank
+  the user or the brief. Never expose assignment metadata in user-facing labels.
+CHALLENGERS:
+  1. a green-phosphor terminal in a midnight machine room, where a blinking cursor, scanline glow, and afterimage trails make text feel alive on glass
+     SOURCE ID: signals-instruments-phosphor-terminal-midnight
+     CREATIVE SPARK: The cursor breathes; each typed line lands with a faint bloom and its ghost lingers a half-second after the scroll.
+     SYSTEM GRAMMAR:
+       - Palette/material: P1 phosphor green on near-black curved glass, dimmer green afterimage for history, bright bloom for the cursor line; the tube's dark ground holds all
+       - Type/composition: one monospaced bitmap face in a fixed 80-column field, no other type exists; hierarchy is made of indentation, case, and full-width rules
+       - Topology/navigation: the surface is one continuous scrolling transcript; place is position in the conversation's history.
+       - Controls/state: input is a first-class typed dialogue; system states print themselves rather than appearing as chrome.
+       - Responsive/motion: phosphor bloom and trails scale with capability
+     WEB LEVERAGE: A live transcript log with CSS phosphor glow, searchable history, and full keyboard-first operation.
+     QUALITY BAR: board https://impeccable.style/worlds/cards/signals-instruments-phosphor-terminal-midnight.webp · hero https://impeccable.style/worlds/cards/signals-instruments-phosphor-terminal-midnight-hero.webp
+  2. a data-sublime field, where dense barcode columns and sine lattices strobe in pure black and white
+     SOURCE ID: ikeda-datamatics
+     CREATIVE SPARK: A wall of hairline vertical bars, some black, some white, holds like a frozen barcode. Dense monospace numbers pack the margin. A single sine curve traces the lattice, and for one frame the whole field snaps to its negative.
+     SYSTEM GRAMMAR:
+       - Palette/material: Pure black and pure white only, no grey and no color; flat pixel-crisp bars, hairline rules, and monospace numerics; the occasional full-frame inversion.
+       - Type/composition: One monospace face at data density, set in tight tabular columns; barcode bar-fields and sine curves structure the page
+       - Topology/navigation: Move by data column, by frequency band, and by frame index.
+       - Controls/state: Scan, sample, and invert; selecting a column pulls its numbers into focus while the surrounding field drops to a faint bar pattern.
+       - Responsive/motion: Columns thin and drop from the edges as width shrinks; reduced-motion disables all strobing and holds a single high-contrast still.
+     WEB LEVERAGE: Render the barcode and sine lattice on canvas from a seeded sequence, stepping frames on requestAnimationFrame that halts entirely under prefers-reduced-motion.
+     QUALITY BAR: board https://impeccable.style/worlds/cards/ikeda-datamatics.webp · hero https://impeccable.style/worlds/cards/ikeda-datamatics-hero.webp
+  3. a seamless cyclorama passing from black night through cobalt and rose into white day, where light alone creates an infinite horizon behind the actors
+     SOURCE ID: stagecraft-theater-lighting-cyclorama-dawn
+     CREATIVE SPARK: The curved wall begins as depthless black; a low cobalt band appears, rose gathers above it, and the actors acquire sh…971 tokens truncated…rate flat-ink shape.
+     QUALITY BAR: board https://impeccable.style/worlds/cards/posters-covers-sleeves-wpa-park-poster.webp · hero https://impeccable.style/worlds/cards/posters-covers-sleeves-wpa-park-poster-hero.webp
+  6. a man-machine band identity, where every element is a neon-lit line diagram drawn on a strict traffic grid
+     SOURCE ID: kraftwerk-man-machine
+     CREATIVE SPARK: Red and yellow lines snap along an invisible grid, wiring four identical figures into a diagram of themselves. A single hazard-red rule crosses the page. Everything hums at the frequency of a pedestrian signal turning green.
+     SYSTEM GRAMMAR:
+       - Palette/material: Traffic-signal red, amber, and green on flat black and paper white; enamel-smooth fills with no texture; one hazard red carries every accent.
+       - Type/composition: Geometric sans in tight tracked caps on a visible modular grid; thin neon rules connect labels like a wiring schematic; symmetry and repetition over contrast.
+       - Topology/navigation: Move by grid coordinate, by signal color, and by numbered track.
+       - Controls/state: Wire, route, and cycle; an active node lights its connecting lines from dim rule to full neon, like current reaching a lamp.
+       - Responsive/motion: The grid reflows to fewer columns while keeping every connector orthogonal; reduced-motion lights nodes instantly with no traveling pulse.
+     WEB LEVERAGE: Draw the connector network as a single SVG path set and animate current with stroke-dashoffset, gated behind prefers-reduced-motion.
+     QUALITY BAR: board https://impeccable.style/worlds/cards/kraftwerk-man-machine.webp · hero https://impeccable.style/worlds/cards/kraftwerk-man-machine-hero.webp
+Fuse each challenger before judging it: the challenger supplies the form
+  and its system grammar, the product supplies every fact, and clarity wins
+  conflicts. Weigh the fused result against the assigned direction on exactly
+  two axes, audience identification and product clarity. Losing to strong
+  grounded material is a valid outcome; beating a thin or tool-monoculture
+  list is the point. A fused challenger that wins both axes becomes the build.
+  Close the weighing with a verdict per challenger, decided before any
+  borrowing is considered: wins (beats the assigned direction on both axes),
+  competitive (holds one axis), or declined (loses both). A declined
+  challenger is not spent: name the one discipline of its system the assigned
+  direction lacks, and raise the assigned direction to match before
+  presenting it. A donation transfers ambition and system discipline, never
+  the challenger's clothes; one world owns the page. Write each raise as its
+  own named line on the presented direction, and carry every verdict, kept
+  line, and raise into the decision page payload.
+When you can view images, open the QUALITY BAR board and hero for any
+challenger you weigh seriously and for the world you build. They exist as a
+craft bar, the finish level and commitment the build is expected to reach,
+never as a mockup to copy; your surface serves this product, not that render.
+PRODUCT.md and explicit incumbent brand commitments constrain every direction.
+The seed never chooses exact colors, fonts, tokens, or a user preference, and
+it never permits the world and first surface to be selected independently.
+The CREATIVE SPARK is a complete visual system, not a theme or decorative
+reference. Translate every supplied system rule into the product: palette and
+material, type and composition, topology, controls and states, and adaptation.
+Keep the source's visible character, scale, rhythm, and interaction instead of
+reducing vivid grammar to generic nouns. When the source is already a credible
+interface language, commit to it across navigation, content, controls, and
+states. Otherwise keep a literal carrier only when it becomes functional.
+Ambitious motion, spatial media, or interaction is welcome when it strengthens
+the product without weakening semantics, performance, or fallback behavior.
+TELEMETRY: after the user's choice resolves, rerun this script once with
+  --kind <assigned|pick|challenger|canon> --from 90f58484 --scope direction --mode operate,
+  adding --chosen <challenger-id> when a dealt challenger won and keeping
+  --register <safer|bolder> when the resolved round came from a steered hand.
+  One ping per resolved attended round. The ping is anonymous, the card kind
+  plus the catalog id when one won; your grounded candidates' names never
+  leave the machine, and the ping is skipped automatically when DO_NOT_TRACK
+  or IMPECCABLE_NO_TELEMETRY is set.
+A user- or brief-pinned decision beats the roll, always.
+ASSIGNED INDEX (restated for truncated readers): 7. Build candidate
+7 of your own grounded list; seed key 90f58484.
