@@ -1,0 +1,34 @@
+{
+  "repository": "https://github.com/msitarzewski/agency-agents",
+  "ref": "main",
+  "commit": null,
+  "note": "GitHub commit API rate limited; snapshot pinned by per-file SHA-256, not by commit.",
+  "retrievedAt": "2026-09-13T09:22:21.779910+00:00",
+  "purpose": "Read-only reference; never loaded by product runtime",
+  "files": [
+    {
+      "path": "LICENSE",
+      "local": "LICENSE",
+      "source": "https://raw.githubusercontent.com/msitarzewski/agency-agents/main/LICENSE",
+      "sha256": "9a45258434d5cedf0af73c9ad4771373701225038d246c49219026c33677f66f"
+    },
+    {
+      "path": "engineering/engineering-prompt-engineer.md",
+      "local": "engineering-prompt-engineer.md",
+      "source": "https://raw.githubusercontent.com/msitarzewski/agency-agents/main/engineering/engineering-prompt-engineer.md",
+      "sha256": "625b066e01fca23222b71331833f7851941a6ba800857481ead4ea2420d40081"
+    },
+    {
+      "path": "engineering/engineering-backend-architect.md",
+      "local": "engineering-backend-architect.md",
+      "source": "https://raw.githubusercontent.com/msitarzewski/agency-agents/main/engineering/engineering-backend-architect.md",
+      "sha256": "18f237d054fa91f72a5dcda46a52ddcf7354ea3a3e39e0247629f4ea0f446917"
+    },
+    {
+      "path": "testing/testing-reality-checker.md",
+      "local": "testing-reality-checker.md",
+      "source": "https://raw.githubusercontent.com/msitarzewski/agency-agents/main/testing/testing-reality-checker.md",
+      "sha256": "6d32fcdb114233e13902ec6372d50293b120e85d490b5e81d372c29808f988a1"
+    }
+  ]
+}

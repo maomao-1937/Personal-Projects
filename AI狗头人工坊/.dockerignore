@@ -1,0 +1,12 @@
+node_modules
+dist
+dist-server
+.git
+.env
+.env.*
+docs
+tmp
+tests
+*.log
+.studio-data
+.impeccable

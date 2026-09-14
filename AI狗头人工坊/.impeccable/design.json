@@ -1,0 +1,429 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-14T01:29:42.247860+00:00",
+  "title": "Design System: 狗头人工坊 V4",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "暖白背景",
+        "tonalRamp": [
+          "oklch(15.00% 0.00264 106.45)",
+          "oklch(26.43% 0.00264 106.45)",
+          "oklch(37.86% 0.00264 106.45)",
+          "oklch(49.29% 0.00264 106.45)",
+          "oklch(60.71% 0.00264 106.45)",
+          "oklch(72.14% 0.00264 106.45)",
+          "oklch(83.57% 0.00264 106.45)",
+          "oklch(95.00% 0.00264 106.45)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "白色表面",
+        "tonalRamp": [
+          "oklch(15.00% 0.00000 0.00)",
+          "oklch(26.43% 0.00000 0.00)",
+          "oklch(37.86% 0.00000 0.00)",
+          "oklch(49.29% 0.00000 0.00)",
+          "oklch(60.71% 0.00000 0.00)",
+          "oklch(72.14% 0.00000 0.00)",
+          "oklch(83.57% 0.00000 0.00)",
+          "oklch(95.00% 0.00000 0.00)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "灰白画布",
+        "tonalRamp": [
+          "oklch(15.00% 0.00399 106.48)",
+          "oklch(26.43% 0.00399 106.48)",
+          "oklch(37.86% 0.00399 106.48)",
+          "oklch(49.29% 0.00399 106.48)",
+          "oklch(60.71% 0.00399 106.48)",
+          "oklch(72.14% 0.00399 106.48)",
+          "oklch(83.57% 0.00399 106.48)",
+          "oklch(95.00% 0.00399 106.48)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "灰黑文字",
+        "tonalRamp": [
+          "oklch(15.00% 0.00784 128.79)",
+          "oklch(26.43% 0.00784 128.79)",
+          "oklch(37.86% 0.00784 128.79)",
+          "oklch(49.29% 0.00784 128.79)",
+          "oklch(60.71% 0.00784 128.79)",
+          "oklch(72.14% 0.00784 128.79)",
+          "oklch(83.57% 0.00784 128.79)",
+          "oklch(95.00% 0.00784 128.79)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "secondary-text": {
+        "role": "neutral",
+        "displayName": "辅助灰",
+        "tonalRamp": [
+          "oklch(15.00% 0.01149 125.85)",
+          "oklch(26.43% 0.01149 125.85)",
+          "oklch(37.86% 0.01149 125.85)",
+          "oklch(49.29% 0.01149 125.85)",
+          "oklch(60.71% 0.01149 125.85)",
+          "oklch(72.14% 0.01149 125.85)",
+          "oklch(83.57% 0.01149 125.85)",
+          "oklch(95.00% 0.01149 125.85)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "区域边界",
+        "tonalRamp": [
+          "oklch(15.00% 0.00944 113.17)",
+          "oklch(26.43% 0.00944 113.17)",
+          "oklch(37.86% 0.00944 113.17)",
+          "oklch(49.29% 0.00944 113.17)",
+          "oklch(60.71% 0.00944 113.17)",
+          "oklch(72.14% 0.00944 113.17)",
+          "oklch(83.57% 0.00944 113.17)",
+          "oklch(95.00% 0.00944 113.17)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "control-border": {
+        "role": "neutral",
+        "displayName": "控件边界",
+        "tonalRamp": [
+          "oklch(15.00% 0.01209 123.56)",
+          "oklch(26.43% 0.01209 123.56)",
+          "oklch(37.86% 0.01209 123.56)",
+          "oklch(49.29% 0.01209 123.56)",
+          "oklch(60.71% 0.01209 123.56)",
+          "oklch(72.14% 0.01209 123.56)",
+          "oklch(83.57% 0.01209 123.56)",
+          "oklch(95.00% 0.01209 123.56)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "primary": {
+        "role": "primary",
+        "displayName": "近黑主操作",
+        "tonalRamp": [
+          "oklch(15.00% 0.00784 128.79)",
+          "oklch(26.43% 0.00784 128.79)",
+          "oklch(37.86% 0.00784 128.79)",
+          "oklch(49.29% 0.00784 128.79)",
+          "oklch(60.71% 0.00784 128.79)",
+          "oklch(72.14% 0.00784 128.79)",
+          "oklch(83.57% 0.00784 128.79)",
+          "oklch(95.00% 0.00784 128.79)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "on-primary": {
+        "role": "primary",
+        "displayName": "主按钮文字",
+        "tonalRamp": [
+          "oklch(15.00% 0.00000 0.00)",
+          "oklch(26.43% 0.00000 0.00)",
+          "oklch(37.86% 0.00000 0.00)",
+          "oklch(49.29% 0.00000 0.00)",
+          "oklch(60.71% 0.00000 0.00)",
+          "oklch(72.14% 0.00000 0.00)",
+          "oklch(83.57% 0.00000 0.00)",
+          "oklch(95.00% 0.00000 0.00)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "primary-hover": {
+        "role": "primary",
+        "displayName": "主按钮悬停",
+        "tonalRamp": [
+          "oklch(15.00% 0.01446 128.91)",
+          "oklch(26.43% 0.01446 128.91)",
+          "oklch(37.86% 0.01446 128.91)",
+          "oklch(49.29% 0.01446 128.91)",
+          "oklch(60.71% 0.01446 128.91)",
+          "oklch(72.14% 0.01446 128.91)",
+          "oklch(83.57% 0.01446 128.91)",
+          "oklch(95.00% 0.01446 128.91)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "focus": {
+        "role": "primary",
+        "displayName": "焦点蓝",
+        "tonalRamp": [
+          "oklch(15.00% 0.18002 266.95)",
+          "oklch(26.43% 0.18002 266.95)",
+          "oklch(37.86% 0.18002 266.95)",
+          "oklch(49.29% 0.18002 266.95)",
+          "oklch(60.71% 0.18002 266.95)",
+          "oklch(72.14% 0.18002 266.95)",
+          "oklch(83.57% 0.18002 266.95)",
+          "oklch(95.00% 0.18002 266.95)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "轻提示底",
+        "tonalRamp": [
+          "oklch(15.00% 0.01509 273.85)",
+          "oklch(26.43% 0.01509 273.85)",
+          "oklch(37.86% 0.01509 273.85)",
+          "oklch(49.29% 0.01509 273.85)",
+          "oklch(60.71% 0.01509 273.85)",
+          "oklch(72.14% 0.01509 273.85)",
+          "oklch(83.57% 0.01509 273.85)",
+          "oklch(95.00% 0.01509 273.85)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "模式选中底",
+        "tonalRamp": [
+          "oklch(15.00% 0.00672 115.71)",
+          "oklch(26.43% 0.00672 115.71)",
+          "oklch(37.86% 0.00672 115.71)",
+          "oklch(49.29% 0.00672 115.71)",
+          "oklch(60.71% 0.00672 115.71)",
+          "oklch(72.14% 0.00672 115.71)",
+          "oklch(83.57% 0.00672 115.71)",
+          "oklch(95.00% 0.00672 115.71)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "error": {
+        "role": "neutral",
+        "displayName": "错误红",
+        "tonalRamp": [
+          "oklch(15.00% 0.18205 29.51)",
+          "oklch(26.43% 0.18205 29.51)",
+          "oklch(37.86% 0.18205 29.51)",
+          "oklch(49.29% 0.18205 29.51)",
+          "oklch(60.71% 0.18205 29.51)",
+          "oklch(72.14% 0.18205 29.51)",
+          "oklch(83.57% 0.18205 29.51)",
+          "oklch(95.00% 0.18205 29.51)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "warning": {
+        "role": "neutral",
+        "displayName": "警示棕",
+        "tonalRamp": [
+          "oklch(15.00% 0.10809 72.38)",
+          "oklch(26.43% 0.10809 72.38)",
+          "oklch(37.86% 0.10809 72.38)",
+          "oklch(49.29% 0.10809 72.38)",
+          "oklch(60.71% 0.10809 72.38)",
+          "oklch(72.14% 0.10809 72.38)",
+          "oklch(83.57% 0.10809 72.38)",
+          "oklch(95.00% 0.10809 72.38)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "composer-border": {
+        "role": "neutral",
+        "displayName": "输入容器边界",
+        "tonalRamp": [
+          "oklch(15.00% 0.01371 115.87)",
+          "oklch(26.43% 0.01371 115.87)",
+          "oklch(37.86% 0.01371 115.87)",
+          "oklch(49.29% 0.01371 115.87)",
+          "oklch(60.71% 0.01371 115.87)",
+          "oklch(72.14% 0.01371 115.87)",
+          "oklch(83.57% 0.01371 115.87)",
+          "oklch(95.00% 0.01371 115.87)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      },
+      "composer-focus-border": {
+        "role": "neutral",
+        "displayName": "输入聚焦边界",
+        "tonalRamp": [
+          "oklch(15.00% 0.02465 137.27)",
+          "oklch(26.43% 0.02465 137.27)",
+          "oklch(37.86% 0.02465 137.27)",
+          "oklch(49.29% 0.02465 137.27)",
+          "oklch(60.71% 0.02465 137.27)",
+          "oklch(72.14% 0.02465 137.27)",
+          "oklch(83.57% 0.02465 137.27)",
+          "oklch(95.00% 0.02465 137.27)"
+        ],
+        "rampProvenance": "Synthesized OKLCH panel preview only; not implemented CSS tokens."
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "display",
+        "purpose": "首页标题，桌面。"
+      },
+      "display-mobile": {
+        "displayName": "display-mobile",
+        "purpose": "首页标题，手机。"
+      },
+      "headline": {
+        "displayName": "headline",
+        "purpose": "设置与实验页标题。"
+      },
+      "headline-mobile": {
+        "displayName": "headline-mobile",
+        "purpose": "手机设置与实验页标题。"
+      },
+      "body": {
+        "displayName": "body",
+        "purpose": "页面默认正文。"
+      },
+      "body-intro": {
+        "displayName": "body-intro",
+        "purpose": "首页描述文字。"
+      },
+      "label": {
+        "displayName": "label",
+        "purpose": "常规按钮。"
+      },
+      "caption": {
+        "displayName": "caption",
+        "purpose": "版本与辅助说明，行高继承上下文。"
+      },
+      "chat-title": {
+        "displayName": "chat-title",
+        "purpose": "项目对话栏标题。"
+      }
+    },
+    "shadows": [
+      {
+        "name": "dialog",
+        "value": "0 8px 24px rgb(20 30 24 / 12%)",
+        "purpose": "仅浮层；静态工作区无阴影。"
+      }
+    ],
+    "motion": [
+      {
+        "name": "control-color",
+        "value": "background-color 160ms, color 160ms",
+        "purpose": "已有共享按钮状态过渡。"
+      },
+      {
+        "name": "spinner",
+        "value": "spin 1.4s linear infinite",
+        "purpose": "真实等待；减少动态偏好时降至单次极短动画。"
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile-max",
+        "value": "767px"
+      },
+      {
+        "name": "compact-desktop-min",
+        "value": "768px"
+      },
+      {
+        "name": "compact-desktop-max",
+        "value": "1050px"
+      },
+      {
+        "name": "wide",
+        "value": "1600px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "主要按钮",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "真实基础按钮变体；最小高度44px，保留悬停、焦点和禁用。",
+      "html": "<button class=\"ds-button-primary\">开始创作</button>",
+      "css": ".ds-button-primary{font-family:var(--font-sans, sans-serif);font-size:14px;font-weight:500;border-radius:8px;min-height:44px;padding:8px 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:background-color 160ms,color 160ms;background:var(--primary,#242622);color:var(--on-primary,#fff);border:0;}.ds-button-primary:hover:not(:disabled){background:var(--primary-hover,#3c4038);}.ds-button-primary:focus-visible{outline:2px solid var(--focus,#3658c9);outline-offset:4px;}.ds-button-primary:disabled{opacity:.5;cursor:not-allowed;}"
+    },
+    {
+      "name": "描边按钮",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "真实基础按钮变体；最小高度44px，保留悬停、焦点和禁用。",
+      "html": "<button class=\"ds-button-outline\">下载作品</button>",
+      "css": ".ds-button-outline{font-family:var(--font-sans, sans-serif);font-size:14px;font-weight:500;border-radius:8px;min-height:44px;padding:8px 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:background-color 160ms,color 160ms;background:var(--surface,#fff);color:var(--foreground,#242622);border:1px solid var(--border,#e2e3dc);}.ds-button-outline:hover:not(:disabled){background:var(--accent-soft,#edf0fb);}.ds-button-outline:focus-visible{outline:2px solid var(--focus,#3658c9);outline-offset:4px;}.ds-button-outline:disabled{opacity:.5;cursor:not-allowed;}"
+    },
+    {
+      "name": "轻量按钮",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "真实基础按钮变体；最小高度44px，保留悬停、焦点和禁用。",
+      "html": "<button class=\"ds-button-ghost\">查看记录</button>",
+      "css": ".ds-button-ghost{font-family:var(--font-sans, sans-serif);font-size:14px;font-weight:500;border-radius:8px;min-height:44px;padding:8px 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:background-color 160ms,color 160ms;background:transparent;color:var(--foreground,#242622);border:0;}.ds-button-ghost:hover:not(:disabled){background:var(--accent-soft,#edf0fb);}.ds-button-ghost:focus-visible{outline:2px solid var(--focus,#3658c9);outline-offset:4px;}.ds-button-ghost:disabled{opacity:.5;cursor:not-allowed;}"
+    },
+    {
+      "name": "模型设置输入",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "独立表单控件；实际基础圆角6px，手机16px字号。",
+      "html": "<label class=\"ds-field\">模型名称<input class=\"ds-input\" placeholder=\"填写模型名称\" /></label>",
+      "css": ".ds-field{display:grid;gap:8px;font-family:var(--font-sans,sans-serif);font-size:14px;color:var(--foreground,#242622);}.ds-input{min-height:44px;border:1px solid var(--control-border,#92958d);border-radius:6px;padding:4px 12px;background:var(--surface,#fff);color:var(--foreground,#242622);font:inherit;line-height:1.5;}.ds-input:focus-visible{outline:2px solid var(--focus,#3658c9);outline-offset:4px;}.ds-input:disabled{opacity:.5;cursor:not-allowed;}.ds-input[aria-invalid=true]{border-color:var(--error,#b42318);}@media(max-width:767px){.ds-input{font-size:16px;}}"
+    },
+    {
+      "name": "顶栏工具导航",
+      "kind": "nav",
+      "description": "项目工作台的新建、历史、设置；移动端收起文字，保留可访问名称。",
+      "html": "<nav class=\"ds-nav\" aria-label=\"主导航\"><button aria-label=\"新建创作\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\" /></svg><span>新建</span></button><button aria-label=\"打开项目历史\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 1 0 2.6-6.4L3 8M3 3v5h5M12 7v5l3 2\" /></svg><span>历史</span></button></nav>",
+      "css": ".ds-nav{display:flex;align-items:center;gap:4px;background:var(--surface,#fff);}.ds-nav button{font-family:var(--font-sans, sans-serif);font-size:14px;font-weight:500;border-radius:8px;min-height:44px;padding:8px 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:background-color 160ms,color 160ms;padding:0 12px;border:0;background:transparent;color:var(--secondary-text,#62655e);}.ds-nav button:hover{background:var(--accent-soft,#edf0fb);color:var(--foreground,#242622);}.ds-nav button:focus-visible{outline:2px solid var(--focus,#3658c9);outline-offset:4px;}@media(max-width:767px){.ds-nav{gap:0;}.ds-nav button{width:40px;padding:0;}.ds-nav span{display:none;}}"
+    },
+    {
+      "name": "创作模式选项",
+      "kind": "chip",
+      "refersTo": "mode-selected",
+      "description": "实际双模式切换，不是装饰标签；此静态样式片段不执行应用状态切换。",
+      "html": "<div class=\"ds-modes\" role=\"group\" aria-label=\"创作模式\"><button aria-pressed=\"true\">Agent 创作</button><button aria-pressed=\"false\">自己控制</button></div>",
+      "css": ".ds-modes{display:flex;gap:2px;}.ds-modes button{font-family:var(--font-sans,sans-serif);font-size:13px;font-weight:500;min-height:40px;padding:8px 10px;border:0;border-radius:6px;cursor:pointer;background:transparent;color:var(--secondary-text,#62655e);}.ds-modes button[aria-pressed=true]{background:var(--muted,#eeefea);color:var(--foreground,#242622);}.ds-modes button:focus-visible{outline:2px solid var(--focus,#3658c9);outline-offset:4px;}"
+    },
+    {
+      "name": "常驻创作输入容器",
+      "kind": "card",
+      "refersTo": "composer",
+      "description": "有必要边界的真实输入容器；聊天参数分组不复用卡片包装。",
+      "html": "<div class=\"ds-composer\"><label class=\"ds-composer-label\" for=\"ds-request\">创作要求</label><textarea id=\"ds-request\" placeholder=\"想把这张照片变成什么样？\"></textarea></div>",
+      "css": ".ds-composer{padding:12px;border:1px solid var(--composer-border,#d4d6cc);border-radius:12px;background:var(--surface,#fff);color:var(--foreground,#242622);}.ds-composer:focus-within{border-color:var(--composer-focus-border,#9ea99a);}.ds-composer-label{font-family:var(--font-sans,sans-serif);font-size:13px;}.ds-composer textarea{display:block;min-height:84px;width:100%;padding:8px 10px 16px;border:0;border-radius:0;background:transparent;color:inherit;font-family:var(--font-sans,sans-serif);font-size:16px;line-height:1.65;resize:none;}.ds-composer textarea:focus-visible{outline:2px solid var(--focus,#3658c9);outline-offset:4px;outline-offset:1px;}"
+    },
+    {
+      "name": "移动创作对话开关",
+      "kind": "custom",
+      "description": "手机默认收起旧对话；片段展示当前收起状态，实际应用由 React 更新 aria-expanded。",
+      "html": "<button class=\"ds-conversation-toggle\" aria-expanded=\"false\">查看创作对话<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\" /></svg></button>",
+      "css": ".ds-conversation-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;padding:8px 16px;border:0;background:var(--surface,#fff);color:var(--secondary-text,#62655e);font-family:var(--font-sans,sans-serif);font-size:12px;text-align:left;cursor:pointer;}.ds-conversation-toggle:focus-visible{outline:2px solid var(--focus,#3658c9);outline-offset:4px;}.ds-conversation-toggle[aria-expanded=true] svg{transform:rotate(180deg);}"
+    }
+  ],
+  "narrative": {
+    "northStar": "有趣的作品，克制的工具",
+    "overview": "用户上传一张人像，得到狗头人，选中作品继续调整并下载。面试展示和跨模型研究是作者场景；普通创作者无需先理解协议。\n\n工作台让图像成为视觉重心：温和的灰白底色承托作品，近黑主操作负责推进任务，蓝色只提示选中与焦点。对话与参数保持紧凑、平面，留白用来区分作品、说明与下一步。",
+    "keyCharacteristics": [
+      "作品领先，完整展示图像，明确当前修改基底。",
+      "一个项目与一个常驻创作输入框，连续调整不跳转流程。",
+      "平面分组、轻边界、紧凑工具，保留必要状态和键盘操作。"
+    ],
+    "rules": [
+      {
+        "name": "The Quiet Accent Rule",
+        "body": "黑色主要按钮，蓝色仅用于选中和焦点，同屏最多一个彩色强调。",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "**Do** 主对象统一复现；作品领先；改哪张必须看得见；版本与实际输入绑定。",
+      "**Do** 状态和能力可验证；示例持续标注；首轮与后续编辑使用正确图像来源。",
+      "**Do** 桌面1440×900、手机390×844实测；至少5条具体 critique 并修正复查。"
+    ],
+    "donts": [
+      "**Don't** 蓝紫渐变、营销长页、虚假任务、假模型评分、Card堆叠、无效画布工具。",
+      "**Don't** 伪造思考、上传即付费调用、隐式重绘、把静态示例当实测。",
+      "**Don't** 凭参考界面宣传尚未实现的局部编辑或无限画布；截图不代表真实模型效果。"
+    ]
+  }
+}
