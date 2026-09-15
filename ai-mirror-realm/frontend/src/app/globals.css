@@ -3,59 +3,75 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #12121a;
-  --bg-tertiary: #1a1a26;
-  --border: #2a2a3a;
-  --accent: #6366f1;
-  --accent-light: #818cf8;
-  --accent-glow: rgba(99, 102, 241, 0.15);
-  --gold: #fbbf24;
-  --text-primary: #e8e8f0;
-  --text-dim: #8888a0;
+  --canvas: #f2f0ec;
+  --paper: #fffdf9;
+  --stage: #0d0e11;
+  --ink: #171612;
+  --muted: #68645e;
+  --line: #d9d5ce;
+  --brand: #c84b31;
+  --signal: #b33942;
+  --success: #237659;
+  --bg-primary: var(--canvas);
+  --bg-secondary: var(--paper);
+  --bg-tertiary: #e7e3dd;
+  --border: var(--line);
+  --accent: var(--brand);
+  --accent-light: #e6785f;
+  --text-primary: var(--ink);
+  --text-dim: var(--muted);
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
+html {
+  background: var(--canvas);
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  line-height: 1.6;
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  background: rgba(99, 102, 241, 0.3);
-  color: #fff;
+  background: #f0cfc5;
+  color: #4c1c12;
 }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-primary); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--canvas); }
+::-webkit-scrollbar-thumb { background: #bcb6ad; border: 3px solid var(--canvas); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
-.glass {
-  background: rgba(18, 18, 26, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
+a, button, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, #fff 0%, #a5a5d0 50%, #818cf8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+input, select, textarea {
+  min-width: 0;
+}
+
+a {
+  text-underline-offset: 0.22em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
 }
 
 .shimmer-bg {
-  background: linear-gradient(
-    90deg,
-    var(--bg-secondary) 0%,
-    var(--bg-tertiary) 50%,
-    var(--bg-secondary) 100%
-  );
+  background: linear-gradient(90deg, #e9e9ed 0%, #f4f4f6 50%, #e9e9ed 100%);
   background-size: 200% 100%;
   animation: shimmer 2s linear infinite;
 }
@@ -66,10 +82,59 @@ html, body {
 }
 
 .portal-bg {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: radial-gradient(circle at 30% 50%, var(--accent-glow) 0%, transparent 50%),
-              radial-gradient(circle at 70% 80%, rgba(236, 72, 153, 0.08) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
+  display: none;
+}
+
+.page-shell {
+  width: min(100% - 64px, 1240px);
+  margin-inline: auto;
+}
+
+.darkroom-grid {
+  background-color: var(--stage);
+}
+
+.editorial-kicker {
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  font-size: .68rem;
+  font-weight: 700;
+}
+
+.display-title {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+.photo-frame {
+  position: relative;
+  overflow: hidden;
+  background: #e9e9ed;
+  border-radius: 16px;
+}
+
+.state-panel {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 48px 0;
+  text-align: center;
+}
+
+@media (max-width: 639px) {
+  .page-shell {
+    width: calc(100% - 40px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

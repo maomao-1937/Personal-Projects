@@ -24,21 +24,21 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-accent text-white hover:bg-accent-dark active:bg-accent-dark/90 focus-visible:ring-accent/50 shadow-lg shadow-accent/20 hover:shadow-accent/30',
+    'bg-brand text-white hover:bg-[#a83d27] active:bg-[#8f321f]',
   secondary:
-    'bg-bg-tertiary text-text-primary hover:bg-bg-tertiary/80 active:bg-bg-tertiary/70 focus-visible:ring-accent/30 border border-[var(--border)]',
+    'bg-[#e7e3dd] text-ink hover:bg-[#d9d5ce] active:bg-[#cbc5bc]',
   outline:
-    'bg-transparent text-text-primary border border-[var(--border)] hover:border-accent/50 hover:bg-accent/5 active:bg-accent/10 focus-visible:ring-accent/30',
+    'bg-paper text-ink border border-line hover:border-[#c8cad1] hover:bg-[#fafafa] active:bg-[#f0f0f2]',
   ghost:
-    'bg-transparent text-text-primary hover:bg-bg-tertiary active:bg-bg-tertiary/80 focus-visible:ring-accent/30',
+    'bg-transparent text-ink hover:bg-[#e7e3dd] active:bg-[#d9d5ce]',
   danger:
-    'bg-red-600 text-white hover:bg-red-700 active:bg-red-700/90 focus-visible:ring-red-500/50 shadow-lg shadow-red-600/20',
+    'bg-signal text-white hover:bg-[#842f23] active:bg-[#70271d]',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-sm rounded-lg gap-1.5',
-  md: 'px-5 py-2.5 text-sm rounded-xl gap-2',
-  lg: 'px-8 py-3.5 text-base rounded-xl gap-2',
+  sm: 'min-h-11 px-4 py-2 text-sm rounded-md gap-1.5',
+  md: 'min-h-11 px-5 py-2.5 text-sm rounded-md gap-2',
+  lg: 'min-h-12 px-7 py-3 text-base rounded-md gap-2',
 };
 
 /**
@@ -77,10 +77,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         type={type}
         disabled={isDisabled}
         className={cn(
-          'inline-flex items-center justify-center font-medium transition-all duration-200',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary',
-          'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100',
-          'hover:scale-[1.02] active:scale-[0.98]',
+          'inline-flex items-center justify-center font-medium transition-colors duration-200',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
+          'disabled:cursor-not-allowed disabled:opacity-45',
           variantClasses[variant],
           sizeClasses[size],
           fullWidth && 'w-full',

@@ -15,6 +15,10 @@ services:
         value: sqlite:///./mirror_realm.db
       - key: SECRET_KEY
         generateValue: true
+      - key: INVITE_TOKEN_PEPPER
+        generateValue: true
+      - key: AUTH_COOKIE_SECURE
+        value: "true"
       - key: CORS_ORIGINS
         value: https://ai-mirror-realm.vercel.app
       - key: AI_API_KEY

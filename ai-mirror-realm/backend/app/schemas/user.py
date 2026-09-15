@@ -5,15 +5,16 @@ from typing import Optional
 from pydantic import BaseModel, Field, field_validator, model_validator, EmailStr
 
 
-# 用户名/昵称正则：只允许字母数字下划线，长度 3-20
-USERNAME_PATTERN = re.compile(r"^[a-zA-Z0-9_]{3,20}$")
+# 昵称允许中文、字母、数字和下划线，长度由字段校验负责。
+USERNAME_PATTERN = re.compile(r"^[\u4e00-\u9fffa-zA-Z0-9_]{2,20}$")
 
 
 class UserRegister(BaseModel):
     phone: Optional[str] = Field(None, description="手机号", max_length=20)
     email: Optional[EmailStr] = Field(None, description="邮箱")
     password: str = Field(..., min_length=6, max_length=128, description="密码（最少6位）")
-    nickname: Optional[str] = Field(None, max_length=20, description="昵称（3-20位字母数字下划线）")
+    nickname: Optional[str] = Field(None, max_length=20, description="昵称（2-20位中英文、数字或下划线）")
+    invite_token: str = Field(..., min_length=8, max_length=200, description="一次性邀请码")
 
     @field_validator("nickname")
     @classmethod
@@ -21,7 +22,7 @@ class UserRegister(BaseModel):
         if v is None:
             return v
         if not USERNAME_PATTERN.match(v):
-            raise ValueError("昵称只能包含字母、数字和下划线，长度为3-20位")
+            raise ValueError("昵称只能包含中文、字母、数字和下划线，长度为2-20位")
         return v
 
     @field_validator("phone")
@@ -54,6 +55,7 @@ class UserOut(BaseModel):
     nickname: str
     avatar_url: Optional[str] = None
     credits: int
+    invited_at: Optional[datetime] = None
     created_at: datetime
 
     class Config:
@@ -63,4 +65,8 @@ class UserOut(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    user: UserOut
+
+
+class AuthSession(BaseModel):
     user: UserOut

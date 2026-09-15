@@ -11,13 +11,18 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!loading && !user) {
-      const redirectUrl = encodeURIComponent(pathname);
-      router.push(`/login?redirect=${redirectUrl}`);
+      const intended = `${pathname}${window.location.search}`;
+      router.replace(`/access?next=${encodeURIComponent(intended)}`);
     }
   }, [loading, user, router, pathname]);
 
-  if (loading) return null;
-  if (!user) return null;
+  if (loading || !user) {
+    return (
+      <div className="page-shell flex min-h-screen items-center justify-center pt-[68px]" role="status">
+        <p className="text-sm text-muted">正在确认访问状态…</p>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }

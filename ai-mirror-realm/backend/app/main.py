@@ -4,14 +4,14 @@ from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import settings
 from app.database import Base, engine, SessionLocal
-from app.routers import auth, uploads, styles, portraits, orders
+from app.routers import auth, uploads, styles, portraits, media
 from app.seed import seed_styles
+from app.services.invitation_service import ensure_invitation_schema
 from app.utils.rate_limiter import limiter, rate_limit_exceeded_handler
 
 logging.basicConfig(level=logging.INFO)
@@ -38,10 +38,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/uploads", StaticFiles(directory=str(settings.UPLOAD_DIR)), name="uploads")
-app.mount("/generated", StaticFiles(directory=str(settings.GENERATED_DIR)), name="generated")
-
-
 # ============================================================
 # 全局异常处理器
 # ============================================================
@@ -51,8 +47,8 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
 
     保持原有状态码和错误信息，统一响应格式。
     """
-    # 根据状态码生成错误码
-    error_code = {
+    # A route can provide a stable machine code without exposing internals.
+    default_error_code = {
         400: "BAD_REQUEST",
         401: "UNAUTHORIZED",
         403: "FORBIDDEN",
@@ -61,11 +57,17 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
         422: "VALIDATION_ERROR",
         429: "RATE_LIMIT_EXCEEDED",
     }.get(exc.status_code, f"HTTP_{exc.status_code}")
+    if isinstance(exc.detail, dict):
+        error_code = str(exc.detail.get("code", default_error_code))
+        detail = str(exc.detail.get("message", "请求失败"))
+    else:
+        error_code = default_error_code
+        detail = str(exc.detail)
 
     return JSONResponse(
         status_code=exc.status_code,
         content={
-            "detail": exc.detail if isinstance(exc.detail, str) else str(exc.detail),
+            "detail": detail,
             "code": error_code,
         },
         headers=exc.headers if hasattr(exc, "headers") and exc.headers else None,
@@ -134,6 +136,7 @@ async def uncaught_exception_handler(request: Request, exc: Exception) -> JSONRe
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
+    ensure_invitation_schema(engine)
     db = SessionLocal()
     try:
         seed_styles(db)
@@ -160,4 +163,4 @@ app.include_router(auth.router)
 app.include_router(uploads.router)
 app.include_router(styles.router)
 app.include_router(portraits.router)
-app.include_router(orders.router)
+app.include_router(media.router)

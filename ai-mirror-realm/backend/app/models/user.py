@@ -24,6 +24,7 @@ class User(Base):
     credits = Column(Integer, nullable=False, default=3)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
+    invited_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

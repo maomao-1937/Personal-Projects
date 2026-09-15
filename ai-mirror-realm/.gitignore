@@ -1,0 +1,22 @@
+# Local secrets and runtime data
+backend/.env
+backend/mirror_realm.db
+backend/app/uploads/
+backend/app/generated/
+
+# Python caches and environments
+backend/.pytest_cache/
+backend/__pycache__/
+backend/app/**/__pycache__/
+backend/venv/
+backend/.venv/
+*.pyc
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/.next/
+frontend/tsconfig.tsbuildinfo
+frontend/.vefaas/
+
+# Local deployment metadata
+backend/.vefaas/

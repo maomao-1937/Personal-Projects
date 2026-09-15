@@ -12,10 +12,10 @@ const iconMap = {
 };
 
 const colorMap: Record<string, { icon: string; border: string; bg: string }> = {
-  success: { icon: 'text-green-400', border: 'border-green-500/30', bg: 'bg-green-500/5' },
-  error: { icon: 'text-red-400', border: 'border-red-500/30', bg: 'bg-red-500/5' },
-  warning: { icon: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-500/5' },
-  info: { icon: 'text-accent-light', border: 'border-accent/30', bg: 'bg-accent/5' },
+  success: { icon: 'text-success', border: 'border-success', bg: 'bg-paper' },
+  error: { icon: 'text-signal', border: 'border-signal', bg: 'bg-paper' },
+  warning: { icon: 'text-gold', border: 'border-gold', bg: 'bg-paper' },
+  info: { icon: 'text-ink', border: 'border-line', bg: 'bg-paper' },
 };
 
 interface ToastProps {
@@ -35,7 +35,7 @@ export default function Toast({ toast, index }: ToastProps) {
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 40, scale: 0.95 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1], delay: index * 0.05 }}
-      className={`flex items-start gap-3 min-w-[300px] max-w-sm p-4 rounded-xl glass border ${colors.border} ${colors.bg} shadow-lg shadow-black/20`}
+      className={`flex min-w-[min(300px,calc(100vw-36px))] max-w-sm items-start gap-3 rounded-md border p-4 shadow-card ${colors.border} ${colors.bg}`}
     >
       <div className={`flex-shrink-0 mt-0.5 ${colors.icon}`}>
         <Icon size={20} />
@@ -43,7 +43,7 @@ export default function Toast({ toast, index }: ToastProps) {
       <p className="flex-1 text-sm text-text-primary leading-relaxed">{toast.message}</p>
       <button
         onClick={() => dismissToast(toast.id)}
-        className="flex-shrink-0 text-text-dim hover:text-text-primary transition-colors"
+        className="flex min-h-11 min-w-11 flex-shrink-0 items-center justify-center text-text-dim transition-colors hover:text-text-primary"
         aria-label="关闭通知"
       >
         <X size={16} />

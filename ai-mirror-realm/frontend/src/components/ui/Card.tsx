@@ -3,21 +3,17 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** 是否使用玻璃拟态效果 */
-  glass?: boolean;
-}
+export type CardProps = React.HTMLAttributes<HTMLDivElement>;
 
 /**
  * 卡片容器组件
  */
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, glass = false, ...props }, ref) => (
+  ({ className, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(
-        'rounded-2xl bg-bg-secondary border border-[var(--border)] shadow-sm',
-        glass && 'glass',
+        'rounded-lg border border-line bg-paper',
         className
       )}
       {...props}
@@ -33,7 +29,7 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('p-6 pb-4 flex flex-col space-y-1.5', className)}
+      className={cn('flex flex-col space-y-1.5 p-6 pb-4', className)}
       {...props}
     />
   )
@@ -47,7 +43,7 @@ const CardTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTML
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn('text-lg font-semibold leading-none tracking-tight text-text-primary', className)}
+      className={cn('text-lg font-semibold leading-tight tracking-[-0.02em] text-ink', className)}
       {...props}
     />
   )
@@ -61,7 +57,7 @@ const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttribu
   ({ className, ...props }, ref) => (
     <p
       ref={ref}
-      className={cn('text-sm text-text-dim', className)}
+      className={cn('text-sm text-muted', className)}
       {...props}
     />
   )

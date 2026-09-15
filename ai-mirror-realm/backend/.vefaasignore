@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.vefaas/
+mirror_realm.db
+*.db
+uploads/
+generated/
+test_ai_api.py

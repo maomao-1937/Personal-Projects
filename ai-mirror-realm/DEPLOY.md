@@ -16,6 +16,8 @@
 | `DEBUG` | `false` |
 | `DATABASE_URL` | `sqlite:///./mirror_realm.db` |
 | `SECRET_KEY` | 点击 Generate 生成 |
+| `INVITE_TOKEN_PEPPER` | 点击 Generate 生成，且不要与 `SECRET_KEY` 相同 |
+| `AUTH_COOKIE_SECURE` | `true` |
 | `CORS_ORIGINS` | Vercel 前端域名 |
 | `AI_API_KEY` | 混元 API Key |
 | `AI_API_BASE_URL` | `https://tokenhub.tencentmaas.com` |

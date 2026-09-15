@@ -12,6 +12,8 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
   label?: string;
   /** 错误信息 */
   error?: string;
+  /** 输入帮助文案 */
+  helperText?: string;
   /** 左侧图标 */
   leftIcon?: React.ReactNode;
   /** 右侧图标 */
@@ -38,6 +40,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       type = 'text',
       label,
       error,
+      helperText,
       leftIcon,
       rightIcon,
       disabled,
@@ -46,14 +49,15 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     },
     ref
   ) => {
-    const inputId = id || React.useId();
+    const generatedId = React.useId();
+    const inputId = id || generatedId;
 
     return (
       <div className={cn('w-full space-y-1.5', containerClassName)}>
         {label && (
           <label
             htmlFor={inputId}
-            className="text-xs text-text-dim block"
+            className="mb-2 block text-sm font-medium text-ink"
           >
             {label}
           </label>
@@ -70,17 +74,17 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={type}
             disabled={disabled}
             aria-invalid={!!error}
-            aria-describedby={error ? `${inputId}-error` : undefined}
+            aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-help` : undefined}
             className={cn(
-              'w-full px-4 py-3 rounded-xl bg-bg-secondary border transition-all duration-200',
-              'text-text-primary placeholder:text-text-muted',
-              'focus:outline-none focus:ring-2 focus:ring-offset-0',
+              'min-h-12 w-full rounded-lg border bg-paper px-4 py-3 transition-colors duration-200',
+              'text-ink placeholder:text-[#9699a2]',
+              'focus:outline-none focus:ring-2 focus:ring-offset-1',
               'disabled:opacity-50 disabled:cursor-not-allowed',
               leftIcon && 'pl-10',
               rightIcon && 'pr-10',
               error
-                ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/30'
-                : 'border-[var(--border)] focus:border-accent focus:ring-accent/30',
+                ? 'border-signal focus:border-signal focus:ring-signal/20'
+                : 'border-line focus:border-brand focus:ring-brand/15',
               className
             )}
             {...props}
@@ -94,10 +98,15 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {error && (
           <p
             id={`${inputId}-error`}
-            className="text-xs text-red-400 flex items-center gap-1"
+            className="mt-2 flex items-center gap-1 text-sm text-signal"
             role="alert"
           >
             {error}
+          </p>
+        )}
+        {!error && helperText && (
+          <p id={`${inputId}-help`} className="mt-2 text-sm text-muted">
+            {helperText}
           </p>
         )}
       </div>
