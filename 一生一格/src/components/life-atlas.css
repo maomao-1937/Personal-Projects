@@ -1,0 +1,253 @@
+.life-atlas {
+  --atlas-background: #12222a;
+  --atlas-past: #67beaa;
+  --atlas-future: #344a51;
+  --atlas-current: #ffb66e;
+  --atlas-gap: 1.5px;
+  color: #f2f8f6;
+  background: var(--atlas-background);
+  border: 1px solid #213943;
+  border-radius: 18px;
+  padding: clamp(20px, 2.3vw, 34px);
+  box-shadow: 0 18px 44px #10212716;
+}
+
+.life-atlas__header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 15px 24px;
+  margin-bottom: clamp(22px, 2.5vw, 36px);
+}
+
+.life-atlas__eyebrow {
+  display: block;
+  margin-bottom: 7px;
+  color: #8baaa9;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .16em;
+}
+
+.life-atlas__heading h2 {
+  margin: 0;
+  color: #f6fbf9;
+  font-size: clamp(23px, 2.2vw, 31px);
+  font-weight: 700;
+  letter-spacing: -.035em;
+  line-height: 1.2;
+}
+
+.life-atlas__heading p {
+  margin: 7px 0 0;
+  color: #aec0c2;
+  font-size: 12px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+.life-atlas__progress {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding-bottom: 5px;
+  color: #b9c9ca;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.life-atlas__progress-track {
+  width: clamp(100px, 12vw, 190px);
+  height: 7px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #41565d;
+}
+
+.life-atlas__progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--atlas-past);
+}
+
+.life-atlas__legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding-bottom: 4px;
+  color: #c0cdce;
+  font-size: 11px;
+}
+
+.life-atlas__legend > span { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.life-atlas__swatch { display: inline-block; width: 11px; height: 11px; border-radius: 2px; }
+.life-atlas__swatch--past { background: var(--atlas-past); }
+.life-atlas__swatch--future { background: var(--atlas-future); }
+.life-atlas__swatch--current { background: var(--atlas-current); }
+
+.life-atlas__columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(24px, 3vw, 52px);
+}
+
+.life-atlas__column { min-width: 0; }
+.life-atlas__column-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 25px;
+  margin-bottom: 10px;
+}
+
+.life-atlas__column-heading strong {
+  color: #f2f8f6;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.life-atlas__column-now {
+  color: var(--atlas-current);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.life-atlas__years { display: flex; flex-direction: column; gap: var(--atlas-gap); }
+.life-atlas__year {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  position: relative;
+}
+
+.life-atlas__year--decade { margin-top: 3px; }
+.life-atlas__year--current .life-atlas__weeks { box-shadow: 0 0 0 1px #ffb66e70; }
+
+.life-atlas__age {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 5px;
+  padding: 0 3px 0 0;
+  border: 0;
+  border-radius: 2px;
+  color: #9aafb0;
+  background: transparent;
+  font-size: 10px;
+  line-height: 1;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.life-atlas__age > span { opacity: 0; transition: opacity .16s ease; }
+.life-atlas__age--visible > span,
+.life-atlas__age:hover > span,
+.life-atlas__age:focus-visible > span { opacity: 1; }
+.life-atlas__age--selected,
+.life-atlas__year--current .life-atlas__age { color: var(--atlas-current); font-weight: 700; }
+.life-atlas__age:focus-visible { outline: 2px solid var(--atlas-current); outline-offset: 1px; }
+
+.life-atlas__weeks {
+  display: grid;
+  grid-template-columns: repeat(53, minmax(0, 1fr));
+  gap: var(--atlas-gap);
+  width: 100%;
+  max-width: 500px;
+  min-width: 0;
+}
+
+.life-atlas__week {
+  display: block;
+  position: relative;
+  min-width: 0;
+  aspect-ratio: 1;
+  border-radius: 1px;
+  background: var(--atlas-future);
+}
+
+.life-atlas__week--past { background: var(--atlas-past); }
+.life-atlas__week--future { background: var(--atlas-future); }
+.life-atlas__week--current { z-index: 3; background: var(--atlas-current); box-shadow: 0 0 0 2px #ffb66e55; }
+.life-atlas__week--selected { outline: 1.5px solid #f7fcfa; outline-offset: 1px; z-index: 2; }
+.life-atlas__week--current.life-atlas__week--selected { z-index: 3; }
+
+.life-atlas__here {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  padding: 5px 7px;
+  border-radius: 4px;
+  background: var(--atlas-current);
+  color: #17242b;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px #07121855;
+}
+
+.life-atlas__here::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - 3px);
+  top: 100%;
+  border: 3px solid transparent;
+  border-top-color: var(--atlas-current);
+}
+
+.life-atlas__here--below { top: calc(100% + 8px); bottom: auto; }
+.life-atlas__here--below::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--atlas-current); }
+.life-atlas__here--end { left: auto; right: 0; transform: none; }
+.life-atlas__here--end::after { left: auto; right: 1px; }
+
+.life-atlas__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.life-atlas__footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 27px; padding-top: 16px; border-top: 1px solid #34505a; color: #94adae; font-size: 11px; }
+.life-atlas__footer strong { color: #d2e6e0; font-weight: 700; white-space: nowrap; }
+
+@media (max-width: 850px) {
+  .life-atlas__columns { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .life-atlas__column { width: 100%; max-width: 620px; }
+  .life-atlas__here { display: none; }
+}
+
+@media (max-width: 480px) {
+  .life-atlas { padding: 18px 15px 21px; border-radius: 14px; }
+  .life-atlas__header { align-items: start; gap: 14px; margin-bottom: 23px; }
+  .life-atlas__heading { width: 100%; }
+  .life-atlas__heading h2 { font-size: 25px; }
+  .life-atlas__progress { padding: 0; }
+  .life-atlas__progress-track { width: 100px; }
+  .life-atlas__legend { width: 100%; padding: 0; }
+  .life-atlas__column-heading { margin-bottom: 8px; }
+  .life-atlas__year { grid-template-columns: 27px minmax(0, 1fr); gap: 5px; }
+  .life-atlas__age { font-size: 9px; }
+  .life-atlas__years { gap: 1px; }
+  .life-atlas__weeks { gap: 1px; }
+  .life-atlas__year--decade { margin-top: 2px; }
+  .life-atlas__footer { flex-direction: column; align-items: start; gap: 5px; margin-top: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .life-atlas__age > span { transition: none; }
+}

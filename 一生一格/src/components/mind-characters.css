@@ -1,0 +1,95 @@
+.mind-characters {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  overflow: hidden;
+  border: 1px solid #31505a;
+  border-radius: 17px;
+  background: #12242d;
+  box-shadow: 0 10px 30px #0c28301e;
+}
+
+.mind-characters svg { display: block; width: 100%; height: auto; }
+
+.mind-characters__hotspots { position: absolute; top: 0; left: 0; width: 100%; aspect-ratio: 320 / 128; pointer-events: none; }
+.mind-characters__hotspot { position: absolute; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; pointer-events: auto; }
+.mind-characters__hotspot:focus-visible { outline: none; }
+.mind-characters__hotspot--rational { left: 14%; top: 10%; width: 19%; height: 84%; }
+.mind-characters__hotspot--monster { left: 43%; top: 5%; width: 16%; height: 77%; }
+.mind-characters__hotspot--monkey { left: 59%; top: 12%; width: 22%; height: 82%; }
+
+.mind-characters__labels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  min-height: 28px;
+  padding: 3px 5px;
+  border-top: 1px solid #3b5961;
+  background: #10242c;
+}
+
+.mind-characters__label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  color: #a9bfc0;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mind-characters__label i { flex: none; width: 5px; height: 5px; border-radius: 50%; }
+.mind-characters__label--rational i { background: #80d4c4; }
+.mind-characters__label--monkey i { background: #f5b476; }
+.mind-characters__label--monster i { background: #f48982; }
+.mind-characters--selected-rational .mind-characters__label--rational { color: #d6fbf2; }
+.mind-characters--selected-monkey .mind-characters__label--monkey { color: #ffdab0; }
+.mind-characters--selected-monster .mind-characters__label--monster { color: #ffd4cb; }
+.mind-characters--selected-rational .mind-characters__label--rational::after,
+.mind-characters--selected-monkey .mind-characters__label--monkey::after,
+.mind-characters--selected-monster .mind-characters__label--monster::after { content: '✓'; font-size: 11px; }
+
+.mind-characters__halo,
+.mind-characters__rational,
+.mind-characters__monkey,
+.mind-characters__monster {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: opacity .35s ease, transform .42s cubic-bezier(.2, .8, .2, 1), filter .25s ease;
+}
+
+.mind-characters__halo--rational,
+.mind-characters__halo--monkey { opacity: .24; }
+.mind-characters__halo--panic { opacity: .15; }
+
+.mind-characters--rational .mind-characters__rational { transform: translateY(-5px) scale(1.06); opacity: 1; }
+.mind-characters--rational .mind-characters__monkey { transform: translateY(4px) scale(.94); opacity: .72; }
+.mind-characters--rational .mind-characters__halo--rational { opacity: .85; }
+.mind-characters--rational .mind-characters__halo--monkey { opacity: .2; }
+
+.mind-characters--monkey .mind-characters__monkey { transform: translateY(-6px) scale(1.07); opacity: 1; }
+.mind-characters--monkey .mind-characters__rational { transform: translateY(4px) scale(.94); opacity: .7; }
+.mind-characters--monkey .mind-characters__halo--monkey { opacity: .9; }
+.mind-characters--monkey .mind-characters__halo--rational { opacity: .2; }
+
+.mind-characters--monster .mind-characters__rational,
+.mind-characters--monster .mind-characters__monkey { transform: translateY(4px) scale(.94); opacity: .72; }
+.mind-characters--monster .mind-characters__halo--rational,
+.mind-characters--monster .mind-characters__halo--monkey { opacity: .14; }
+
+.mind-characters:not(.mind-characters--monster) .mind-characters__monster { transform: translateY(-5px) scale(.84); opacity: .8; }
+.mind-characters--monster .mind-characters__monster { transform: translateY(2px) scale(1.18); opacity: 1; }
+.mind-characters--monster .mind-characters__halo--panic { opacity: .95; }
+
+.mind-characters--interacting-rational .mind-characters__rational { filter: drop-shadow(0 0 8px #9be1d1); }
+.mind-characters--interacting-monster .mind-characters__monster { filter: drop-shadow(0 0 8px #ff9e8e); }
+.mind-characters--interacting-monkey .mind-characters__monkey { filter: drop-shadow(0 0 8px #fbc17a); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mind-characters__halo,
+  .mind-characters__rational,
+  .mind-characters__monkey,
+  .mind-characters__monster { transition: none; }
+}

@@ -1,0 +1,64 @@
+.mind-cockpit {
+  min-width: 0;
+  padding: 18px 18px 16px;
+  border: 1px solid #dce7e3;
+  border-radius: 17px;
+  background: linear-gradient(145deg, #ffffff 0%, #f7fbf9 100%);
+  box-shadow: 0 10px 32px #15362f08;
+}
+.mind-cockpit--monkey { background: linear-gradient(145deg, #fffefd 0%, #fff9f0 100%); border-color: #e9ded0; }
+.mind-cockpit--monster { background: linear-gradient(145deg, #fffefd 0%, #fff5f1 100%); border-color: #efd6ce; }
+.mind-cockpit__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mind-cockpit__sound-controls { display: inline-flex; align-items: center; gap: 5px; }
+.mind-cockpit__eyebrow { color: #579182; font-size: 10px; font-weight: 800; letter-spacing: .06em; }
+.mind-cockpit__sound { display: inline-flex; align-items: center; gap: 5px; min-height: 27px; padding: 4px 8px; border: 1px solid #dceae4; border-radius: 999px; background: #f4faf7; color: #527d73; font-size: 10px; font-weight: 750; white-space: nowrap; }
+.mind-cockpit__sound[aria-pressed="false"] { color: #889b96; background: #f6f7f5; }
+.mind-cockpit__sound:hover { border-color: #9ccdbd; }
+.mind-cockpit__heading { margin: 9px 0 12px; }
+.mind-cockpit__heading h2 { margin: 0; color: #193039; font-size: 19px; font-weight: 800; letter-spacing: -.05em; line-height: 1.25; }
+.mind-cockpit__heading p { margin: 4px 0 0; color: #8a9a99; font-size: 11px; }
+.mind-cockpit__intro { margin-top: 10px; padding: 13px 14px 12px; border: 1px solid #d6e8e1; border-radius: 11px; background: #f1faf6; box-shadow: 0 5px 16px #1e544712; }
+.mind-cockpit__intro--monster { border-color: #f1d7ce; background: #fff4ef; }
+.mind-cockpit__intro--monkey { border-color: #eddfc6; background: #fff8ea; }
+.mind-cockpit__intro-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mind-cockpit__intro-top span { color: #618a7d; font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+.mind-cockpit__intro--monster .mind-cockpit__intro-top span { color: #ad7068; }
+.mind-cockpit__intro--monkey .mind-cockpit__intro-top span { color: #a67b4c; }
+.mind-cockpit__intro-top button { display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 6px; background: #ffffffa3; color: #57726b; }
+.mind-cockpit__intro-top button:hover { background: white; }
+.mind-cockpit__intro h3 { margin: 1px 0 5px; color: #193039; font-size: 15px; font-weight: 800; }
+.mind-cockpit__intro p { margin: 0; color: #526b69; font-size: 12px; line-height: 1.65; }
+.mind-cockpit__intro small { display: block; margin-top: 8px; color: #82958e; font-size: 10px; line-height: 1.5; }
+.mind-cockpit__description { min-height: 32px; margin: 12px 1px 0; color: #526b6b; font-size: 11px; line-height: 1.6; }
+.mind-cockpit--monkey .mind-cockpit__description { color: #84694d; }
+.mind-cockpit--monster .mind-cockpit__description { color: #8d5e5a; }
+.mind-cockpit__nudge { margin-top: 10px; padding-top: 9px; border-top: 1px solid #ecdcc4; }
+.mind-cockpit__nudge p { color: #765f49; font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; }
+.mind-cockpit__nudge-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+.mind-cockpit__nudge-actions button { min-height: 29px; padding: 5px 9px; border: 0; border-radius: 7px; background: transparent; color: #8a755d; font-size: 10px; font-weight: 800; }
+.mind-cockpit__nudge-actions button:first-child { background: #287c6b; color: #fff; }
+.mind-cockpit__nudge-actions button:hover { filter: brightness(.95); }
+.mind-cockpit__personalize { margin-top: 7px; padding: 0; border: 0; background: transparent; color: #927553; font-size: 10px; font-weight: 750; text-decoration: underline; text-decoration-color: #92755375; text-underline-offset: 3px; }
+.mind-cockpit__guide-form { display: grid; gap: 5px; margin-top: 8px; }
+.mind-cockpit__guide-form label { color: #6d6558; font-size: 10px; font-weight: 800; }
+.mind-cockpit__guide-form input { width: 100%; min-width: 0; height: 34px; padding: 0 9px; border: 1px solid #e4d9c6; border-radius: 7px; background: #fff; color: #203d3f; font-size: 12px; }
+.mind-cockpit__guide-form input::placeholder { color: #a5b4ae; }
+.mind-cockpit__guide-form p { margin: 0; color: #aa5949; font-size: 10px; }
+.mind-cockpit__sound:focus-visible, .mind-cockpit__intro button:focus-visible, .mind-cockpit__guide-form input:focus-visible { outline: 2px solid #68baa6; outline-offset: 2px; }
+@media (max-width: 400px) {
+  .mind-cockpit { padding: 17px 15px 15px; }
+}
+@media (max-width: 700px) {
+  .mind-cockpit { border-radius: 19px; padding: 19px; }
+  .mind-cockpit__heading h2 { font-size: 21px; }
+  .mind-cockpit__heading p, .mind-cockpit__description { font-size: 13px; }
+  .mind-cockpit__sound { min-height: 36px; padding: 5px 10px; font-size: 12px; }
+  .mind-cockpit__intro { padding: 15px; }
+  .mind-cockpit__intro h3 { font-size: 16px; }
+  .mind-cockpit__intro p, .mind-cockpit__nudge p { font-size: 13px; }
+  .mind-cockpit__intro-top button { width: 36px; height: 36px; }
+  .mind-cockpit__nudge-actions button { min-height: 42px; padding: 8px 14px; font-size: 12px; }
+  .mind-cockpit__personalize { min-height: 40px; font-size: 12px; }
+  .mind-cockpit__guide-form label, .mind-cockpit__guide-form input { font-size: 13px; }
+  .mind-cockpit__guide-form input { height: 42px; }
+}

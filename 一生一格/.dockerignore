@@ -1,0 +1,17 @@
+node_modules
+dist
+data
+backups
+private
+deploy
+.git
+.env
+.env.production
+*.sqlite*
+*.mp3
+*.ogg
+design
+docs
+*.tsbuildinfo
+*.test.ts
+server/*.test.mjs
