@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#2563eb"/>
+    </marker>
+  </defs>
+  <rect width="800" height="380" rx="8" fill="#fafbfc"/>
+  <rect width="800" height="48" rx="8" fill="#1e3a5f"/>
+  <rect y="40" width="800" height="8" fill="#1e3a5f"/>
+  <text x="400" y="31" fill="#fff" font-size="16" font-weight="700" text-anchor="middle">Skill Loading — Catalog in system prompt, full content in tool_result</text>
+
+  <text x="32" y="78" fill="#475569" font-size="11" font-weight="700">Startup</text>
+  <rect x="32" y="90" width="120" height="54" rx="6" fill="#fff" stroke="#64748b"/>
+  <text x="92" y="112" fill="#1e293b" font-size="11" font-weight="700" text-anchor="middle">skills/</text>
+  <text x="92" y="130" fill="#64748b" font-size="9" text-anchor="middle">*/SKILL.md</text>
+  <line x1="152" y1="117" x2="195" y2="117" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="198" y="90" width="130" height="54" rx="6" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="263" y="112" fill="#1e3a5f" font-size="11" font-weight="700" text-anchor="middle">SkillLoader.scan</text>
+  <text x="263" y="130" fill="#64748b" font-size="9" text-anchor="middle">parse frontmatter</text>
+  <line x1="328" y1="117" x2="371" y2="117" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="374" y="90" width="130" height="54" rx="6" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="439" y="112" fill="#1e3a5f" font-size="11" font-weight="700" text-anchor="middle">Skill catalog</text>
+  <text x="439" y="130" fill="#64748b" font-size="9" text-anchor="middle">name + description</text>
+  <line x1="504" y1="117" x2="547" y2="117" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="550" y="90" width="218" height="54" rx="6" fill="#ecfdf5" stroke="#059669"/>
+  <text x="659" y="112" fill="#065f46" font-size="11" font-weight="700" text-anchor="middle">system prompt</text>
+  <text x="659" y="130" fill="#64748b" font-size="9" text-anchor="middle">base instructions + catalog</text>
+
+  <text x="32" y="190" fill="#475569" font-size="11" font-weight="700">Runtime</text>
+  <rect x="32" y="204" width="90" height="48" rx="6" fill="#fff" stroke="#2563eb"/>
+  <text x="77" y="233" fill="#1e293b" font-size="11" font-weight="700" text-anchor="middle">LLM</text>
+  <line x1="122" y1="228" x2="149" y2="228" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="152" y="204" width="110" height="48" rx="6" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="207" y="224" fill="#1e3a5f" font-size="10" font-weight="700" text-anchor="middle">load_skill</text>
+  <text x="207" y="240" fill="#64748b" font-size="9" text-anchor="middle">name</text>
+  <line x1="262" y1="228" x2="289" y2="228" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="292" y="204" width="100" height="48" rx="6" fill="#fff" stroke="#64748b"/>
+  <text x="342" y="224" fill="#1e293b" font-size="10" font-weight="700" text-anchor="middle">Registry</text>
+  <text x="342" y="240" fill="#64748b" font-size="9" text-anchor="middle">lookup by name</text>
+  <line x1="392" y1="228" x2="419" y2="228" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="422" y="204" width="110" height="48" rx="6" fill="#fff" stroke="#64748b"/>
+  <text x="477" y="224" fill="#1e293b" font-size="10" font-weight="700" text-anchor="middle">Full content</text>
+  <text x="477" y="240" fill="#64748b" font-size="9" text-anchor="middle">SKILL.md</text>
+  <line x1="532" y1="228" x2="559" y2="228" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="562" y="204" width="100" height="48" rx="6" fill="#ecfdf5" stroke="#059669"/>
+  <text x="612" y="224" fill="#065f46" font-size="10" font-weight="700" text-anchor="middle">tool_result</text>
+  <text x="612" y="240" fill="#64748b" font-size="9" text-anchor="middle">returned to model</text>
+  <line x1="662" y1="228" x2="689" y2="228" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="692" y="204" width="76" height="48" rx="6" fill="#fff" stroke="#2563eb"/>
+  <text x="730" y="224" fill="#1e293b" font-size="10" font-weight="700" text-anchor="middle">messages[]</text>
+  <text x="730" y="240" fill="#64748b" font-size="9" text-anchor="middle">append</text>
+
+  <path d="M730 252 V316 H77 V252" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+  <text x="403" y="309" fill="#475569" font-size="10" text-anchor="middle">The next LLM call receives the updated messages[]</text>
+</svg>

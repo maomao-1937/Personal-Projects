@@ -1,0 +1,49 @@
+{
+  "version": "s17",
+  "title": "Goal Loop",
+  "description": "A separate evaluator reads the conversation at the end of a turn and sends unfinished work back through the same loop.",
+  "steps": [
+    {
+      "type": "user_message",
+      "content": "/goal pytest tests/auth exits with code 0",
+      "annotation": "The command stores an active completion condition and starts the work."
+    },
+    {
+      "type": "assistant_text",
+      "content": "The authentication code looks correct. The tests should pass now.",
+      "annotation": "With no more tool calls, the session asks the evaluator whether the active goal is complete."
+    },
+    {
+      "type": "system_event",
+      "content": "goal_evaluated ok=false -> block",
+      "annotation": "The evaluator finds no test exit code in the conversation."
+    },
+    {
+      "type": "system_event",
+      "content": "[Goal still active] Run pytest tests/auth and surface the exit code.",
+      "annotation": "The controller appends the reason to messages[] and continues the same loop; no queue is involved."
+    },
+    {
+      "type": "tool_call",
+      "toolName": "bash",
+      "content": "pytest tests/auth",
+      "annotation": "The next agent turn runs the missing check."
+    },
+    {
+      "type": "tool_result",
+      "toolName": "bash",
+      "content": "exit_code=0\n12 passed in 0.42s",
+      "annotation": "The concrete command result enters the same conversation."
+    },
+    {
+      "type": "assistant_text",
+      "content": "pytest tests/auth exited 0: 12 tests passed.",
+      "annotation": "A turn with no further tool call reaches the Stop hook again."
+    },
+    {
+      "type": "system_event",
+      "content": "goal_evaluated ok=true -> achieved",
+      "annotation": "The controller records success, clears the active goal, and returns."
+    }
+  ]
+}

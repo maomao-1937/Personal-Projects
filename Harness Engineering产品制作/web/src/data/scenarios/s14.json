@@ -1,0 +1,46 @@
+{
+  "version": "s14",
+  "title": "MCP Tools",
+  "description": "The agent discovers external MCP tools and exposes them through a normalized tool namespace.",
+  "steps": [
+    {
+      "type": "user_message",
+      "content": "Search the documentation for deployment guidance.",
+      "annotation": "The user asks for a tool source outside the built-in set."
+    },
+    {
+      "type": "tool_call",
+      "toolName": "connect_mcp",
+      "content": "{\"name\":\"docs\"}",
+      "annotation": "The runtime creates an MCP client for the named server."
+    },
+    {
+      "type": "system_event",
+      "content": "normalize_mcp_name(\"docs\", \"search\") -> mcp__docs__search",
+      "annotation": "External tools are namespaced to avoid collisions."
+    },
+    {
+      "type": "tool_result",
+      "toolName": "connect_mcp",
+      "content": "Connected to MCP server 'docs'. Discovered 2 tools: search, get_version",
+      "annotation": "Tool discovery expands the active tool pool."
+    },
+    {
+      "type": "tool_call",
+      "toolName": "mcp__docs__search",
+      "content": "{\"query\":\"deployment\"}",
+      "annotation": "The LLM can now call the discovered tool by its normalized name."
+    },
+    {
+      "type": "tool_result",
+      "toolName": "mcp__docs__search",
+      "content": "[docs] Found 3 results for 'deployment'",
+      "annotation": "The external result is appended like any other tool result."
+    },
+    {
+      "type": "assistant_text",
+      "content": "The docs server found three matches for deployment guidance.",
+      "annotation": "The agent summarizes external tool output for the user."
+    }
+  ]
+}

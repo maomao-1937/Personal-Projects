@@ -1,0 +1,47 @@
+{
+  "version": "s16",
+  "decisions": [
+    {
+      "id": "script-owns-fixed-orchestration",
+      "title": "Code Owns Fixed Orchestration",
+      "description": "When the stages and aggregation rules are known in advance, a workflow script makes the process parallel, reproducible, and inspectable without changing the main agent loop.",
+      "alternatives": "Letting the model choose every next step is more flexible, but slower and harder to resume for a fixed procedure.",
+      "zh": {
+        "title": "固定编排由代码负责",
+        "description": "当阶段与汇总规则事先确定时，workflow 脚本能让流程并行、可复现、可检查，同时不修改主 Agent 循环。"
+      },
+      "ja": {
+        "title": "固定された編成はコードが担う",
+        "description": "段階と集約ルールが事前に決まっているなら、workflow script は main Agent loop を変えずに処理を並列化し、再現可能で検査可能にする。"
+      }
+    },
+    {
+      "id": "semantic-journal-keys",
+      "title": "Semantic Keys Make Resume Independent of Completion Order",
+      "description": "Journal entries use stable call content rather than a shared completion counter. Concurrent calls can finish in any order and still map to the correct cached result.",
+      "alternatives": "Indexing by completion order is simpler, but replays the wrong result as soon as concurrent timing changes.",
+      "zh": {
+        "title": "语义键让恢复不依赖完成顺序",
+        "description": "Journal 用稳定的调用内容作为 key，而不是共享完成计数器。并发调用无论以什么顺序结束，都能命中正确缓存。"
+      },
+      "ja": {
+        "title": "意味キーで完了順序に依存せず再開する",
+        "description": "Journal は共有完了カウンタではなく安定した call 内容を key にする。並行 call の終了順が変わっても正しい cache result に対応できる。"
+      }
+    },
+    {
+      "id": "fail-the-workflow",
+      "title": "Orchestration Failures Propagate",
+      "description": "A failed stage, invalid structured result, corrupt journal, or exceeded run-wide limit fails the workflow instead of silently dropping an item and reporting success.",
+      "alternatives": "Best-effort collection can be useful for optional work, but it must be explicit rather than the default.",
+      "zh": {
+        "title": "编排故障必须向上传播",
+        "description": "阶段失败、结构化结果不合法、journal 损坏或超过全局限制时，workflow 直接失败，而不是静默丢项后仍报告成功。"
+      },
+      "ja": {
+        "title": "編成の失敗は上位へ伝播させる",
+        "description": "stage failure、無効な structured result、破損 journal、run-wide limit 超過は workflow を失敗させ、項目を黙って落として成功扱いしない。"
+      }
+    }
+  ]
+}

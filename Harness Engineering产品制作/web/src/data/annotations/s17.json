@@ -1,0 +1,47 @@
+{
+  "version": "s17",
+  "decisions": [
+    {
+      "id": "host-owns-completion-gate",
+      "title": "The Host Owns the Completion Gate",
+      "description": "The working model may request to stop, but GoalController evaluates the active goal before AgentSession returns. The gate sits at the existing turn boundary.",
+      "alternatives": "Asking the working model whether it is finished is simpler, but lets the same actor make and verify its own claim.",
+      "zh": {
+        "title": "完成闸门由宿主持有",
+        "description": "工作模型可以请求停止，但 GoalController 会在 AgentSession 返回前评估 active goal。这个闸门就在原有的轮次边界上。"
+      },
+      "ja": {
+        "title": "完了ゲートはホストが所有する",
+        "description": "作業モデルは停止を要求できますが、GoalController は AgentSession が return する前に active goal を評価します。この gate は既存の turn 境界に置かれます。"
+      }
+    },
+    {
+      "id": "conversation-is-evaluator-input",
+      "title": "The Conversation Is the Evaluator's Input",
+      "description": "The evaluator receives the active condition and the current conversation, including tool results reported there. It has no tools of its own and judges only what the conversation contains.",
+      "alternatives": "Letting the evaluator rerun commands would turn a completion check into another worker and create a second execution path.",
+      "zh": {
+        "title": "对话记录就是判断器的输入",
+        "description": "判断器接收 active condition 和当前对话，其中也包括已经写入的工具结果。它自己没有工具，只能根据对话中已有的内容判断。"
+      },
+      "ja": {
+        "title": "conversation が evaluator の入力になる",
+        "description": "evaluator は active condition と現在の conversation を受け取り、そこに記録された tool result も読みます。自身では tool を使えず、conversation にある内容だけで判断します。"
+      }
+    },
+    {
+      "id": "continuation-limits-preserve-goal",
+      "title": "Limits Return Control Without Clearing the Goal",
+      "description": "When a goal is unmet, the controller appends the evaluator's reason to messages[] and continues the same loop. The Stop-hook block cap or global turn limit returns control to the user while leaving the goal active.",
+      "alternatives": "Continuing without any limit can hold one request forever; marking the goal complete or clearing it at the limit would lose unfinished work.",
+      "zh": {
+        "title": "达到限制时交还控制权，但保留目标",
+        "description": "目标未满足时，controller 把判断理由追加到 messages[]，并在同一个循环里继续。Stop hook 的连续阻止上限或全局轮次上限会把控制权交还用户，同时让目标保持 active。"
+      },
+      "ja": {
+        "title": "上限では control を返し、goal は維持する",
+        "description": "goal が未達なら、controller は evaluator の理由を messages[] に追加し、同じ loop を続けます。Stop hook の連続 block 上限または global turn limit に達すると、goal を active のまま user に control を返します。"
+      }
+    }
+  ]
+}

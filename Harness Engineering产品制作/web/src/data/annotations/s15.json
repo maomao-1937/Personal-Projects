@@ -1,0 +1,47 @@
+{
+  "version": "s15",
+  "decisions": [
+    {
+      "id": "composition-over-new-loop",
+      "title": "The Harness Composes Previous Layers",
+      "description": "The integrated harness does not replace the loop with a new architecture. It composes memory, tasks, skills, background work, teams, worktrees, and MCP around the same core model-tool-result cycle.",
+      "alternatives": "A new orchestration framework would look more impressive, but it would hide the continuity across the course.",
+      "zh": {
+        "title": "Harness 组合既有层，而不是换掉循环",
+        "description": "集成后的 Harness 没有用新架构替换循环，而是把 memory、task、skill、后台任务、团队、worktree、MCP 组合到同一个模型-工具-结果循环周围。"
+      },
+      "ja": {
+        "title": "Harness は既存レイヤーを統合する",
+        "description": "統合された Harness はループを新しい構造で置き換えません。memory、task、skill、バックグラウンド処理、チーム、worktree、MCP を同じ model-tool-result サイクルの周囲に合成します。"
+      }
+    },
+    {
+      "id": "single-source-of-runtime-truth",
+      "title": "Runtime State Has Named Sources",
+      "description": "Context assembly pulls from named sources such as memory, task graph, skills, tool registry, and policy. This keeps a large agent debuggable because each piece of prompt context has an owner.",
+      "alternatives": "Dumping everything into one prompt string is shorter, but it becomes impossible to tell which subsystem caused a bad decision.",
+      "zh": {
+        "title": "运行时状态来自具名来源",
+        "description": "上下文组装从 memory、task graph、skills、tool registry、policy 等具名来源读取。大型 agent 因此仍可调试，因为每块 prompt context 都有清晰归属。"
+      },
+      "ja": {
+        "title": "ランタイム状態には名前付きの出所がある",
+        "description": "コンテキスト組み立ては memory、task graph、skills、tool registry、policy などの名前付きソースから取得します。各 prompt context に所有者があるため、大きなエージェントでもデバッグ可能です。"
+      }
+    },
+    {
+      "id": "recovery-is-first-class",
+      "title": "Recovery Is Part of the Main Flow",
+      "description": "Compaction, error recovery, and asynchronous result collection are normal loop behavior. The harness handles recovery and resumption through named paths instead of scattered exception branches.",
+      "alternatives": "Leaving recovery at the edges makes it harder to see which state is safe to resume.",
+      "zh": {
+        "title": "恢复能力是一等流程",
+        "description": "压缩、错误恢复和异步结果收集都属于正常循环。Harness 通过明确的路径处理恢复与续跑，而不是把逻辑散落在异常分支中。"
+      },
+      "ja": {
+        "title": "リカバリは主要フローの一部",
+        "description": "圧縮、エラー回復、非同期結果収集を通常のループ動作として扱います。Harness は回復と再開を名前付きの経路にまとめ、例外分岐へ散らしません。"
+      }
+    }
+  ]
+}
