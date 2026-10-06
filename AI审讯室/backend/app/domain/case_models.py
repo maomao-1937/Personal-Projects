@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import Field, field_validator, model_validator
 
 from app.domain.types import DomainModel
+from app.domain.case_intent import CaseIntent
 
 
 ALLOWED_LIE_TOPICS = {
@@ -119,6 +120,7 @@ class CaseSnapshot(DomainModel):
     case_code: str = Field(min_length=4, max_length=24)
     source: Literal["llm", "manual_fallback"]
     model_name: str | None = Field(default=None, max_length=120)
+    generation_intent: CaseIntent | None = None
     title: str = Field(min_length=2, max_length=40)
     subtitle: str = Field(min_length=4, max_length=80)
     time: str = Field(min_length=4, max_length=80)
@@ -245,6 +247,10 @@ class CaseSnapshot(DomainModel):
             "caseId": self.case_id,
             "caseCode": self.case_code,
             "generationSource": self.source,
+            "generationIntent": (
+                self.generation_intent.model_dump(by_alias=True)
+                if self.generation_intent is not None else None
+            ),
             "title": self.title,
             "subtitle": self.subtitle,
             "time": self.time,

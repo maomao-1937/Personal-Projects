@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import json
 from typing import Protocol
+from urllib.parse import urlsplit
 
 import httpx
 
 from app.core.config import Settings
 from app.domain.case_models import CaseSnapshot
-from app.llm.prompts import dialogue_messages, generation_messages, review_messages
+from app.llm.prompts import dialogue_messages, generation_messages, intent_messages, review_messages
 
 
 class LLMProviderError(RuntimeError):
@@ -17,6 +18,8 @@ class LLMProviderError(RuntimeError):
 class LLMProvider(Protocol):
     configured: bool
     case_model: str
+
+    def analyze_case_json(self, prompt: str) -> str: ...
 
     def generate_case_json(self, prompt: str) -> str: ...
 
@@ -33,6 +36,9 @@ class UnavailableLLMProvider:
         raise LLMProviderError("LLM provider is not configured")
 
     def generate_case_json(self, prompt: str) -> str:
+        return self._raise()
+
+    def analyze_case_json(self, prompt: str) -> str:
         return self._raise()
 
     def review_case_json(self, prompt: str) -> str:
@@ -65,6 +71,17 @@ class OpenAICompatibleProvider:
         if not settings.llm_configured:
             return UnavailableLLMProvider()
         return cls(settings)
+
+    def analyze_case_json(self, prompt: str) -> str:
+        return self._complete(
+            model=self.review_model,
+            messages=intent_messages(prompt),
+            max_tokens=900,
+            temperature=0.1,
+            response_format={"type": "json_object"},
+            disable_thinking=True,
+            timeout_seconds=min(30, self.timeout_seconds),
+        )
 
     def generate_case_json(self, prompt: str) -> str:
         machine_schema = json.dumps(
@@ -114,6 +131,7 @@ class OpenAICompatibleProvider:
         temperature: float,
         response_format: dict | None,
         disable_thinking: bool,
+        timeout_seconds: float | None = None,
     ) -> str:
         payload: dict = {
             "model": model,
@@ -124,11 +142,14 @@ class OpenAICompatibleProvider:
         }
         if response_format is not None:
             payload["response_format"] = response_format
-        if disable_thinking:
+        if urlsplit(self.base_url).hostname == "api.deepseek.com":
+            # Keep the token budget for JSON and spoken replies, not reasoning.
+            payload["thinking"] = {"type": "disabled"}
+        elif disable_thinking:
             payload["enable_thinking"] = False
         try:
             with httpx.Client(
-                timeout=self.timeout_seconds,
+                timeout=timeout_seconds if timeout_seconds is not None else self.timeout_seconds,
                 trust_env=self.trust_env,
                 transport=self.transport,
             ) as client:
@@ -146,5 +167,5 @@ class OpenAICompatibleProvider:
             if not isinstance(content, str) or not content.strip():
                 raise LLMProviderError("model returned empty content")
             return content.strip()
-        except (httpx.HTTPError, KeyError, TypeError, ValueError) as exc:
+        except (httpx.HTTPError, IndexError, KeyError, TypeError, ValueError) as exc:
             raise LLMProviderError("model request failed") from exc

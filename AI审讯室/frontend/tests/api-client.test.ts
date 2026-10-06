@@ -5,9 +5,22 @@ import {
   apiRequest,
   AppError,
   authApi,
+  gameApi,
 } from "@/features/game/api";
 
 describe("apiRequest", () => {
+  it("posts the case prompt with enough time for analysis and generation", async () => {
+    const timer = vi.spyOn(window, "setTimeout");
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ caseId: "case_idea" }), { status: 200 }));
+    vi.stubGlobal("fetch", fetcher);
+    try {
+      await gameApi.generateCase({ prompt: "博物馆失窃" });
+      expect(fetcher).toHaveBeenCalledWith("/api/v1/cases/generate", expect.objectContaining({
+        method: "POST", body: JSON.stringify({ prompt: "博物馆失窃" }),
+      }));
+      expect(timer).toHaveBeenCalledWith(expect.any(Function), 150_000);
+    } finally { timer.mockRestore(); vi.unstubAllGlobals(); }
+  });
   it("returns parsed JSON on success", async () => {
     const fetcher = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ status: "ok" }), {

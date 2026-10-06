@@ -45,18 +45,14 @@ describe("CinematicCaseLaunch", () => {
     const scene = screen.getByRole("region", { name: "AI 嫌疑人案件生成场景" });
     expect(scene).toHaveAttribute("aria-busy", "false");
     expect(scene).toHaveAttribute("data-launch-state", "IDLE");
-    expect(scene).toHaveAttribute("data-scene-version", "v3");
-    expect(screen.getByTestId("containment-shell")).toBeInTheDocument();
-    expect(screen.getByTestId("containment-gate")).toBeInTheDocument();
-    expect(screen.getByTestId("containment-gate")).not.toBe(
-      screen.getByTestId("containment-shell"),
-    );
-    expect(screen.getByTestId("ai-suspect")).toBeInTheDocument();
-    expect(screen.getByTestId("foreground-interrogator")).toBeInTheDocument();
+    expect(document.querySelector(".containment-frame")).toBeInTheDocument();
+    expect(document.querySelector(".suspect-seat")).toBeInTheDocument();
+    expect(document.querySelector(".interrogator-silhouette")).toBeInTheDocument();
     expect(screen.getByText("会撒谎")).toHaveClass("cinematic-copy__shift");
     expect(screen.getByText("无法改写真相")).toHaveClass("cinematic-copy__truth");
     expect(screen.getByText("AI 嫌疑人")).toHaveClass("cinematic-copy__shift");
 
+    fireEvent.change(screen.getByRole("textbox", { name: "你想审讯什么样的案件？" }), { target: { value: "博物馆的展画被调包" } });
     fireEvent.click(screen.getByRole("button", { name: "生成案件" }));
     expect(gameApi.generateCase).toHaveBeenCalledOnce();
     expect(scene).toHaveAttribute("aria-busy", "true");
@@ -83,6 +79,7 @@ describe("CinematicCaseLaunch", () => {
     vi.spyOn(gameApi, "generateCase").mockReturnValue(new Promise(() => {}));
     render(<CinematicCaseLaunch />);
 
+    fireEvent.change(screen.getByRole("textbox", { name: "你想审讯什么样的案件？" }), { target: { value: "博物馆的展画被调包" } });
     const button = screen.getByRole("button", { name: "生成案件" });
     fireEvent.click(button);
     fireEvent.click(button);
@@ -96,6 +93,7 @@ describe("CinematicCaseLaunch", () => {
     vi.spyOn(gameApi, "generateCase").mockReturnValue(generated.promise);
     render(<CinematicCaseLaunch />);
 
+    fireEvent.change(screen.getByRole("textbox", { name: "你想审讯什么样的案件？" }), { target: { value: "博物馆的展画被调包" } });
     fireEvent.click(screen.getByRole("button", { name: "生成案件" }));
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
@@ -103,7 +101,7 @@ describe("CinematicCaseLaunch", () => {
       await vi.advanceTimersByTimeAsync(4_000);
     });
     const status = screen.getByRole("status");
-    expect(status).toHaveTextContent("正在检索档案...");
+    expect(status).toHaveTextContent("正在理解你的案件方向并生成案件");
     expect(status).not.toHaveTextContent("构建行为模型...");
     expect(status).not.toHaveTextContent("核验证据链...");
   });
@@ -121,6 +119,7 @@ describe("CinematicCaseLaunch", () => {
     } as GameSession);
     render(<CinematicCaseLaunch />);
 
+    fireEvent.change(screen.getByRole("textbox", { name: "你想审讯什么样的案件？" }), { target: { value: "博物馆的展画被调包" } });
     fireEvent.click(screen.getByRole("button", { name: "生成案件" }));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(4_000);
@@ -147,6 +146,7 @@ describe("CinematicCaseLaunch", () => {
     } as GameSession);
 
     render(<CinematicCaseLaunch onComplete={onComplete} />);
+    fireEvent.change(screen.getByRole("textbox", { name: "你想审讯什么样的案件？" }), { target: { value: "博物馆的展画被调包" } });
     fireEvent.click(screen.getByRole("button", { name: "生成案件" }));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(4_500);

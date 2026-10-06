@@ -18,10 +18,20 @@ export type Evidence = {
 
 export type CaseOption = { id: string; label: string };
 
+export type CaseIntent = {
+  scene: string;
+  incident: string;
+  suspectRole: string;
+  atmosphere: string;
+  preferences: string;
+  adaptationNote: string;
+};
+
 export type PublicCase = {
   caseId: string;
   caseCode: string;
   generationSource: "llm" | "manual_fallback";
+  generationIntent?: CaseIntent | null;
   title: string;
   subtitle: string;
   time: string;

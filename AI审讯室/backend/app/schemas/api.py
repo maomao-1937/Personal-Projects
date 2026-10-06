@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from app.domain.scoring import ReportInput, ScoreResult
 from app.domain.types import DomainModel, GameSessionState, Tactic
+from app.domain.case_intent import CaseIntent
 
 
 class CreateSessionRequest(DomainModel):
@@ -21,12 +22,18 @@ class AuthSessionResponse(DomainModel):
 
 
 class GenerateCaseRequest(DomainModel):
+    prompt: str | None = Field(default=None, min_length=1, max_length=500)
     theme: Literal[
         "urban_archive",
         "workplace_secret",
         "missing_property",
     ] | None = None
     difficulty: str = Field(default="standard", pattern=r"^(standard|hard)$")
+
+    @field_validator("prompt", mode="before")
+    @classmethod
+    def trim_prompt(cls, value):
+        return value.strip() if isinstance(value, str) else value
 
 
 class TurnRequest(DomainModel):
@@ -84,6 +91,7 @@ class PublicCaseResponse(DomainModel):
     motive_options: list[CaseOptionResponse]
     method_options: list[CaseOptionResponse]
     generation_source: str = "manual_fallback"
+    generation_intent: CaseIntent | None = None
 
 
 class SessionResponse(GameSessionState):

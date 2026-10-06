@@ -887,8 +887,9 @@ a {
 
 .cinematic-launch--intro .cinematic-copy,
 .cinematic-launch--generating .cinematic-copy,
-.cinematic-launch--locked .cinematic-copy,
-.cinematic-launch--error .cinematic-copy {
+.cinematic-launch--locking .cinematic-copy,
+.cinematic-launch--completed .cinematic-copy,
+.cinematic-launch--locked .cinematic-copy {
   opacity: 0;
   transform: translateY(7px);
   filter: blur(4px);
@@ -2279,4 +2280,90 @@ a {
   .cinematic-copy__shift { animation: none !important; }
 
   .cinematic-copy__shift { background: none; color: #a8a5a0; }
+}
+
+/* Player case composer. Flow layout keeps controls reachable on short screens. */
+.landing-page {
+  height: auto;
+  overflow: clip;
+}
+
+.cinematic-launch {
+  display: flex;
+  align-items: flex-end;
+  min-height: 100svh;
+  height: auto;
+  padding: 112px clamp(26px, 5.4vw, 84px) max(36px, env(safe-area-inset-bottom));
+}
+
+.cinematic-copy {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  width: min(43vw, 550px);
+}
+
+.cinematic-copy__line { font-size: clamp(16px, 1.45vw, 21px); margin-bottom: 20px; }
+.case-composer { display: grid; gap: 10px; }
+.case-composer label { color: #eee9df; font-size: clamp(19px, 1.65vw, 25px); font-weight: 500; }
+.case-composer textarea {
+  width: 100%;
+  min-height: 108px;
+  max-height: 240px;
+  resize: vertical;
+  padding: 13px 15px;
+  border: 1px solid rgba(238, 233, 223, 0.34);
+  border-radius: 3px;
+  background: rgba(8, 9, 10, 0.82);
+  color: #eee9df;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.65;
+  backdrop-filter: blur(12px);
+}
+.case-composer textarea::placeholder { color: #93918c; }
+.case-composer textarea:focus-visible { outline: 2px solid #d9a74a; outline-offset: 2px; }
+.case-composer textarea[aria-invalid="true"] { border-color: #c88882; }
+.case-composer__meta { display: flex; justify-content: space-between; gap: 12px; color: #b1aea7; font-size: 11px; }
+.case-composer__meta p { margin: 0; }
+.case-composer__meta span { flex-shrink: 0; }
+.case-composer__validation { margin: 0; color: #e1a49d; font-size: 12px; }
+.case-composer__examples { display: flex; flex-wrap: wrap; gap: 7px; margin: 3px 0 6px; }
+.case-composer__examples button {
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid rgba(238, 233, 223, 0.2);
+  border-radius: 3px;
+  color: #c2beb5;
+  background: rgba(8, 9, 10, 0.72);
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+.case-composer__examples button:hover:not(:disabled) { border-color: #d9a74a; color: #eee9df; }
+.case-composer__examples button:focus-visible { outline: 2px solid #d9a74a; outline-offset: 2px; }
+.case-composer .cinematic-launch__button { justify-self: start; margin: 0; }
+.case-composer .cinematic-launch__button:disabled { opacity: 0.48; cursor: default; }
+.case-composer textarea:disabled,
+.case-composer__examples button:disabled { opacity: 0.6; cursor: wait; }
+.cinematic-copy .cinematic-feedback__error { margin-top: 18px; text-align: left; }
+.cinematic-feedback { pointer-events: none; }
+.cinematic-launch--idle .cinematic-feedback,
+.cinematic-launch--error .cinematic-feedback { display: none; }
+.cinematic-feedback__status { letter-spacing: 0.03em; line-height: 1.7; }
+
+.case-direction h2 { margin: 0 0 16px; font-size: 18px; }
+.case-direction dl { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; margin: 0; }
+.case-direction dt { margin-bottom: 4px; color: #756e66; font-size: 11px; }
+.case-direction dd { margin: 0; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.case-direction__note { display: grid; gap: 6px; margin: 20px 0 0; padding-left: 12px; border-left: 2px solid #9d8251; font-size: 12px; line-height: 1.7; }
+
+@media (max-width: 800px) {
+  .cinematic-launch { padding: max(200px, 28svh) 18px max(24px, calc(env(safe-area-inset-bottom) + 16px)); }
+  .cinematic-copy { width: 100%; max-width: 550px; margin: 0 auto; }
+  .cinematic-copy__line { margin: 0 0 15px; font-size: 16px; }
+  .case-composer__examples button { min-height: 44px; }
+  .case-composer .cinematic-launch__button { width: 100%; justify-self: stretch; }
+  .case-direction dl { grid-template-columns: 1fr; }
 }

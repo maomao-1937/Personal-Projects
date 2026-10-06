@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { gameApi } from "@/features/game/api";
+import { getSessionId, storeSessionId } from "@/features/game/session";
 import { useCaseLaunch } from "@/features/game/use-case-launch";
 import type { GameSession, PublicCase } from "@/features/game/types";
 
@@ -26,11 +27,81 @@ describe("useCaseLaunch", () => {
     vi.useFakeTimers();
     push.mockReset();
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
+  });
+
+  it.each(["generated", "fallback"] as const)("does not open an abandoned %s case after its request resolves", async (kind) => {
+    const pendingCase = deferred<PublicCase>();
+    vi.spyOn(gameApi, kind === "generated" ? "generateCase" : "getFallbackCase")
+      .mockReturnValue(pendingCase.promise);
+    vi.spyOn(gameApi, "createSession").mockResolvedValue({ sessionId: "ses_abandoned" } as GameSession);
+    const onComplete = vi.fn();
+    const { result, unmount } = renderHook(() => useCaseLaunch({ introDurationMs: 4_000, onComplete }));
+    let pendingLaunch!: Promise<void>;
+    act(() => {
+      pendingLaunch = kind === "generated" ? result.current.startGenerated("旧案件") : result.current.startFallback();
+    });
+    await act(async () => { await vi.advanceTimersByTimeAsync(4_000); });
+    expect(result.current.lifecycleState).toBe("GENERATING");
+    unmount();
+    storeSessionId("ses_newer_launch");
+    sessionStorage.setItem("ai-interrogation-report-result", "newer-report");
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    const removeItem = vi.spyOn(Storage.prototype, "removeItem");
+    await act(async () => {
+      pendingCase.resolve({ caseId: "case_abandoned" } as PublicCase);
+      await pendingLaunch;
+    });
+    expect(gameApi.createSession).not.toHaveBeenCalled();
+    expect(getSessionId("")).toBe("ses_newer_launch");
+    expect(sessionStorage.getItem("ai-interrogation-report-result")).toBe("newer-report");
+    expect(setItem).not.toHaveBeenCalled();
+    expect(removeItem).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it.each(["generated", "fallback"] as const)("does not replace recovery storage when an abandoned %s session resolves", async (kind) => {
+    vi.spyOn(gameApi, kind === "generated" ? "generateCase" : "getFallbackCase")
+      .mockResolvedValue({ caseId: "case_abandoned" } as PublicCase);
+    const pendingSession = deferred<GameSession>();
+    vi.spyOn(gameApi, "createSession").mockReturnValue(pendingSession.promise);
+    const onComplete = vi.fn();
+    const { result, unmount } = renderHook(() => useCaseLaunch({ onComplete }));
+    let pendingLaunch!: Promise<void>;
+    await act(async () => {
+      pendingLaunch = kind === "generated" ? result.current.startGenerated("旧案件") : result.current.startFallback();
+    });
+    expect(gameApi.createSession).toHaveBeenCalledExactlyOnceWith("case_abandoned");
+    unmount();
+    storeSessionId("ses_newer_launch");
+    sessionStorage.setItem("ai-interrogation-report-result", "newer-report");
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    const removeItem = vi.spyOn(Storage.prototype, "removeItem");
+    await act(async () => {
+      pendingSession.resolve({ sessionId: "ses_abandoned" } as GameSession);
+      await pendingLaunch;
+    });
+    expect(getSessionId("")).toBe("ses_newer_launch");
+    expect(sessionStorage.getItem("ai-interrogation-report-result")).toBe("newer-report");
+    expect(setItem).not.toHaveBeenCalled();
+    expect(removeItem).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it("passes a trimmed player prompt while keeping legacy callers optional", async () => {
+    vi.spyOn(gameApi, "generateCase").mockRejectedValue(new Error("生成失败"));
+    const { result } = renderHook(() => useCaseLaunch());
+    await act(async () => { await result.current.startGenerated("  博物馆的展画被调包  "); });
+    expect(gameApi.generateCase).toHaveBeenCalledWith({ prompt: "博物馆的展画被调包" });
+    await act(async () => { await result.current.startGenerated(); });
+    expect(gameApi.generateCase).toHaveBeenLastCalledWith();
   });
 
   it("starts generation immediately but preserves the intro and locked hold", async () => {

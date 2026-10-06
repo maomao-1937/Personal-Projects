@@ -90,6 +90,7 @@ def create_v1_router(
         snapshot = case_generation_service.generate(
             theme=request.theme,
             difficulty=request.difficulty,
+            prompt=request.prompt,
         )
         return snapshot.public_payload()
 

@@ -100,11 +100,11 @@ export const authApi = {
 export const gameApi = {
   getCase: (caseId: string) =>
     apiRequest<PublicCase>(`/cases/${encodeURIComponent(caseId)}`),
-  generateCase: (input: { theme?: string; difficulty?: "standard" | "hard" } = {}) =>
+  generateCase: (input: { prompt?: string; theme?: string; difficulty?: "standard" | "hard" } = {}) =>
     apiRequest<PublicCase>("/cases/generate", {
       method: "POST",
       body: JSON.stringify(input),
-    }, fetch, 120_000),
+    }, fetch, 150_000),
   getFallbackCase: () =>
     apiRequest<PublicCase>("/cases/fallback", { method: "POST" }),
   createSession: (caseId: string) =>

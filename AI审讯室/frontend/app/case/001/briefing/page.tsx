@@ -46,6 +46,22 @@ export function BriefingScreen({ caseId }: { caseId: string }) {
           <p className="dossier-summary">{caseData.summary}</p>
         </section>
 
+        {caseData.generationIntent ? (
+          <section className="dossier-section case-direction" aria-labelledby="case-direction-title">
+            <h2 id="case-direction-title">你的案件方向</h2>
+            <dl>
+              <div><dt>场景</dt><dd>{caseData.generationIntent.scene}</dd></div>
+              <div><dt>事件</dt><dd>{caseData.generationIntent.incident}</dd></div>
+              <div><dt>审讯对象</dt><dd>{caseData.generationIntent.suspectRole}</dd></div>
+              <div><dt>氛围</dt><dd>{caseData.generationIntent.atmosphere}</dd></div>
+              <div><dt>偏好</dt><dd>{caseData.generationIntent.preferences}</dd></div>
+            </dl>
+            {caseData.generationIntent.adaptationNote ? (
+              <p className="case-direction__note"><strong>方向调整说明</strong><span>{caseData.generationIntent.adaptationNote}</span></p>
+            ) : null}
+          </section>
+        ) : null}
+
         <div className="dossier-grid">
           <section className="dossier-section">
             <p className="section-number">02 / 核心嫌疑人</p>

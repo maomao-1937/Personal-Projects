@@ -18,7 +18,9 @@ describe("LandingPage", () => {
     )).toBeVisible();
     expect(screen.getByRole("button", { name: "生成案件" })).toBeVisible();
     expect(screen.getByRole("button", { name: "退出" })).toBeVisible();
-    expect(screen.getAllByRole("button")).toHaveLength(2);
+    expect(screen.getByRole("textbox", { name: "你想审讯什么样的案件？" })).toBeVisible();
+    expect(screen.getByRole("group", { name: "试试这些案件方向" })).toBeVisible();
+    expect(screen.getAllByRole("button")).toHaveLength(5);
 
     expect(screen.queryByText("CASE SYSTEM / 12+")).not.toBeInTheDocument();
     expect(screen.queryByText("INTERROGATION READY")).not.toBeInTheDocument();

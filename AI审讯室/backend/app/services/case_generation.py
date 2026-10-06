@@ -7,6 +7,7 @@ from uuid import uuid4
 from pydantic import ValidationError
 
 from app.domain.case_models import CaseSnapshot
+from app.domain.case_intent import CaseIntent
 from app.llm.prompts import build_case_prompt
 from app.llm.provider import LLMProvider, LLMProviderError
 from app.repositories.cases import CaseAlreadyExistsError, CaseRepository
@@ -26,6 +27,11 @@ class LLMNotConfiguredError(CaseGenerationError):
 
 class CaseGenerationFailedError(CaseGenerationError):
     pass
+
+
+class CaseIntentFailedError(CaseGenerationError):
+    code = "CASE_INTENT_FAILED"
+    user_message = "案件方向暂时没有整理成功，请换一种描述后重试。"
 
 
 UNSAFE_CONTENT_TERMS = (
@@ -81,14 +87,21 @@ FORMAL_ENTITY_PATTERN = re.compile(
 
 
 def case_content_is_safe(snapshot: CaseSnapshot) -> bool:
-    content = snapshot.model_dump_json(by_alias=True)
+    return _content_is_safe(snapshot.model_dump_json(by_alias=True))
+
+
+def _content_is_safe(content: str) -> bool:
     if any(term in content for term in UNSAFE_CONTENT_TERMS):
         return False
     if any(re.search(pattern, content) for pattern in DANGEROUS_CONTENT_PATTERNS):
         return False
     if FORMAL_ENTITY_PATTERN.search(content):
         return False
-    if re.search(r"https?://|\b1[3-9]\d{9}\b", content, flags=re.IGNORECASE):
+    if re.search(
+        r"https?://|(?<!\d)1[3-9]\d{9}(?!\d)|[\w.%+-]+@[\w.-]+\.[A-Za-z]{2,}",
+        content,
+        flags=re.IGNORECASE,
+    ):
         return False
     return True
 
@@ -183,14 +196,26 @@ class CaseGenerationService:
         *,
         theme: str | None = None,
         difficulty: str = "standard",
+        prompt: str | None = None,
     ) -> CaseSnapshot:
         if not self.provider.configured:
             raise LLMNotConfiguredError
 
+        intent = None
+        if prompt is not None:
+            try:
+                intent = CaseIntent.model_validate_json(
+                    self.provider.analyze_case_json(prompt)
+                )
+                if not _content_is_safe(intent.model_dump_json(by_alias=True)):
+                    raise ValueError("case direction is outside the product scope")
+            except (ValueError, TypeError, ValidationError, LLMProviderError) as exc:
+                raise CaseIntentFailedError from exc
+
         for _ in range(self.max_attempts):
             try:
                 raw_case = self.provider.generate_case_json(
-                    build_case_prompt(theme, difficulty)
+                    build_case_prompt(theme, difficulty, intent=intent)
                 )
                 payload = normalize_case_graph(json.loads(raw_case))
                 for _ in range(3):
@@ -203,6 +228,7 @@ class CaseGenerationService:
                             "caseCode": f"CASE-{suffix[:16].upper()}",
                             "source": "llm",
                             "modelName": self.provider.case_model,
+                            "generationIntent": intent.model_dump(by_alias=True) if intent else None,
                         }
                     )
                     if not case_content_is_safe(snapshot):
