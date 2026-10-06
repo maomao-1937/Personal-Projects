@@ -38,6 +38,7 @@ export default function Navbar() {
           <span>AI 镜界</span><span className="hidden text-[9px] font-semibold uppercase tracking-[0.16em] text-muted/70 sm:inline">portrait lab</span>
         </Link>
         <div className="hidden items-center gap-2 sm:flex">
+          <a href="/portrait-chat" className="inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-medium text-muted transition-colors hover:bg-[#eeebe6] hover:text-ink">写真聊天预览</a>
           {items.map((item) => (
             <Link key={item.href} href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined} className={`inline-flex min-h-10 items-center rounded-lg px-4 text-sm font-medium transition-colors ${isCurrent(item.href) ? 'bg-[#e7e3dd] text-ink' : 'text-muted hover:bg-[#eeebe6] hover:text-ink'}`}>
               {item.label}
@@ -55,6 +56,7 @@ export default function Navbar() {
       </nav>
       {menuOpen && (
         <div id="mobile-navigation" className="border-t border-line bg-paper px-5 py-3 sm:hidden">
+          <a href="/portrait-chat" className="flex min-h-12 items-center border-b border-line text-sm font-medium">写真聊天预览</a>
           {items.map((item) => <Link key={item.href} href={item.href} className="flex min-h-12 items-center border-b border-line text-sm font-medium">{item.label}</Link>)}
           {!loading && (user ? <button type="button" onClick={() => void logout()} className="flex min-h-12 w-full items-center gap-2 text-left text-sm text-muted"><LogOut size={16} />退出</button> : <Link href="/access" className="mt-3 flex min-h-11 items-center justify-center rounded-lg bg-brand text-sm font-semibold text-white shadow-[0_5px_14px_rgba(200,75,49,0.16)]">邀请码进入</Link>)}
         </div>

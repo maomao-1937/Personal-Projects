@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>AI 镜界 · 写真创作室</title>
+  <link rel="stylesheet" href="coral-studio.css?v=3">
+  <script src="coral-studio.js?v=3" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="AI 镜界 写真创作室">AI 镜界</a>
+    <div class="session-picker">
+      <button id="session-toggle" class="session-toggle" aria-expanded="false" aria-controls="session-menu">我的写真<img class="icon" src="assets/icons/chevron-down.svg" alt=""></button>
+      <div id="session-menu" class="session-menu" hidden>
+        <div class="menu-heading">我的对话<span>仅保存在本次预览</span></div>
+        <div id="sessions"></div>
+      </div>
+    </div>
+    <button id="new" class="new-chat"><img class="icon" src="assets/icons/plus.svg" alt="">新建对话</button>
+  </header>
+  <main class="studio">
+    <section class="gallery" aria-label="写真展示">
+      <div class="gallery-inner">
+        <div class="gallery-caption"><span id="result-label">当前写真 · 示例</span><span id="result-status" hidden></span></div>
+        <button id="image-open" class="portrait-open" aria-label="查看示例写真大图"><img id="result-image" class="portrait" src="assets/lifestyle-portrait.webp" alt="自然光生活写真示例"></button>
+        <div id="gallery-empty" class="gallery-empty" hidden>
+          <img class="empty-icon" src="assets/icons/photo.svg" alt="">
+          <h2>你的下一张写真，从这里开始。</h2><p>添加一张自拍，再告诉我你的想法。</p>
+        </div>
+        <div id="image-actions" class="image-actions">
+          <button id="view-image"><img class="icon" src="assets/icons/external-link.svg" alt="">查看大图</button>
+          <span class="action-divider" aria-hidden="true"></span>
+          <a id="download" href="assets/lifestyle-portrait.webp" download="生活写真示例.webp"><img class="icon" src="assets/icons/download.svg" alt="">下载照片</a>
+        </div>
+      </div>
+    </section>
+    <section class="conversation" aria-label="写真聊天">
+      <div class="conversation-intro"><h1>一起拍点不一样的。</h1><p>说出你的想法，继续调整这张写真。</p></div>
+      <div class="reference-row" id="reference-row">
+        <img id="reference-image" src="assets/reference-photo.webp" alt="示例参考照片"><span>参考照片</span><button id="change" class="text-action">更换</button>
+      </div>
+      <div class="upload-row" id="upload-row" hidden>
+        <button id="upload"><img class="icon" src="assets/icons/photo.svg" alt="">上传一张自拍</button><span>JPG / PNG / WebP · 最大 10 MB</span>
+      </div>
+      <div id="thread" class="thread"><div id="messages" class="messages" role="log" aria-label="聊天消息" aria-live="polite"></div></div>
+      <footer class="composer-area">
+        <div class="suggestions" aria-label="尝试修改">
+          <button data-prompt="背景换成海边，保持人物和衣服不变">换个背景</button>
+          <button data-prompt="把衣服改成黑色，保留当前背景和人物特征">衣服改成黑色</button>
+          <button data-prompt="光线柔和一点，保留当前服装和构图">光线柔和一点</button>
+        </div>
+        <form id="form" class="composer">
+          <button id="attach" type="button" class="attach" aria-label="添加或更换参考照片"><img class="icon" src="assets/icons/paperclip.svg" alt=""></button>
+          <label class="sr-only" for="prompt">描述你想生成或修改的写真</label><textarea id="prompt" maxlength="2000" rows="1" placeholder="接下来，想改哪里？"></textarea>
+          <button id="send" type="submit" class="send" aria-label="发送提示词" disabled>发送<img class="icon" src="assets/icons/arrow-up.svg" alt=""></button>
+        </form>
+        <p class="preview-note">交互预览 · 图片为示例</p>
+      </footer>
+    </section>
+  </main>
+  <input id="file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+  <div id="toast" class="toast" role="alert" hidden></div>
+  <dialog id="dialog" aria-label="写真大图">
+    <button id="close-modal" class="close-modal" aria-label="关闭大图"><img class="icon" src="assets/icons/x.svg" alt=""></button>
+    <img id="large-image" alt="写真大图"><p id="modal-caption">示例写真</p>
+  </dialog>
+</body>
+</html>

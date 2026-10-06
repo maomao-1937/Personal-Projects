@@ -1,0 +1,3 @@
+Noto Sans SC font subset from Google Fonts
+License: SIL Open Font License 1.1
+Official license source: https://github.com/google/fonts/blob/main/ofl/notosanssc/OFL.txt
