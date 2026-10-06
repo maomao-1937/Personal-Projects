@@ -5,6 +5,7 @@ import { extname, join, resolve, sep } from 'node:path';
 import { openDatabase } from './database.mjs';
 import { accessCodeDigest, normalizeAccessCode, sessionDigest } from './invites.mjs';
 import { decryptLegacyDraftMetadata } from './legacyDrafts.mjs';
+import { validGoals } from './taskPlanValidation.mjs';
 
 const SESSION_LIFETIME = 30 * 24 * 60 * 60 * 1000;
 const BODY_LIMIT = 4 * 1024 * 1024;
@@ -30,6 +31,8 @@ function validProfile(profile) {
   }
   if (!mind || typeof mind !== 'object' || !['rational', 'monkey', 'monster'].includes(mind.selected) || !isoDate(mind.day)) return false;
   if (!guide || typeof guide !== 'object' || typeof guide.goal !== 'string' || guide.goal.length > 80 || typeof guide.distraction !== 'string' || guide.distraction.length > 60 || typeof guide.soundEnabled !== 'boolean') return false;
+  if (Object.hasOwn(profile, 'goals') && !validGoals(profile.goals)) return false;
+  if (Object.hasOwn(profile, 'calendarConfigured') && typeof profile.calendarConfigured !== 'boolean') return false;
   return true;
 }
 

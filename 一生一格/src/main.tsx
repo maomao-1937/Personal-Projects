@@ -4,6 +4,7 @@ import '@fontsource-variable/noto-sans-sc';
 import '@fontsource-variable/manrope';
 import App from './App';
 import './styles.css';
+import './visual-refresh.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

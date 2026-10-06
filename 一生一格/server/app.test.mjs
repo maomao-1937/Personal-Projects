@@ -12,6 +12,8 @@ import { bindLegacyAccount, createAccount, rotateAccount, accessCodeDigest, norm
 import { decryptLegacyDraftMetadata } from './legacyDrafts.mjs';
 import { openDatabase } from './database.mjs';
 import { normalizeAppOrigin } from './config.mjs';
+import { createGoal, normalizeGoals } from '../src/lib/taskPlan.ts';
+import { validGoals } from './taskPlanValidation.mjs';
 
 const ORIGIN = 'http://127.0.0.1:5173';
 const SECRET = 'local-test-secret-at-least-thirty-two-chars';
@@ -344,4 +346,105 @@ test('APP_ORIGIN normalizes a trailing slash and rejects invalid production orig
   for (const value of ['http://example.com', 'https://example.com/app', 'https://example.com/?next=1', 'https://user:password@example.com']) {
     assert.throws(() => normalizeAppOrigin(value, { production: true }));
   }
+});
+
+const goalInput = { title: '测试面试目标', kind: 'interview', context: '测试岗位', deadline: '2026-10-17', estimatedMinutes: 35, frequency: 'daily' };
+
+test('goal progress, feedback and demo calendar flag persist across restart and stay separate by account', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'life-weeks-goals-'));
+  try {
+    const dbPath = join(dir, 'users.sqlite');
+    const first = await fixture(t, { dbPath });
+    const account = first.create();
+    const alice = await first.login(account.code);
+    const bob = await first.login(first.create().code);
+    const goal = createGoal(goalInput, '2026-10-03');
+    goal.actions[0].completedAt = '2026-10-03T10:00:00.000Z';
+    goal.actions[1].feedback = 'busy';
+    goal.actions[1].scheduledDate = '2026-10-09';
+    goal.actions[1].time = '19:30';
+    const saved = await first.request('/api/profile', { method: 'PUT', cookie: alice.cookie, body: { profile: { ...profile, goals: [goal], calendarConfigured: false }, revision: 0 } });
+    assert.equal(saved.status, 200);
+    assert.deepEqual(saved.data.profile.goals, [goal]);
+    assert.equal(saved.data.profile.calendarConfigured, false);
+    assert.deepEqual((await first.request('/api/profile', { cookie: bob.cookie })).data, { profile: null, revision: 0 });
+    const conflict = await first.request('/api/profile', { method: 'PUT', cookie: alice.cookie, body: { profile: { ...profile, goals: [], calendarConfigured: false }, revision: 0 } });
+    assert.equal(conflict.status, 409);
+    assert.deepEqual(conflict.data.profile.goals, [goal]);
+    await first.close();
+    const second = await fixture(t, { dbPath });
+    const login = await second.login(account.code);
+    const loaded = await second.request('/api/profile', { cookie: login.cookie });
+    assert.equal(loaded.data.revision, 1);
+    assert.deepEqual(loaded.data.profile.goals, [goal]);
+    assert.equal(loaded.data.profile.calendarConfigured, false);
+    await second.close();
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('existing version 3 profiles remain accepted without optional goal fields', async (t) => {
+  const f = await fixture(t);
+  const login = await f.login(f.create().code);
+  const saved = await f.request('/api/profile', { method: 'PUT', cookie: login.cookie, body: { profile, revision: 0 } });
+  assert.equal(saved.status, 200);
+  assert.deepEqual(saved.data.profile.notes, profile.notes);
+  assert.deepEqual(normalizeGoals(saved.data.profile.goals), []);
+});
+
+test('server rejects malformed goal data and leaves the previous revision untouched', async (t) => {
+  const f = await fixture(t);
+  const login = await f.login(f.create().code);
+  const goal = createGoal(goalInput, '2026-10-03');
+  const validProfile = { ...profile, goals: [goal], calendarConfigured: false };
+  assert.equal((await f.request('/api/profile', { method: 'PUT', cookie: login.cookie, body: { profile: validProfile, revision: 0 } })).status, 200);
+  const invalidChanges = [
+    (value) => { value.goals = null; },
+    (value) => { value.goals = {}; },
+    (value) => { value.calendarConfigured = 'false'; },
+    (value) => { value.goals = Array(21).fill(goal); },
+    (value) => { value.goals.push(structuredClone(goal)); },
+    (value) => { value.goals[0].actions = Array(61).fill(goal.actions[0]); },
+    (value) => { value.goals[0].actions.push(structuredClone(goal.actions[0])); },
+    (value) => { value.goals[0].createdOn = '2026-02-30'; },
+    (value) => { value.goals[0].deadline = '2026-10-02'; },
+    (value) => { value.goals[0].kind = 'unknown'; },
+    (value) => { value.goals[0].title = ' '; },
+    (value) => { value.goals[0].context = '岗'.repeat(501); },
+    (value) => { value.goals[0].actions[0].scheduledDate = '2026-02-30'; },
+    (value) => { value.goals[0].actions[0].scheduledDate = '2026-10-18'; },
+    (value) => { value.goals[0].actions[0].scheduledDate = '2026-10-02'; },
+    (value) => { value.goals[0].actions[0].time = '24:00'; },
+    (value) => { value.goals[0].actions[0].estimatedMinutes = 0; },
+    (value) => { value.goals[0].actions[0].estimatedMinutes = 1441; },
+    (value) => { value.goals[0].actions[0].estimatedMinutes = 1.5; },
+    (value) => { value.goals[0].actions[0].feedback = 'other'; },
+    (value) => { value.goals[0].actions[0].completedAt = true; },
+    (value) => { value.goals[0].actions[0].completedAt = '2026-02-30T12:00:00Z'; },
+    (value) => { value.goals[0].actions[0].completedAt = '2026-10-03'; },
+    (value) => { value.goals[0].actions[0].criterion = ''; },
+    (value) => { value.goals[0].actions[0] = []; },
+    (value) => { value.goals[0] = []; },
+  ];
+  for (const [index, change] of invalidChanges.entries()) {
+    const invalid = structuredClone(validProfile);
+    change(invalid);
+    const rejected = await f.request('/api/profile', { method: 'PUT', cookie: login.cookie, body: { profile: invalid, revision: 1 } });
+    assert.equal(rejected.status, 400, `invalid goal case ${index}`);
+  }
+  const loaded = await f.request('/api/profile', { cookie: login.cookie });
+  assert.equal(loaded.data.revision, 1);
+  assert.deepEqual(loaded.data.profile.goals, [goal]);
+});
+
+test('generated local plans match server limits including long plans and null durations', () => {
+  for (const kind of ['interview', 'running', 'general']) {
+    const goal = createGoal({ ...goalInput, kind, title: '事'.repeat(120), context: '岗'.repeat(500), deadline: '2027-12-31', estimatedMinutes: null }, '2026-10-03');
+    assert.equal(validGoals([goal]), true);
+    assert.deepEqual(normalizeGoals([goal]), [goal]);
+  }
+  const first = createGoal(goalInput, '2026-10-03');
+  const second = createGoal(goalInput, '2026-10-03');
+  second.actions[0].id = first.actions[0].id;
+  assert.equal(validGoals([first, second]), false);
+  assert.deepEqual(normalizeGoals([first, second]), [first]);
 });

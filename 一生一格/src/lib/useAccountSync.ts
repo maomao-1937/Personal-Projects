@@ -7,7 +7,7 @@ export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'conflict';
 
 function fingerprint(profile: ProfileChanges | ProfileData | null | undefined) {
   if (!profile) return '';
-  return JSON.stringify({ birthDate: profile.birthDate, endDate: profile.endDate, endMode: profile.endMode, notes: profile.notes, mind: profile.mind, guide: profile.guide });
+  return JSON.stringify({ birthDate: profile.birthDate, endDate: profile.endDate, endMode: profile.endMode, notes: profile.notes, mind: profile.mind, guide: profile.guide, goals: profile.goals ?? [], calendarConfigured: profile.calendarConfigured !== false });
 }
 
 export function useAccountSync(accountId: string | null, initialProfile: ProfileData | null, initialRevision: number, forceSyncInitial: boolean, changes: ProfileChanges, enabled: boolean) {

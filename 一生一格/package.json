@@ -10,7 +10,7 @@
     "dev": "vite --host 127.0.0.1",
     "dev:api": "node --env-file-if-exists=.env server/index.mjs",
     "build": "tsc -b && vite build && node scripts/build-sw.mjs",
-    "test": "node --test src/lib/lifeCalendar.test.ts src/lib/profileStorage.test.ts src/lib/accountDraft.test.ts server/app.test.mjs",
+    "test": "node --test src/lib/lifeCalendar.test.ts src/lib/taskPlan.test.ts src/lib/profileStorage.test.ts src/lib/accountDraft.test.ts server/app.test.mjs",
     "backup": "node --env-file-if-exists=.env scripts/backup.mjs",
     "invite": "node --env-file-if-exists=.env scripts/invite.mjs",
     "start": "node --env-file-if-exists=.env server/index.mjs --production",

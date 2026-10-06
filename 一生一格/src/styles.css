@@ -11,6 +11,14 @@
   --mint: #67beaa;
   --amber: #ffb66e;
 }
+.profile-summary { min-width: 0; }
+.sync-dialog { max-height: 90dvh; overflow-y: auto; }
+.profile-summary strong { overflow-wrap: anywhere; }
+.profile-summary details { margin-top: 10px; font-size: 11px; color: #53745f; }
+.profile-summary summary { cursor: pointer; line-height: 1.8; }
+.profile-summary ul { list-style: none; padding: 0; margin: 8px 0 0; max-height: 220px; overflow: auto; }
+.profile-summary li { border-top: 1px solid #e0e8dc; padding: 8px 0; overflow-wrap: anywhere; }
+.profile-summary li small { display: block; line-height: 1.8; margin-top: 5px; }
 
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
@@ -295,7 +303,7 @@ a { color: inherit; }
   .age-stepper select { min-width: 88px; height: 42px; border-radius: 11px; font-size: 13px; }
   .week-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
   .week-square { border-radius: 8px; }
-  .mobile-dock { position: fixed; z-index: 40; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); left: 12px; display: grid; grid-template-columns: repeat(3, 1fr); width: min(calc(100% - 24px), 500px); min-height: 66px; margin: 0 auto; padding: 5px; border: 1px solid #dbe6e2; border-radius: 20px; background: #fffffff2; box-shadow: 0 8px 28px #112f3028; backdrop-filter: blur(18px); }
+  .mobile-dock { position: fixed; z-index: 40; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); left: 12px; display: grid; grid-template-columns: repeat(4, 1fr); width: min(calc(100% - 24px), 500px); min-height: 66px; margin: 0 auto; padding: 5px; border: 1px solid #dbe6e2; border-radius: 20px; background: #fffffff2; box-shadow: 0 8px 28px #112f3028; backdrop-filter: blur(18px); }
   .mobile-dock a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 54px; border-radius: 15px; color: #42635e; font-size: 11px; font-weight: 800; text-decoration: none; }
   .mobile-dock a:active, .mobile-dock a:focus-visible { background: #e6f4ee; color: #206c5c; }
   .toast { bottom: calc(90px + env(safe-area-inset-bottom)); max-width: calc(100vw - 32px); white-space: normal; text-align: center; }

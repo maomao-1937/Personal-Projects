@@ -7,6 +7,7 @@
   box-shadow: 0 10px 32px #15362f08;
 }
 .mind-cockpit--monkey { background: linear-gradient(145deg, #fffefd 0%, #fff9f0 100%); border-color: #e9ded0; }
+.mind-cockpit__action-link { display: inline-flex; padding: 10px 13px; background: #e3f2e9; color: #326b54; font-size: 12px; border-radius: 9px; text-decoration: none; min-height: 42px; align-items: center; }
 .mind-cockpit--monster { background: linear-gradient(145deg, #fffefd 0%, #fff5f1 100%); border-color: #efd6ce; }
 .mind-cockpit__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .mind-cockpit__sound-controls { display: inline-flex; align-items: center; gap: 5px; }

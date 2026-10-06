@@ -1,3 +1,5 @@
+import { normalizeGoals, type TaskGoal } from './taskPlan.ts';
+
 export type MindRole = 'rational' | 'monkey' | 'monster';
 
 export type MindSelection = { selected: MindRole; day: string };
@@ -12,10 +14,12 @@ export type ProfileData = {
   notes: Record<string, string>;
   mind: MindSelection;
   guide: MindGuide;
+  goals?: TaskGoal[];
+  calendarConfigured?: boolean;
   updatedAt: string;
 };
 
-export type ProfileChanges = Pick<ProfileData, 'birthDate' | 'endDate' | 'endMode' | 'notes' | 'mind' | 'guide'>;
+export type ProfileChanges = Pick<ProfileData, 'birthDate' | 'endDate' | 'endMode' | 'notes' | 'mind' | 'guide' | 'goals' | 'calendarConfigured'>;
 
 export const PROFILE_STORAGE_KEY = 'life-in-weeks-profile-v3';
 const PREVIOUS_PROFILE_KEY = 'life-in-weeks-profile-v2';
@@ -109,6 +113,8 @@ function normalizeProfile(value: unknown, today: string, legacyMind: unknown): P
     notes: normalizeNotes(candidate.notes),
     mind: normalizeMind(candidate.mind ?? legacyMind, today),
     guide: normalizeGuide(candidate.guide),
+    goals: normalizeGoals(candidate.goals),
+    calendarConfigured: candidate.calendarConfigured !== false,
     updatedAt: typeof candidate.updatedAt === 'string' ? candidate.updatedAt : '',
   };
 }

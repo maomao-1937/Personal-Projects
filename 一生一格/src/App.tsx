@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { ArrowDownToLine, ArrowLeft, ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Crosshair, House, LogIn, LogOut, NotebookPen, RotateCcw, Settings2, X } from 'lucide-react';
+import { ArrowDownToLine, ArrowLeft, ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Crosshair, House, ListChecks, LogOut, NotebookPen, RotateCcw, Settings, UserRound, X } from 'lucide-react';
 import AuthScreen from './components/AuthScreen';
 import LifeAtlas from './components/LifeAtlas';
 import MindCockpit from './components/MindCockpit';
 import TimelineControls from './components/TimelineControls';
+import GoalBoard from './components/GoalBoard';
+import ProfileSummary from './components/ProfileSummary';
+import { localDate, nextAction, normalizeGoals, type TaskGoal } from './lib/taskPlan';
 import { createLifeCalendarToDate, type LifeWeek } from './lib/lifeCalendar';
 import { downloadCalendarSvg } from './lib/exportSvg';
-import { anniversary, clearLocalProfile, readLocalProfile, validIsoDate, writeLocalProfile, type EndMode, type MindGuide, type MindRole, type MindSelection } from './lib/profileStorage';
+import { anniversary, clearLocalProfile, readLocalGuideDraft, readLocalProfile, validIsoDate, writeLocalProfile, type EndMode, type MindGuide, type MindRole, type MindSelection } from './lib/profileStorage';
 import { clearAccountDraft, clearLegacyAccountDraft, findLegacyAccountDraft, readAccountDraft, skipLocalImport, skippedLocalImport } from './lib/accountDraft';
 import { getRemoteProfile, getSession, logout, putRemoteProfile, type AccountUser, type RemoteProfile } from './lib/cloudApi';
 import { useAccountSync } from './lib/useAccountSync';
@@ -98,19 +101,22 @@ type CalendarProps = {
 };
 
 function CalendarApp({ mode, account, initialProfile = null, initialRevision = 0, forceSyncInitial = false, onLogout, onBackToLogin, onUseRemote }: CalendarProps) {
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const initial = useMemo(() => mode === 'account' ? initialProfile : null, []);
+  const [today, setToday] = useState(() => localDate());
+  const initial = useMemo(() => mode === 'account' ? initialProfile : readLocalProfile(today), []);
   const [birthDate, setBirthDate] = useState(initial?.birthDate ?? DEMO_BIRTH_DATE);
   const [endDate, setEndDate] = useState(initial?.endDate ?? DEMO_END_DATE);
   const [endMode, setEndMode] = useState<EndMode>(initial?.endMode ?? 'age');
   const [targetAge, setTargetAge] = useState(() => Math.max(1, Math.min(120, ageOnDate(initial?.birthDate ?? DEMO_BIRTH_DATE, initial?.endDate ?? DEMO_END_DATE))));
-  const [isDemo, setIsDemo] = useState(!initial);
+  const [isDemo, setIsDemo] = useState(!initial || initial.calendarConfigured === false);
+  const [profileStarted, setProfileStarted] = useState(!!initial);
+  const [goals, setGoals] = useState<TaskGoal[]>(() => normalizeGoals(initial?.goals));
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>(initial?.notes ?? {});
   const [mind, setMind] = useState<MindSelection>(initial?.mind?.day === today ? initial.mind : { selected: 'rational', day: today });
-  const [guide, setGuide] = useState<MindGuide>({ goal: initial?.guide.goal ?? '', distraction: initial?.guide.distraction ?? '', soundEnabled: initial?.guide.soundEnabled !== false });
+  const [guide, setGuide] = useState<MindGuide>(() => initial?.guide ?? (mode === 'preview' ? readLocalGuideDraft() : null) ?? { goal: '', distraction: '', soundEnabled: true });
   const [guideDraftSaved, setGuideDraftSaved] = useState(true);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>(initial ? 'saved' : 'idle');
+  const [localRetry, setLocalRetry] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [focusedAge, setFocusedAge] = useState(0);
   const [toast, setToast] = useState('');
@@ -119,7 +125,9 @@ function CalendarApp({ mode, account, initialProfile = null, initialRevision = 0
   const [birthEditReset, setBirthEditReset] = useState(0);
   const birthInputRef = useRef<HTMLInputElement>(null);
   const actualAge = ageOnDate(birthDate, today);
-  const calendar = useMemo(() => createLifeCalendarToDate(birthDate, endDate), [birthDate, endDate]);
+  const calendar = useMemo(() => createLifeCalendarToDate(birthDate, endDate, new Date(`${today}T12:00:00`)), [birthDate, endDate, today]);
+  const activeGoal = goals.find((goal) => goal.id === selectedGoalId) ?? goals.find((goal) => nextAction(goal)) ?? goals[0];
+  const activeAction = activeGoal ? nextAction(activeGoal) : undefined;
   const defaultWeekIndex = calendar.currentIndex >= 0 ? calendar.currentIndex : calendar.pastCount === calendar.totalCount ? calendar.totalCount - 1 : 0;
   const selectedWeek = calendar.weeks[selectedIndex] ?? calendar.weeks[defaultWeekIndex];
   const currentWeek = calendar.weeks[calendar.currentIndex];
@@ -130,8 +138,8 @@ function CalendarApp({ mode, account, initialProfile = null, initialRevision = 0
   const displayedAge = Math.max(0, Math.min(calendar.rows.length - 1, focusedAge));
   const progress = calendar.totalCount ? (calendar.pastCount / calendar.totalCount) * 100 : 0;
   const sync = useAccountSync(account?.id ?? null, initialProfile, initialRevision, forceSyncInitial,
-    { birthDate, endDate, endMode, notes, mind, guide }, mode === 'account' && !isDemo);
-  const accountStatus = isDemo ? '账号已登录 · 设置生日后开始记录'
+    { birthDate, endDate, endMode, notes, mind, guide, goals, calendarConfigured: !isDemo }, mode === 'account' && (profileStarted || !isDemo));
+  const accountStatus = isDemo && !profileStarted ? '账号已登录 · 设置生日后开始记录'
     : sync.status === 'synced' ? '已同步到账号'
       : sync.status === 'syncing' ? '正在同步…'
         : sync.status === 'conflict' ? '需要处理同步冲突'
@@ -139,14 +147,24 @@ function CalendarApp({ mode, account, initialProfile = null, initialRevision = 0
 
   useEffect(() => setFocusedAge(defaultFocusAge), [birthDate, endDate, defaultFocusAge]);
   useEffect(() => {
+    const refresh = () => setToday(localDate());
+    const timer = window.setInterval(refresh, 30_000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
+  }, []);
+  useEffect(() => { setMind((current) => current.day === today ? current : { selected: 'rational', day: today }); }, [today]);
+  useEffect(() => {
     if (mode === 'account') return;
-    if (isDemo) {
+    if (isDemo && !profileStarted) {
       setSaveStatus('idle');
       setGuideDraftSaved(true);
       return;
     }
-    setSaveStatus(writeLocalProfile({ birthDate, endDate, endMode, notes, mind, guide }) ? 'saved' : 'error');
-  }, [birthDate, endDate, endMode, notes, mind, guide, isDemo, mode]);
+    const saved = !!writeLocalProfile({ birthDate, endDate, endMode, notes, mind, guide, goals, calendarConfigured: !isDemo });
+    setSaveStatus(saved ? 'saved' : 'error');
+    setGuideDraftSaved(saved);
+  }, [birthDate, endDate, endMode, notes, mind, guide, goals, isDemo, mode, profileStarted, localRetry]);
   useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(''), 3200);
@@ -236,11 +254,12 @@ function CalendarApp({ mode, account, initialProfile = null, initialRevision = 0
   }
 
   function selectMind(role: MindRole) {
+    setProfileStarted(true);
     setMind({ selected: role, day: today });
   }
 
   function resetDemo() {
-    if (!window.confirm('这会清除保存在这台设备上的出生日期和所有周记录，确定恢复示例吗？')) return;
+    if (!window.confirm('这会清除这台设备上的出生日期、所有周记录、目标和行动记录，确定恢复示例吗？')) return;
     if (!clearLocalProfile()) {
       setSaveStatus('error');
       setToast('本机数据清除失败，请检查浏览器存储设置');
@@ -251,6 +270,9 @@ function CalendarApp({ mode, account, initialProfile = null, initialRevision = 0
     setEndMode('age');
     setTargetAge(DEFAULT_TARGET_AGE);
     setNotes({});
+    setGoals([]);
+    setProfileStarted(false);
+    setSelectedGoalId(null);
     setMind({ selected: 'rational', day: today });
     setGuide({ goal: '', distraction: '', soundEnabled: true });
     setSelectedIndex(-1);
@@ -263,23 +285,28 @@ function CalendarApp({ mode, account, initialProfile = null, initialRevision = 0
     <header className="topbar">
       <a className="brand-lockup" href="#top" aria-label="一生一格，返回顶部"><span className="brand-mark" aria-hidden="true"><i/><i/><i/><i/></span><span className="brand">一生一格</span></a>
       <div className="top-controls">
-        {mode === 'account' ? <button className="account-button" type="button" title="退出账号" aria-label="退出账号" onClick={() => { if (sync.status !== 'synced' && !isDemo && !window.confirm('还有内容尚未同步。退出后本机草稿会保留，重新登录可继续同步。确定退出吗？')) return; void onLogout?.().catch(() => setToast('退出失败，请联网后重试')); }}><LogOut size={17} aria-hidden="true"/><span>退出</span></button>
-          : <button className="account-button" type="button" onClick={onBackToLogin}><LogIn size={17} aria-hidden="true"/><span>登录</span></button>}
-        <button className="settings-button" type="button" aria-label="打开时间设置" aria-controls="timeline-settings" aria-expanded={mobileSettingsOpen} onClick={() => mobileSettingsOpen ? setMobileSettingsOpen(false) : openTimelineSettings()}><Settings2 size={18} aria-hidden="true"/><span>设置</span></button>
+        {mode === 'account' ? <button className="account-button" type="button" title="退出账号" aria-label="退出账号" onClick={() => { if (sync.status !== 'synced' && (profileStarted || !isDemo) && !window.confirm('还有内容尚未同步。退出后本机草稿会保留，重新登录可继续同步。确定退出吗？')) return; void onLogout?.().catch(() => setToast('退出失败，请联网后重试')); }}><LogOut size={17} aria-hidden="true"/><span>退出</span></button>
+          : <button className="account-button" type="button" onClick={onBackToLogin}><UserRound size={17} aria-hidden="true"/><span>登录</span></button>}
+        <button className="settings-button" type="button" aria-label="打开时间设置" aria-controls="timeline-settings" aria-expanded={mobileSettingsOpen} onClick={() => mobileSettingsOpen ? setMobileSettingsOpen(false) : openTimelineSettings()}><Settings size={18} aria-hidden="true"/><span>时间设置</span></button>
         <button className="export-button" type="button" onClick={() => { downloadCalendarSvg(calendar, birthDate, endDate); setToast('周历图片已导出'); }}><ArrowDownToLine size={17} aria-hidden="true"/>导出图片</button>
       </div>
     </header>
 
     <main id="top">
       <section className="intro" aria-labelledby="main-title">
-        <div className="intro-copy"><div className="eyebrow"><span className="eyebrow-line"/> LIFE IN WEEKS · 人生周历</div><h1 id="main-title"><span className="desktop-title">把一生，看成一周一周<span>。</span></span><span className="mobile-title">这一周，正在发生。</span></h1><p>每一格，都是实实在在的七天。找到此刻，也看看时间的全貌。</p></div>
-        <div className="intro-now"><span className={`now-label${saveStatus === 'error' || sync.status === 'error' ? ' now-label--error' : ''}`} role="status"><i/> {mode === 'account' ? accountStatus : isDemo ? '示例视图 · 设置生日后开始记录' : saveStatus === 'error' ? '本机保存失败' : '已保存到本机'}</span><strong>{calendar.currentIndex >= 0 ? formatNumber(calendar.currentIndex + 1) : '—'}</strong><span className="now-caption">{calendar.currentIndex >= 0 ? `正在经历的这一周 · ${actualAge} 岁` : '当前已超过所选终点日期'}</span>{currentWeek && <span className="now-date">{formatDate(currentWeek.startDate)} — {formatDate(currentWeek.endDate)}</span>}<button type="button" aria-label={isDemo ? '设置生日，开始记录' : undefined} onClick={isDemo ? openTimelineSettings : goToCurrentWeek}><span className="desktop-title">{isDemo ? '设置生日，开始记录' : calendar.currentIndex >= 0 ? '定位这一周' : '查看最后一周'}</span><span className="mobile-title">{isDemo ? '设置生日，开始记录' : '查看本周记录'}</span> <ArrowRight size={15} aria-hidden="true"/></button></div>
+        <div className="intro-copy"><h1 id="main-title">把一生，看成一周一周。</h1><p>每一格，都是实实在在的七天。</p></div>
+        <div className={`intro-now${isDemo ? ' intro-now--demo' : ''}`}><span className={`now-label${saveStatus === 'error' || sync.status === 'error' ? ' now-label--error' : ''}`} role="status"><i/> {mode === 'account' ? accountStatus : saveStatus === 'error' ? '本机保存失败' : isDemo ? '周历示例 · 目标可独立记录' : '已保存到本机'}</span><span className='now-weekline'><span>{isDemo ? '示例 · 第' : '第'}</span><strong>{calendar.currentIndex >= 0 ? formatNumber(calendar.currentIndex + 1) : '—'}</strong><span>周</span></span><span className="now-caption">{isDemo ? '设置生日，查看属于你的这一周' : calendar.currentIndex >= 0 ? `正在经历的这一周 · ${actualAge} 岁` : '当前已超过所选终点日期'}</span>{currentWeek && !isDemo && <span className="now-date">{formatDate(currentWeek.startDate)} — {formatDate(currentWeek.endDate)}</span>}<button type="button" aria-label={isDemo ? '设置生日，开始记录' : undefined} onClick={isDemo ? openTimelineSettings : goToCurrentWeek}><span className="desktop-title">{isDemo ? '设置生日，开始记录' : calendar.currentIndex >= 0 ? '定位这一周' : '查看最后一周'}</span><span className="mobile-title">{isDemo ? '设置生日，开始记录' : '查看本周记录'}</span> <ArrowRight size={15} aria-hidden="true"/></button></div>
       </section>
 
       <div className={`timeline-settings${mobileSettingsOpen ? ' timeline-settings--open' : ''}`} id="timeline-settings"><button className="settings-close" type="button" onClick={() => setMobileSettingsOpen(false)} aria-label="关闭时间设置"><X size={18} aria-hidden="true"/>完成</button><TimelineControls key={birthEditReset} birthDate={birthDate} endDate={endDate} endMode={endMode} targetAge={targetAge}
         totalWeeks={calendar.totalCount} today={today} minEndDate={nextDay(birthDate)} maxEndDate={anniversary(birthDate, 120)}
         birthInputRef={birthInputRef} onBirthChange={updateBirthDate} onEndDateChange={updateEndDate}
         onAgeChange={updateTargetAge} onModeChange={updateEndMode}/></div>
+
+      <div className="action-workspace">
+      <GoalBoard goals={goals} today={today} selectedId={activeGoal?.id ?? null} onSelect={setSelectedGoalId} onChange={(next) => { setGoals(next); setProfileStarted(true); }} role={mind.selected} preview={mode === 'preview'} previewSaved={saveStatus === 'saved'} saveError={mode === 'account' ? sync.status === 'error' : saveStatus === 'error'} onRetry={mode === 'account' ? sync.retry : () => setLocalRetry((value) => value + 1)}/>
+      <MindCockpit selected={mind.selected} onSelect={selectMind} guide={guide} onGuideChange={(next) => { setGuide(next); setProfileStarted(true); }} guideDraftSaved={mode === 'account' ? sync.status !== 'error' : guideDraftSaved} goal={activeGoal} action={activeAction} today={today}/>
+      </div>
 
       <section className="stat-strip" aria-label="周数概览">
         <div className="stat-intro"><span>{isDemo ? '示例日历' : '我的人生周历'}</span><strong>从出生到终点</strong><small>{formatDate(birthDate)} — {formatDate(endDate)}</small></div>
@@ -290,17 +317,16 @@ function CalendarApp({ mode, account, initialProfile = null, initialRevision = 0
 
       <div className="primary-workspace">
         <div className="side-stack">
-        <MindCockpit selected={mind.selected} onSelect={selectMind} guide={guide} onGuideChange={setGuide} guideDraftSaved={guideDraftSaved}/>
         <aside className="detail-panel" id="week-note" aria-label="选中的一周">
           <div className="detail-topline"><span className="detail-kicker"><i/> 本周记录</span><span className={`status-pill ${selectedWeek?.status ?? 'future'}`}>{selectedWeek?.status === 'current' ? '这一周' : selectedWeek?.status === 'past' ? '已走过' : '未到来'}</span></div>
           {selectedWeek && <>
-            <div className="detail-title-row"><div><span className="detail-overline">你的时间故事</span><h2>第 {formatNumber(selectedWeek.index + 1)} 周</h2></div><div className="week-nav" aria-label="切换选中的周"><button type="button" disabled={selectedWeek.index === 0} onClick={() => selectWeek(selectedWeek.index - 1)} aria-label="上一周"><ArrowLeft size={18}/></button><button type="button" disabled={selectedWeek.index === calendar.totalCount - 1} onClick={() => selectWeek(selectedWeek.index + 1)} aria-label="下一周"><ArrowRight size={18}/></button></div></div>
+            <div className="detail-title-row"><div><span className="detail-overline">你的时间故事</span><h2>记下这一周</h2></div><div className="week-nav" aria-label="切换选中的周"><button type="button" disabled={selectedWeek.index === 0} onClick={() => selectWeek(selectedWeek.index - 1)} aria-label="上一周"><ArrowLeft size={18}/></button><button type="button" disabled={selectedWeek.index === calendar.totalCount - 1} onClick={() => selectWeek(selectedWeek.index + 1)} aria-label="下一周"><ArrowRight size={18}/></button></div></div>
             <p className="detail-date">{formatDate(selectedWeek.startDate)} <span>—</span> {formatDate(selectedWeek.endDate)}</p>
             {selectedWeek.daysBeforeTarget < 7 && <p className="boundary-note">这一格有前 {selectedWeek.daysBeforeTarget} 天计入所选日期范围。</p>}
             <div className="detail-facts"><div><span>周开始时年龄</span><strong>{selectedWeek.age} 岁</strong></div><div><span>本年龄段第几周</span><strong>{selectedWeek.weekOfAge} / {calendar.rows[selectedWeek.age].length}</strong></div></div>
             {isDemo ? <div className="note-empty"><span className="note-empty__icon"><NotebookPen size={20} aria-hidden="true"/></span><strong>把这一周留给自己</strong><p>设置生日后，就能在自己的时间线上写记录。</p><button type="button" onClick={openTimelineSettings}>设置我的生日 <ArrowRight size={16} aria-hidden="true"/></button></div> : <>
               <label className="note-label" htmlFor="weekly-note">{selectedWeek.status === 'future' ? '写给未来的自己' : '记下这一周'}</label>
-              <div className="note-wrap"><textarea id="weekly-note" rows={5} maxLength={500} value={selectedNote} placeholder={selectedWeek.status === 'future' ? '那时，你想做什么？' : '一个瞬间、一句感受，或一件想记住的小事……'} onChange={(event) => setNotes((current) => ({ ...current, [noteKey]: event.target.value.slice(0, 500) }))}/><span className="note-count">{selectedNote.length} / 500</span></div>
+              <div className="note-compose"><div className="note-wrap"><textarea id="weekly-note" rows={5} maxLength={500} value={selectedNote} placeholder={selectedWeek.status === 'future' ? '那时，你想做什么？' : '一个瞬间、一句感受，或一件想记住的小事……'} onChange={(event) => setNotes((current) => ({ ...current, [noteKey]: event.target.value.slice(0, 500) }))}/><span className="note-count">{selectedNote.length} / 500</span></div><button className="note-save" type="button" disabled={mode === 'account' && (sync.status === 'syncing' || sync.status === 'conflict')} onClick={() => mode === 'account' ? sync.retry() : setLocalRetry((value) => value + 1)}>{mode === 'account' && sync.status === 'syncing' ? '保存中…' : '保存'}</button></div>
               <p className={`autosave-label${saveStatus === 'error' || sync.status === 'error' ? ' autosave-label--error' : ''}`}>{mode === 'account' ? <>{accountStatus}{sync.status === 'error' && <button type="button" onClick={sync.retry}>重试同步</button>}</> : saveStatus === 'error' ? '保存失败，请检查浏览器存储设置' : '内容已自动保存在这台设备上'}</p>
             </>}
           </>}
@@ -319,10 +345,10 @@ function CalendarApp({ mode, account, initialProfile = null, initialRevision = 0
       </section>
     </main>
 
-    <nav className="mobile-dock" aria-label="手机快捷导航"><a href="#top"><House size={19} aria-hidden="true"/>此刻</a><a href="#week-note"><NotebookPen size={19} aria-hidden="true"/>记录</a><a href="#life-atlas"><CalendarDays size={19} aria-hidden="true"/>周历</a></nav>
-    <footer className="site-footer"><span>一生一格 <b>·</b> 认真过好每一周</span>{mode === 'preview' && !isDemo && <button type="button" onClick={resetDemo}><RotateCcw size={14} aria-hidden="true"/>清除本机数据</button>}</footer>
+    <nav className="mobile-dock" aria-label="手机快捷导航"><a href="#top"><House size={19} aria-hidden="true"/>此刻</a><a href="#my-actions"><ListChecks size={19} aria-hidden="true"/>行动</a><a href="#week-note"><NotebookPen size={19} aria-hidden="true"/>记录</a><a href="#life-atlas"><CalendarDays size={19} aria-hidden="true"/>周历</a></nav>
+    <footer className="site-footer"><span>一生一格 <b>·</b> 认真过好每一周</span>{mode === 'preview' && (!isDemo || profileStarted) && <button type="button" onClick={resetDemo}><RotateCcw size={14} aria-hidden="true"/>清除本机数据</button>}</footer>
     {toast && <div className="toast" role="status">{toast}</div>}
-    {sync.conflict && <div className="sync-backdrop"><section className="sync-dialog" role="dialog" aria-modal="true" aria-labelledby="sync-conflict-title"><h2 id="sync-conflict-title">另一台设备更新了记录</h2><p>云端最近也有修改。请选择要保留的版本，避免无意覆盖。</p><div className="sync-actions"><button type="button" onClick={() => onUseRemote?.(sync.conflict!)}>使用云端版本</button><button type="button" onClick={sync.keepLocal}>保留本机版本并覆盖云端</button></div></section></div>}
+    {sync.conflict && <div className="sync-backdrop"><section className="sync-dialog" role="dialog" aria-modal="true" aria-labelledby="sync-conflict-title"><h2 id="sync-conflict-title">另一台设备更新了记录</h2><p>云端最近也有修改。请选择要保留的版本，避免无意覆盖。</p><div className="choice-versions"><ProfileSummary label="这台设备" profile={{ version: 3, birthDate, endDate, endMode, notes, mind, guide, goals, calendarConfigured: !isDemo, updatedAt: '' }}/><ProfileSummary label="账号云端" profile={sync.conflict.profile}/></div><div className="sync-actions"><button type="button" onClick={() => onUseRemote?.(sync.conflict!)}>使用云端版本</button><button type="button" onClick={sync.keepLocal}>保留本机版本并覆盖云端</button></div></section></div>}
     {pendingBirthDate && <div className="sync-backdrop"><section className="sync-dialog" role="dialog" aria-modal="true" aria-labelledby="birth-change-title"><h2 id="birth-change-title">更改出生日期？</h2><p>原生日周历里有 {Object.entries(notes).filter(([key, value]) => key.startsWith(`${birthDate}:`) && value.trim()).length} 条记录。继续后，旧记录会保留；改回原生日即可再次看到。</p><div className="sync-actions"><button type="button" onClick={() => { applyBirthDate(pendingBirthDate); setPendingBirthDate(null); }}>保留旧记录并继续</button><button type="button" onClick={() => { setPendingBirthDate(null); setBirthEditReset((value) => value + 1); }}>取消</button></div></section></div>}
   </div>;
 }
@@ -335,7 +361,8 @@ type Gate =
   | { kind: 'account'; user: AccountUser; remote: RemoteProfile; forceSync: boolean; instance: number };
 
 function App() {
-  const [gate, setGate] = useState<Gate>({ kind: 'loading' });
+  const [previewRequested] = useState(() => new URLSearchParams(window.location.search).get('preview') === '1');
+  const [gate, setGate] = useState<Gate>(() => previewRequested ? { kind: 'preview' } : { kind: 'loading' });
   const instanceRef = useRef(0);
 
   function showAccount(user: AccountUser, remote: RemoteProfile, forceSync = false) {
@@ -358,6 +385,7 @@ function App() {
   }
 
   useEffect(() => {
+    if (previewRequested) return;
     let active = true;
     getSession().then(async ({ user }) => {
       if (!active) return;
@@ -388,7 +416,7 @@ function App() {
   if (gate.kind === 'choice') return <div className="choice-page"><div className="choice-card">
     <span className="choice-eyebrow">账号数据</span><h1>这台设备有一份周历</h1><p>{gate.remote.profile ? '先选要保留哪一份。导入本机版本会覆盖账号云端目前的资料。' : '账号里还没有资料，可以把这台设备上的记录导入。'}</p>
     {gate.legacyDraftKey && <p className="choice-legacy-warning">发现旧版尚未同步的本机修改，请比较后选择；选择云端会丢弃这份本机草稿。</p>}
-    <div className="choice-versions"><div><span>这台设备</span><strong>{formatDate(gate.local.birthDate)} 出生</strong><small>{Object.keys(gate.local.notes).filter((key) => gate.local.notes[key].trim()).length} 条周记录</small></div><div><span>账号云端</span><strong>{gate.remote.profile ? `${formatDate(gate.remote.profile.birthDate)} 出生` : '还没有资料'}</strong><small>{gate.remote.profile ? `${Object.keys(gate.remote.profile.notes).filter((key) => gate.remote.profile!.notes[key].trim()).length} 条周记录` : '可以导入本机记录'}</small></div></div>
+    <div className="choice-versions"><ProfileSummary label="这台设备" profile={gate.local}/><ProfileSummary label="账号云端" profile={gate.remote.profile}/></div>
     {gate.error && <p className="choice-error" role="alert">{gate.error}</p>}
     <button className="choice-primary" type="button" disabled={gate.busy} onClick={() => void chooseLocal(gate)}>{gate.busy ? '正在导入…' : gate.remote.profile ? '用本机版本覆盖云端' : '把本机记录导入账号'}</button>
     <button className="choice-secondary" type="button" disabled={gate.busy} onClick={() => { if (gate.source === 'legacy') skipLocalImport(gate.user.id); else if (gate.legacyDraftKey) clearLegacyAccountDraft(gate.legacyDraftKey); else clearAccountDraft(gate.user.id); showAccount(gate.user, gate.remote); }}>{gate.remote.profile ? '使用云端版本' : '暂不导入，从空白开始'}</button>

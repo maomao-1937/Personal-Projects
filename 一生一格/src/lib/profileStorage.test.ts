@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { PROFILE_STORAGE_KEY, clearLocalProfile, readLocalGuideDraft, readLocalProfile, writeLocalGuideDraft, writeLocalProfile } from './profileStorage.ts';
+import { createGoal } from './taskPlan.ts';
 
 function memoryStore(initial: Record<string, string> = {}) {
   const values = new Map(Object.entries(initial));
@@ -93,4 +94,40 @@ test('clear removes current and old keys together', () => {
   const store = memoryStore({ [PROFILE_STORAGE_KEY]: 'new', 'life-in-weeks-profile-v2': 'previous', 'life-in-weeks-v1': 'old', 'life-in-weeks-mind-v1': 'old-role', 'life-in-weeks-guide-draft-v1': 'draft' });
   assert.equal(clearLocalProfile(store), true);
   assert.equal(store.values.size, 0);
+});
+
+test('old profiles default to no goals and a configured calendar', () => {
+  const store = memoryStore();
+  writeLocalProfile({ birthDate: '2001-01-01', endDate: '2091-01-01', endMode: 'age', notes: {}, mind: { selected: 'rational', day: '2026-10-03' }, guide: { goal: '', distraction: '', soundEnabled: true } }, store);
+  const loaded = readLocalProfile('2026-10-03', store);
+  assert.deepEqual(loaded?.goals, []);
+  assert.equal(loaded?.calendarConfigured, true);
+});
+
+test('goals with completion, feedback and rescheduling survive a local profile write', () => {
+  const goal = createGoal({ title: '准备面试', kind: 'interview', context: '设计师', deadline: '2026-10-17', estimatedMinutes: 35, frequency: 'daily' }, '2026-10-03');
+  goal.actions[0].completedAt = '2026-10-03T09:00:00.000Z';
+  goal.actions[1].feedback = 'busy';
+  goal.actions[1].scheduledDate = '2026-10-09';
+  goal.actions[1].time = '19:30';
+  const store = memoryStore();
+  writeLocalProfile({ birthDate: '2001-01-01', endDate: '2091-01-01', endMode: 'age', notes: { week: '保留' }, mind: { selected: 'rational', day: '2026-10-03' }, guide: { goal: '', distraction: '', soundEnabled: true }, goals: [goal], calendarConfigured: false }, store);
+  const loaded = readLocalProfile('2026-10-03', store);
+  assert.deepEqual(loaded?.goals, [goal]);
+  assert.equal(loaded?.calendarConfigured, false);
+  assert.equal(loaded?.notes.week, '保留');
+  assert.ok(loaded && writeLocalProfile(loaded, store));
+  assert.deepEqual(readLocalProfile('2026-10-03', store)?.goals, [goal]);
+  assert.equal(readLocalProfile('2026-10-03', store)?.calendarConfigured, false);
+});
+
+test('damaged goals never discard a readable calendar, and only false disables its configured flag', () => {
+  const base = { version: 3, birthDate: '2001-01-01', endDate: '2091-01-01', endMode: 'age', notes: { week: '保留' }, mind: { selected: 'rational', day: '2026-10-03' }, guide: { goal: '', distraction: '', soundEnabled: true } };
+  for (const goals of [null, 'damaged', [{ id: 'incomplete' }], [null]]) {
+    const loaded = readLocalProfile('2026-10-03', memoryStore({ [PROFILE_STORAGE_KEY]: JSON.stringify({ ...base, goals, calendarConfigured: 'damaged' }) }));
+    assert.equal(loaded?.birthDate, base.birthDate);
+    assert.equal(loaded?.notes.week, '保留');
+    assert.deepEqual(loaded?.goals, []);
+    assert.equal(loaded?.calendarConfigured, true);
+  }
 });
