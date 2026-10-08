@@ -90,6 +90,11 @@ describe("sourceContainsContext", () => {
     ).toBe(true);
     expect(sourceContainsContext(source, "RAG 能保证答案永远正确")).toBe(false);
   });
+
+  it("允许中文引用省略原文的换行和空格，同时保留英文单词边界", () => {
+    expect(sourceContainsContext("先检索资料，\n再生成回答。", "先检索资料，再生成回答。")).toBe(true);
+    expect(sourceContainsContext("retrieval augmented generation", "retrievalaugmented generation")).toBe(false);
+  });
 });
 
 describe("dual-mode prompts", () => {

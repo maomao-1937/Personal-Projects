@@ -67,7 +67,11 @@ export type AssessmentOutput = z.infer<typeof assessmentSchema>;
 export type SupportOutput = z.infer<typeof supportSchema>;
 
 function normalizeWhitespace(value: string): string {
-  return value.replace(/\s+/g, " ").trim();
+  return value
+    .replace(/\s+/g, " ")
+    .replace(/(?<=[\p{Script=Han}，。！？、；：]) /gu, "")
+    .replace(/ (?=[\p{Script=Han}，。！？、；：])/gu, "")
+    .trim();
 }
 
 export function sourceContainsContext(
@@ -78,4 +82,3 @@ export function sourceContainsContext(
   const context = normalizeWhitespace(sourceContext);
   return context.length > 0 && source.includes(context);
 }
-
