@@ -14,7 +14,9 @@ async def save_upload(file: UploadFile, subdir: str = "") -> str:
             detail=f"不支持的文件格式: .{ext}，请上传 {', '.join(settings.ALLOWED_EXTENSIONS)} 格式",
         )
 
-    content = await file.read()
+    # Read at most one byte over the limit so oversized uploads cannot occupy
+    # unbounded application memory before the size check runs.
+    content = await file.read(settings.MAX_FILE_SIZE + 1)
     if len(content) > settings.MAX_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
