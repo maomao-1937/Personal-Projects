@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { randomBytes } from 'node:crypto';
 import sharp from 'sharp';
 import { buildPrompt, configSchema, publicProfile, providerInfo, type ModelProfile } from '../shared/models';
 import { createProviderRequest, extractImage, generate, normalizeImage } from '../server/adapters';
@@ -87,6 +88,11 @@ test('URL image responses are retrieved without forwarding provider credentials'
 });
 test('rejects non-image outputs even when a supplier claims success', async () => {
   await assert.rejects(generate(input, signal, async () => ({ status: 200, body: Buffer.from(JSON.stringify({ data: [{ b64_json: Buffer.from('<html>oops</html>').toString('base64') }] })), contentType: 'application/json' })), /不是可用图片/);
+});
+test('explains when a decoded result exceeds the image size limit', async () => {
+  const noisy = await sharp(randomBytes(3000 * 3000 * 3), { raw: { width: 3000, height: 3000, channels: 3 } }).jpeg({ quality: 75 }).toBuffer();
+  const send: Transport = async () => ({ status: 200, body: Buffer.from(JSON.stringify({ data: [{ b64_json: noisy.toString('base64') }] })), contentType: 'application/json' });
+  await assert.rejects(generate(input, signal, send), /生成图片超过 24 MB/);
 });
 test('config import/export whitelists fields and never persists injected keys', () => {
   const polluted = { ...profile, apiKey: key, password: 'other-secret' };

@@ -95,7 +95,10 @@ export async function generate(input: GenerationInput, signal: AbortSignal, send
     const metadata = await outputImage.metadata();
     if (!['png', 'jpeg', 'webp'].includes(metadata.format || '')) throw new Error('not image');
     const { data, info } = await outputImage.png().toBuffer({ resolveWithObject: true });
-    if (data.length > 24 * 1024 * 1024) throw new Error('too large');
+    if (data.length > 24 * 1024 * 1024) throw new PublicError('生成图片超过 24 MB，请降低输出尺寸后重试。', 502);
     return { image: `data:image/png;base64,${data.toString('base64')}`, mimeType: 'image/png', width: info.width, height: info.height, durationMs: Date.now() - started, inputHash, requestId: output.requestId?.slice(0, 100), parameters: { inputMaxEdge: 2048, inputFormat: 'png', ...(input.profile.provider === 'seedream' ? { size: '2K', response_format: 'b64_json', stream: false, sequential_image_generation: 'disabled' } : input.profile.provider === 'gemini' ? { responseModalities: ['TEXT', 'IMAGE'] } : input.profile.provider === 'dashscope' ? { n: 1, ...(input.profile.model === 'qwen-image-edit' ? {} : { prompt_extend: false }) } : { n: 1 }) } };
-  } catch { throw new PublicError('返回内容不是可用图片，请检查模型的图像输出能力。', 502); }
+  } catch (error) {
+    if (error instanceof PublicError) throw error;
+    throw new PublicError('返回内容不是可用图片，请检查模型的图像输出能力。', 502);
+  }
 }
