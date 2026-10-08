@@ -19,9 +19,13 @@
 | `INVITE_TOKEN_PEPPER` | 点击 Generate 生成，且不要与 `SECRET_KEY` 相同 |
 | `AUTH_COOKIE_SECURE` | `true` |
 | `CORS_ORIGINS` | Vercel 前端域名 |
-| `AI_API_KEY` | 混元 API Key |
-| `AI_API_BASE_URL` | `https://tokenhub.tencentmaas.com` |
-| `AI_MODEL` | `hy-image-v3` |
+| `AI_API_KEY` | 火山方舟 Seedream API Key |
+| `AI_API_BASE_URL` | `https://ark.cn-beijing.volces.com` |
+| `AI_MODEL` | `doubao-seedream-4.5` |
+| `AI_IMAGE_SIZE` | `2K` |
+| `DEEPSEEK_API_KEY` | DeepSeek API Key；可暂不配置，未配置时沿用用户原提示词 |
+| `DEEPSEEK_API_BASE_URL` | `https://api.deepseek.com` |
+| `DEEPSEEK_MODEL` | `deepseek-flash` |
 
 ## 二、前端部署（Vercel）
 

@@ -52,7 +52,6 @@ def register(
             email=payload.email,
             password_hash=hash_password(payload.password),
             nickname=payload.nickname or "镜界用户",
-            credits=0,
         )
         db.add(user)
         db.flush()

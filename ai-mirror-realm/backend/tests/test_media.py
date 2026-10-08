@@ -19,7 +19,6 @@ def create_completed_portrait(db_session_factory, user_id: str) -> PortraitTask:
             selfie_url=f"/uploads/selfies/{user_id}/selfie.jpg",
             result_url="/generated/private-result.png",
             status="completed",
-            credits_used=0,
             completed_at=datetime.utcnow(),
         )
         db.add(portrait)

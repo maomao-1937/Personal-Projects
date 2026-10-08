@@ -29,10 +29,12 @@ class Settings(BaseSettings):
     AI_MODEL: str = "doubao-seedream-4.5"
     AI_IMAGE_SIZE: str = "2K"
 
+    DEEPSEEK_API_KEY: str = ""
+    DEEPSEEK_API_BASE_URL: str = "https://api.deepseek.com"
+    DEEPSEEK_MODEL: str = "deepseek-flash"
+
     MAX_FILE_SIZE: int = 10 * 1024 * 1024
     ALLOWED_EXTENSIONS: set[str] = {"jpg", "jpeg", "png", "webp"}
-
-    FREE_CREDITS: int = 3
 
     @model_validator(mode="after")
     def require_secure_cookie_outside_debug(self) -> "Settings":

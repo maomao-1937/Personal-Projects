@@ -17,7 +17,7 @@
   "lanes": [
     { "id": "visitor", "label": "用户与工作台" },
     { "id": "service", "label": "私有服务" },
-    { "id": "model", "label": "Seedream 生图" },
+    { "id": "model", "label": "AI 模型服务" },
     { "id": "recovery", "label": "失败恢复", "variant": "exception" }
   ],
   "phases": [
@@ -32,6 +32,7 @@
     { "id": "selfie", "lane": "visitor", "col": 1, "type": "frontend", "label": "上传一张自拍", "sublabel": "JPG / PNG / WebP · ≤10MB", "width": 138 },
     { "id": "direction", "lane": "visitor", "col": 2, "type": "frontend", "label": "描述或选主题", "sublabel": "至少选择一种方向" },
     { "id": "task", "lane": "service", "col": 2, "type": "backend", "label": "创建写真任务", "sublabel": "POST /api/portraits · pending", "width": 160 },
+    { "id": "deepseek", "lane": "model", "col": 1, "type": "external", "label": "DeepSeek 分析", "sublabel": "仅文字 · 可选 / 失败回退", "width": 152 },
     { "id": "system_prompt", "lane": "service", "col": 3, "type": "backend", "label": "合成系统提示词", "sublabel": "人物一致性 + 画质 + 安全", "width": 140 },
     { "id": "seedream", "lane": "model", "col": 3, "type": "external", "label": "Seedream 4.5", "sublabel": "火山方舟 · 图生图", "width": 142 },
     { "id": "persist", "lane": "service", "col": 4, "type": "backend", "label": "保存私有结果", "sublabel": "写入文件 · completed" },
@@ -43,9 +44,11 @@
     { "from": "invite", "to": "selfie", "label": "资格验证通过", "role": "main" },
     { "from": "selfie", "to": "direction", "label": "上传私有照片", "role": "main" },
     { "from": "direction", "to": "task", "label": "提交照片与创作方向", "role": "main" },
-    { "from": "task", "to": "system_prompt", "label": "后台任务", "role": "async" },
+    { "from": "task", "to": "system_prompt", "label": "异步处理", "role": "async", "fromSide": "right", "toSide": "left" },
+    { "from": "task", "to": "deepseek", "label": "仅发送用户文字", "role": "branch", "variant": "dashed" },
+    { "from": "deepseek", "to": "system_prompt", "label": "文字分析结果", "role": "branch", "variant": "dashed", "toSide": "left" },
     { "from": "system_prompt", "to": "seedream", "label": "参考图 + 合成提示词", "role": "main" },
-    { "from": "seedream", "to": "persist", "label": "返回图像字节", "role": "main" },
+    { "from": "seedream", "to": "persist", "label": "生成图像数据", "role": "main", "variant": "emphasis" },
     { "from": "persist", "to": "result", "label": "状态变为完成", "role": "main" },
     { "from": "task", "to": "result", "label": "创建后进入任务页", "role": "branch" },
     { "from": "result", "to": "download", "label": "读取私有媒体", "role": "main" },
@@ -58,7 +61,7 @@
       "items": [
         "自拍先校验格式与 10MB 上限，再上传到当前账户的私有目录",
         "用户提示词与主题可单独使用，也可同时使用",
-        "服务端始终优先加入固定系统提示词"
+        "DeepSeek 仅分析文字，异常回退原文；服务端再加入固定约束"
       ]
     },
     {

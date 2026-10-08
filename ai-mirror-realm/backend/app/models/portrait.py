@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, String, Integer, DateTime, Text, ForeignKey
+from sqlalchemy import Column, String, DateTime, Text, ForeignKey
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -19,7 +19,6 @@ class PortraitTask(Base):
     status = Column(String(20), default="pending", nullable=False, index=True)
     error_message = Column(Text, nullable=True)
     prompt_used = Column(Text, nullable=True)
-    credits_used = Column(Integer, default=1)
     created_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
 

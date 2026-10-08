@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from app.models.style import Style
 from app.models.portrait import PortraitTask
-from app.models.user import User
 from conftest import register_user
 
 
@@ -78,9 +77,9 @@ def test_style_and_custom_prompt_are_combined_with_system_prompt(client, db_sess
         assert "保留眼镜，背景加入细雨" in task.prompt_used
 
 
-def test_generation_does_not_change_credits(client, db_session_factory):
+def test_generation_has_no_billing_fields(client, db_session_factory):
     user_data = register_user(client, db_session_factory, email="portrait@example.com")
-    user_id = user_data["user"]["id"]
+    assert "credits" not in user_data["user"]
 
     upload = client.post(
         "/api/uploads/selfie",
@@ -90,7 +89,6 @@ def test_generation_does_not_change_credits(client, db_session_factory):
 
     with db_session_factory() as db:
         style_id = db.query(Style.id).order_by(Style.sort_order).first()[0]
-        credits_before = db.query(User).filter(User.id == user_id).one().credits
 
     create = client.post(
         "/api/portraits",
@@ -98,9 +96,32 @@ def test_generation_does_not_change_credits(client, db_session_factory):
     )
 
     assert create.status_code == 201, create.text
-    assert create.json()["credits_used"] == 0
+    assert "credits_used" not in create.json()
+
+
+def test_deepseek_analysis_is_used_before_seedream(client, db_session_factory, monkeypatch):
+    from app.routers import portraits
+
+    register_user(client, db_session_factory, email="analysis@example.com")
+    analyzed = {}
+
+    def fake_analysis(user_prompt, style_name):
+        analyzed.update(user_prompt=user_prompt, style_name=style_name)
+        return "A cinematic portrait on a rainy city street, wearing a black coat."
+
+    monkeypatch.setattr(portraits.prompt_analysis_service, "analyze", fake_analysis)
+    response = client.post(
+        "/api/portraits",
+        json={"selfie_url": upload_selfie(client), "user_prompt": "雨夜街头，黑色风衣"},
+    )
+
+    assert response.status_code == 201, response.text
+    assert analyzed == {"user_prompt": "雨夜街头，黑色风衣", "style_name": None}
     with db_session_factory() as db:
-        assert db.query(User).filter(User.id == user_id).one().credits == credits_before
+        task = db.query(PortraitTask).filter(PortraitTask.id == response.json()["id"]).one()
+        assert portraits.SYSTEM_PORTRAIT_PROMPT in task.prompt_used
+        assert "雨夜街头，黑色风衣" in task.prompt_used
+        assert "A cinematic portrait on a rainy city street" in task.prompt_used
 
 
 def test_portrait_rejects_another_users_selfie(client, db_session_factory):
@@ -139,7 +160,6 @@ def test_generation_failure_hides_internal_error(client, db_session_factory, mon
             style_id=style.id,
             selfie_url="/uploads/selfies/private/input.jpg",
             status="pending",
-            credits_used=0,
         )
         db.add(task)
         db.commit()
@@ -154,7 +174,7 @@ def test_generation_failure_hides_internal_error(client, db_session_factory, mon
         ),
     )
 
-    portraits._run_generation(task_id, "/tmp/input.jpg", "prompt")
+    portraits._run_generation(task_id, "/tmp/input.jpg", None, "prompt")
 
     with db_session_factory() as db:
         task = db.query(PortraitTask).filter(PortraitTask.id == task_id).one()

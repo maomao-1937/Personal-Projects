@@ -59,7 +59,12 @@ vefaas env set AI_API_KEY=ark-xxxxxxxxxxxxxxxxxx
 vefaas env set AI_API_BASE_URL=https://ark.cn-beijing.volces.com
 vefaas env set AI_MODEL=doubao-seedream-4.5
 vefaas env set AI_IMAGE_SIZE=2K
+vefaas env set DEEPSEEK_API_KEY=your-deepseek-api-key
+vefaas env set DEEPSEEK_API_BASE_URL=https://api.deepseek.com
+vefaas env set DEEPSEEK_MODEL=deepseek-flash
 ```
+
+DeepSeek 只分析文字提示词，不接收自拍；暂不配置 `DEEPSEEK_API_KEY` 时，系统直接使用用户原文继续调用 Seedream。
 
 ### 2.3 配置构建与启动
 

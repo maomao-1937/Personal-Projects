@@ -39,7 +39,6 @@ export default function HomePage() {
                   使用邀请码开始 <ArrowRight size={18} />
                 </Link>
                 <p className="mt-4 text-xs text-white/40">仅限受邀用户 · 不需要训练模型 · 结果仅自己可见</p>
-                <a href="/portrait-chat" className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-white/80 underline decoration-white/30 underline-offset-4 hover:text-white">体验写真聊天界面 <ArrowUpRight size={16} aria-hidden="true" /></a>
               </div>
 
               <div className="mt-16 grid max-w-md grid-cols-3 border-t border-white/15 pt-5">

@@ -54,7 +54,6 @@ class UserOut(BaseModel):
     email: Optional[str] = None
     nickname: str
     avatar_url: Optional[str] = None
-    credits: int
     invited_at: Optional[datetime] = None
     created_at: datetime
 

@@ -11,6 +11,7 @@ from app.models.style import Style
 from app.models.user import User
 from app.schemas.portrait import PortraitCreate, PortraitOut, PortraitStatus
 from app.services.ai_service import ai_service
+from app.services.prompt_analysis_service import prompt_analysis_service
 from app.services.auth_service import get_current_invited_user
 from app.utils.file_utils import resolve_media_path
 from app.utils.rate_limiter import limiter, get_user_id
@@ -27,13 +28,22 @@ SYSTEM_PORTRAIT_PROMPT = (
 )
 
 
-def _build_generation_prompt(style_prompt: str | None, user_prompt: str | None) -> str:
+def _build_generation_prompt(
+    style_prompt: str | None,
+    user_prompt: str | None,
+    analyzed_prompt: str | None = None,
+) -> str:
     parts = [f"Non-negotiable system requirements: {SYSTEM_PORTRAIT_PROMPT}"]
     if style_prompt:
         parts.append(f"Selected visual direction: {style_prompt}")
     if user_prompt:
         parts.append(f"User creative direction: {user_prompt}")
-    parts.append("The system requirements above take priority over all creative directions.")
+    if analyzed_prompt and analyzed_prompt != user_prompt:
+        parts.append(f"DeepSeek visual interpretation: {analyzed_prompt}")
+    parts.append(
+        "The system requirements above take priority over all creative directions. "
+        "The user's original creative direction takes priority over its interpretation."
+    )
     return "\n\n".join(parts)
 
 
@@ -109,19 +119,29 @@ def create_portrait(
         selfie_url=payload.selfie_url,
         status="pending",
         prompt_used=generation_prompt,
-        credits_used=0,
     )
     db.add(task)
     db.commit()
     db.refresh(task)
 
     background_tasks.add_task(
-        _run_generation, task.id, str(selfie_path), generation_prompt
+        _run_generation,
+        task.id,
+        str(selfie_path),
+        style_prompt,
+        payload.user_prompt,
+        style.name if payload.style_id else None,
     )
     return _portrait_out(task)
 
 
-def _run_generation(task_id: str, selfie_path: str, prompt: str):
+def _run_generation(
+    task_id: str,
+    selfie_path: str,
+    style_prompt: str | None,
+    user_prompt: str | None,
+    style_name: str | None = None,
+):
     db = SessionLocal()
     try:
         task = db.query(PortraitTask).filter(PortraitTask.id == task_id).first()
@@ -130,7 +150,12 @@ def _run_generation(task_id: str, selfie_path: str, prompt: str):
         task.status = "processing"
         db.commit()
 
-        image_data = ai_service.generate_portrait_sync(selfie_path, prompt)
+        refined_prompt = prompt_analysis_service.analyze(user_prompt, style_name)
+        generation_prompt = _build_generation_prompt(style_prompt, user_prompt, refined_prompt)
+        task.prompt_used = generation_prompt
+        db.commit()
+
+        image_data = ai_service.generate_portrait_sync(selfie_path, generation_prompt)
 
         from app.services.file_service import save_generated_image
         result_url = save_generated_image(image_data)

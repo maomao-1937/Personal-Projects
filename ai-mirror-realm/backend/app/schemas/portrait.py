@@ -38,7 +38,6 @@ class PortraitOut(BaseModel):
     result_url: Optional[str] = None
     status: str
     error_message: Optional[str] = None
-    credits_used: int
     created_at: datetime
     completed_at: Optional[datetime] = None
 

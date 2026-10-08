@@ -11,6 +11,7 @@ from app.config import settings
 from app.database import Base, engine, SessionLocal
 from app.routers import auth, uploads, styles, portraits, media
 from app.seed import seed_styles
+from app.services.billing_schema_cleanup import remove_legacy_billing_schema
 from app.services.invitation_service import ensure_invitation_schema
 from app.utils.rate_limiter import limiter, rate_limit_exceeded_handler
 
@@ -53,7 +54,6 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
         401: "UNAUTHORIZED",
         403: "FORBIDDEN",
         404: "NOT_FOUND",
-        402: "PAYMENT_REQUIRED",
         422: "VALIDATION_ERROR",
         429: "RATE_LIMIT_EXCEEDED",
     }.get(exc.status_code, f"HTTP_{exc.status_code}")
@@ -135,6 +135,7 @@ async def uncaught_exception_handler(request: Request, exc: Exception) -> JSONRe
 
 @app.on_event("startup")
 def on_startup():
+    remove_legacy_billing_schema(engine)
     Base.metadata.create_all(bind=engine)
     ensure_invitation_schema(engine)
     db = SessionLocal()

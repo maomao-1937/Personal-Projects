@@ -1,9 +1,8 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, String, Integer, DateTime, Boolean
+from sqlalchemy import Column, String, DateTime, Boolean
 from sqlalchemy.dialects.sqlite import TEXT
-from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -21,12 +20,8 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     nickname = Column(String(100), nullable=False, default="镜界用户")
     avatar_url = Column(TEXT, nullable=True)
-    credits = Column(Integer, nullable=False, default=3)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
     invited_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # 关联订单
-    orders = relationship("Order", back_populates="user")

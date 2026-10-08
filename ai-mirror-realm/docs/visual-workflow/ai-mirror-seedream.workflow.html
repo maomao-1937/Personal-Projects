@@ -5037,7 +5037,7 @@
         <text x="54" y="198" class="t-dim" font-size="10" font-weight="600">02 / 私有服务</text>
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-2" x="40" y="300" width="992" height="104" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="322" class="t-dim" font-size="10" font-weight="600">03 / Seedream 生图</text>
+        <text x="54" y="322" class="t-dim" font-size="10" font-weight="600">03 / AI 模型服务</text>
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-3" x="40" y="424" width="992" height="104" rx="10" class="c-lane" stroke-width="1"/>
         <rect data-graph-role="structural-frame" data-composition-frame-kind="exception-lane" data-composition-frame-id="lane-3-exception" x="46" y="430" width="980" height="92" rx="8" class="c-security-group" stroke-width="1"/>
@@ -5061,16 +5061,18 @@
 
 
         <!-- Edge paths -->
-        <path data-edge-from="direction" data-edge-to="task" data-edge-label="提交照片与创作方向" data-edge-key="0" data-composition-points="475.20000000000005,145;475.20000000000005,166;379.20000000000005,166;379.20000000000005,243;395.20000000000005,243" d="M 475.20000000000005 145 L 475.20000000000005 166 L 379.20000000000005 166 L 379.20000000000005 243 L 395.20000000000005 243" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="invite" data-edge-to="selfie" data-edge-label="资格验证通过" data-edge-key="1" data-composition-points="140,119;215.60000000000002,119" d="M 140 119 L 215.60000000000002 119" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="persist" data-edge-to="result" data-edge-label="状态变为完成" data-edge-key="2" data-composition-points="805.6,217;805.6,145" d="M 805.6 217 L 805.6 145" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="result" data-edge-to="download" data-edge-label="读取私有媒体" data-edge-key="3" data-composition-points="851.6,119;927.2,119" d="M 851.6 119 L 927.2 119" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="seedream" data-edge-to="failed" data-edge-label="调用异常" data-edge-key="4" data-composition-points="752.6,367;1044,367;1044,491;752.6,491" d="M 752.6 367 L 1044 367 L 1044 491 L 752.6 491" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
-        <path data-edge-from="seedream" data-edge-to="persist" data-edge-label="返回图像字节" data-edge-key="5" data-composition-points="681.6,341;681.6,290;805.6,290;805.6,269" d="M 681.6 341 L 681.6 290 L 805.6 290 L 805.6 269" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="selfie" data-edge-to="direction" data-edge-label="上传私有照片" data-edge-key="6" data-composition-points="353.6,119;429.20000000000005,119" d="M 353.6 119 L 429.20000000000005 119" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="system_prompt" data-edge-to="seedream" data-edge-label="参考图 + 合成提示词" data-edge-key="7" data-composition-points="611.6,243;595.6,243;595.6,420;681.6,420;681.6,393" d="M 611.6 243 L 595.6 243 L 595.6 420 L 681.6 420 L 681.6 393" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="task" data-edge-to="result" data-edge-label="创建后进入任务页" data-edge-key="8" data-composition-points="555.2,243;571.2,243;571.2,166;805.6,166;805.6,145" d="M 555.2 243 L 571.2 243 L 571.2 166 L 805.6 166 L 805.6 145" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="task" data-edge-to="system_prompt" data-edge-label="后台任务" data-edge-key="9" data-composition-points="475.20000000000005,269;475.20000000000005,296;595.6,296;595.6,243;611.6,243" d="M 475.20000000000005 269 L 475.20000000000005 296 L 595.6 296 L 595.6 243 L 611.6 243" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="deepseek" data-edge-to="system_prompt" data-edge-label="文字分析结果" data-edge-key="0" data-composition-points="284.6,341;284.6,290;595.6,290;595.6,243;611.6,243" d="M 284.6 341 L 284.6 290 L 595.6 290 L 595.6 243 L 611.6 243" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
+        <path data-edge-from="direction" data-edge-to="task" data-edge-label="提交照片与创作方向" data-edge-key="1" data-composition-points="475.20000000000005,145;475.20000000000005,166;379.20000000000005,166;379.20000000000005,243;395.20000000000005,243" d="M 475.20000000000005 145 L 475.20000000000005 166 L 379.20000000000005 166 L 379.20000000000005 243 L 395.20000000000005 243" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="invite" data-edge-to="selfie" data-edge-label="资格验证通过" data-edge-key="2" data-composition-points="140,119;215.60000000000002,119" d="M 140 119 L 215.60000000000002 119" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="persist" data-edge-to="result" data-edge-label="状态变为完成" data-edge-key="3" data-composition-points="805.6,217;805.6,145" d="M 805.6 217 L 805.6 145" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="result" data-edge-to="download" data-edge-label="读取私有媒体" data-edge-key="4" data-composition-points="851.6,119;927.2,119" d="M 851.6 119 L 927.2 119" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="seedream" data-edge-to="failed" data-edge-label="调用异常" data-edge-key="5" data-composition-points="752.6,367;1044,367;1044,491;752.6,491" d="M 752.6 367 L 1044 367 L 1044 491 L 752.6 491" class="a-security" stroke-width="1.4" marker-end="url(#arrowhead-security)"/>
+        <path data-edge-from="seedream" data-edge-to="persist" data-edge-label="生成图像数据" data-edge-key="6" data-composition-points="681.6,341;681.6,290;805.6,290;805.6,269" d="M 681.6 341 L 681.6 290 L 805.6 290 L 805.6 269" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="selfie" data-edge-to="direction" data-edge-label="上传私有照片" data-edge-key="7" data-composition-points="353.6,119;429.20000000000005,119" d="M 353.6 119 L 429.20000000000005 119" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="system_prompt" data-edge-to="seedream" data-edge-label="参考图 + 合成提示词" data-edge-key="8" data-composition-points="611.6,243;595.6,243;595.6,420;681.6,420;681.6,393" d="M 611.6 243 L 595.6 243 L 595.6 420 L 681.6 420 L 681.6 393" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="task" data-edge-to="deepseek" data-edge-label="仅发送用户文字" data-edge-key="9" data-composition-points="395.20000000000005,243;20,243;20,367;208.60000000000002,367" d="M 395.20000000000005 243 L 20 243 L 20 367 L 208.60000000000002 367" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
+        <path data-edge-from="task" data-edge-to="result" data-edge-label="创建后进入任务页" data-edge-key="10" data-composition-points="555.2,243;571.2,243;571.2,166;805.6,166;805.6,145" d="M 555.2 243 L 571.2 243 L 571.2 166 L 805.6 166 L 805.6 145" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="task" data-edge-to="system_prompt" data-edge-label="异步处理" data-edge-key="11" data-composition-points="555.2,253;571.2,253;571.2,160;595.6,160;595.6,236;611.6,236" d="M 555.2 253 L 571.2 253 L 571.2 160 L 595.6 160 L 595.6 236 L 611.6 236" class="a-default" stroke-width="1.4" marker-end="url(#arrowhead)"/>
 
         <!-- Nodes -->
         <g id="node-invite" data-node-id="invite" data-node-label="邀请码进入" tabindex="0" role="button" aria-label="聚焦邀请码进入，/access · 一次性令牌, 用户与工作台 › 获得访问权" aria-pressed="false" data-node-kind="security" data-node-sublabel="/access · 一次性令牌" data-node-context="用户与工作台 › 获得访问权">
@@ -5174,8 +5176,20 @@
           <text data-detail="context" x="805.6" y="255" class="t-muted" font-size="7" text-anchor="middle">写入文件 · completed</text>
         </g>
 
-        <g id="node-seedream" data-node-id="seedream" data-node-label="Seedream 4.5" tabindex="0" role="button" aria-label="聚焦Seedream 4.5，火山方舟 · 图生图, Seedream 生图 › 异步生成" aria-pressed="false" data-node-kind="external" data-node-sublabel="火山方舟 · 图生图" data-node-context="Seedream 生图 › 异步生成">
-          <title>Seedream 4.5 · 火山方舟 · 图生图 · Seedream 生图 › 异步生成</title>
+        <g id="node-deepseek" data-node-id="deepseek" data-node-label="DeepSeek 分析" tabindex="0" role="button" aria-label="聚焦DeepSeek 分析，仅文字 · 可选 / 失败回退, AI 模型服务 › 提交创作素材" aria-pressed="false" data-node-kind="external" data-node-sublabel="仅文字 · 可选 / 失败回退" data-node-context="AI 模型服务 › 提交创作素材">
+          <title>DeepSeek 分析 · 仅文字 · 可选 / 失败回退 · AI 模型服务 › 提交创作素材</title>
+          <rect x="208.60000000000002" y="341" width="152" height="52" rx="6" class="c-mask"/>
+          <rect x="208.60000000000002" y="341" width="152" height="52" rx="6" class="c-external" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(214.60000000000002 347) scale(0.6875)">
+            <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
+            <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="284.6" y="362" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">DeepSeek 分析</text>
+          <text data-detail="context" x="284.6" y="379" class="t-muted" font-size="8" text-anchor="middle">仅文字 · 可选 / 失败回退</text>
+        </g>
+
+        <g id="node-seedream" data-node-id="seedream" data-node-label="Seedream 4.5" tabindex="0" role="button" aria-label="聚焦Seedream 4.5，火山方舟 · 图生图, AI 模型服务 › 异步生成" aria-pressed="false" data-node-kind="external" data-node-sublabel="火山方舟 · 图生图" data-node-context="AI 模型服务 › 异步生成">
+          <title>Seedream 4.5 · 火山方舟 · 图生图 · AI 模型服务 › 异步生成</title>
           <rect x="610.6" y="341" width="142" height="52" rx="6" class="c-mask"/>
           <rect x="610.6" y="341" width="142" height="52" rx="6" class="c-external" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(616.6 347) scale(0.6875)">
@@ -5198,45 +5212,53 @@
         </g>
 
         <!-- Edge labels -->
-        <g data-detail="context" data-edge-from="direction" data-edge-to="task" data-edge-label="提交照片与创作方向" data-edge-key="0">
+        <g data-detail="context" data-edge-from="deepseek" data-edge-to="system_prompt" data-edge-label="文字分析结果" data-edge-key="0">
+          <rect x="406.3" y="270" width="67.6" height="14" rx="3" class="c-mask"/>
+          <text x="440.1" y="280" class="t-database" font-size="8" text-anchor="middle">文字分析结果</text>
+        </g>
+        <g data-detail="context" data-edge-from="direction" data-edge-to="task" data-edge-label="提交照片与创作方向" data-edge-key="1">
           <rect x="379.00000000000006" y="146" width="96.39999999999999" height="14" rx="3" class="c-mask"/>
           <text x="427.20000000000005" y="156" class="t-muted" font-size="8" text-anchor="middle">提交照片与创作方向</text>
         </g>
-        <g data-detail="context" data-edge-from="invite" data-edge-to="selfie" data-edge-label="资格验证通过" data-edge-key="1">
+        <g data-detail="context" data-edge-from="invite" data-edge-to="selfie" data-edge-label="资格验证通过" data-edge-key="2">
           <rect x="144" y="99" width="67.6" height="14" rx="3" class="c-mask"/>
           <text x="177.8" y="109" class="t-muted" font-size="8" text-anchor="middle">资格验证通过</text>
         </g>
-        <g data-detail="context" data-edge-from="persist" data-edge-to="result" data-edge-label="状态变为完成" data-edge-key="2">
+        <g data-detail="context" data-edge-from="persist" data-edge-to="result" data-edge-label="状态变为完成" data-edge-key="3">
           <rect x="771.8000000000001" y="197" width="67.6" height="14" rx="3" class="c-mask"/>
           <text x="805.6" y="207" class="t-muted" font-size="8" text-anchor="middle">状态变为完成</text>
         </g>
-        <g data-detail="context" data-edge-from="result" data-edge-to="download" data-edge-label="读取私有媒体" data-edge-key="3">
+        <g data-detail="context" data-edge-from="result" data-edge-to="download" data-edge-label="读取私有媒体" data-edge-key="4">
           <rect x="855.6000000000001" y="99" width="67.6" height="14" rx="3" class="c-mask"/>
           <text x="889.4000000000001" y="109" class="t-muted" font-size="8" text-anchor="middle">读取私有媒体</text>
         </g>
-        <g data-detail="context" data-edge-from="seedream" data-edge-to="failed" data-edge-label="调用异常" data-edge-key="4">
+        <g data-detail="context" data-edge-from="seedream" data-edge-to="failed" data-edge-label="调用异常" data-edge-key="5">
           <rect x="874.0999999999999" y="347" width="48.4" height="14" rx="3" class="c-mask"/>
           <text x="898.3" y="357" class="t-security" font-size="8" text-anchor="middle">调用异常</text>
         </g>
-        <g data-detail="context" data-edge-from="seedream" data-edge-to="persist" data-edge-label="返回图像字节" data-edge-key="5">
+        <g data-detail="context" data-edge-from="seedream" data-edge-to="persist" data-edge-label="生成图像数据" data-edge-key="6">
           <rect x="709.8000000000001" y="270" width="67.6" height="14" rx="3" class="c-mask"/>
-          <text x="743.6" y="280" class="t-muted" font-size="8" text-anchor="middle">返回图像字节</text>
+          <text x="743.6" y="280" class="t-backend" font-size="8" text-anchor="middle">生成图像数据</text>
         </g>
-        <g data-detail="context" data-edge-from="selfie" data-edge-to="direction" data-edge-label="上传私有照片" data-edge-key="6">
+        <g data-detail="context" data-edge-from="selfie" data-edge-to="direction" data-edge-label="上传私有照片" data-edge-key="7">
           <rect x="357.6" y="99" width="67.6" height="14" rx="3" class="c-mask"/>
           <text x="391.40000000000003" y="109" class="t-muted" font-size="8" text-anchor="middle">上传私有照片</text>
         </g>
-        <g data-detail="context" data-edge-from="system_prompt" data-edge-to="seedream" data-edge-label="参考图 + 合成提示词" data-edge-key="7">
+        <g data-detail="context" data-edge-from="system_prompt" data-edge-to="seedream" data-edge-label="参考图 + 合成提示词" data-edge-key="8">
           <rect x="588" y="400" width="101.2" height="14" rx="3" class="c-mask"/>
           <text x="638.6" y="410" class="t-muted" font-size="8" text-anchor="middle">参考图 + 合成提示词</text>
         </g>
-        <g data-detail="context" data-edge-from="task" data-edge-to="result" data-edge-label="创建后进入任务页" data-edge-key="8">
+        <g data-detail="context" data-edge-from="task" data-edge-to="deepseek" data-edge-label="仅发送用户文字" data-edge-key="9">
+          <rect x="169.00000000000003" y="223" width="77.2" height="14" rx="3" class="c-mask"/>
+          <text x="207.60000000000002" y="233" class="t-database" font-size="8" text-anchor="middle">仅发送用户文字</text>
+        </g>
+        <g data-detail="context" data-edge-from="task" data-edge-to="result" data-edge-label="创建后进入任务页" data-edge-key="10">
           <rect x="645.0000000000001" y="146" width="86.8" height="14" rx="3" class="c-mask"/>
           <text x="688.4000000000001" y="156" class="t-muted" font-size="8" text-anchor="middle">创建后进入任务页</text>
         </g>
-        <g data-detail="context" data-edge-from="task" data-edge-to="system_prompt" data-edge-label="后台任务" data-edge-key="9">
-          <rect x="511.2000000000001" y="276" width="48.4" height="14" rx="3" class="c-mask"/>
-          <text x="535.4000000000001" y="286" class="t-muted" font-size="8" text-anchor="middle">后台任务</text>
+        <g data-detail="context" data-edge-from="task" data-edge-to="system_prompt" data-edge-label="异步处理" data-edge-key="11">
+          <rect x="559.2" y="140" width="48.4" height="14" rx="3" class="c-mask"/>
+          <text x="583.4000000000001" y="150" class="t-muted" font-size="8" text-anchor="middle">异步处理</text>
         </g>
 
         <!-- Legend -->
@@ -5453,7 +5475,7 @@
         <ul>
           <li>&bull; 自拍先校验格式与 10MB 上限，再上传到当前账户的私有目录</li>
           <li>&bull; 用户提示词与主题可单独使用，也可同时使用</li>
-          <li>&bull; 服务端始终优先加入固定系统提示词</li>
+          <li>&bull; DeepSeek 仅分析文字，异常回退原文；服务端再加入固定约束</li>
         </ul>
       </div>
 
