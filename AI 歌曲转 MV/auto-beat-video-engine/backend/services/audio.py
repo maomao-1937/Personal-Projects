@@ -15,6 +15,16 @@ from backend.services.projects import ProjectService
 from backend.storage.local_artifacts import LocalArtifactStore
 
 
+def upload_limit_message(max_bytes: int) -> str:
+    if max_bytes % (1024 * 1024) == 0:
+        limit = f"{max_bytes // (1024 * 1024)} MB"
+    elif max_bytes % 1024 == 0:
+        limit = f"{max_bytes // 1024} KB"
+    else:
+        limit = f"{max_bytes} 字节"
+    return f"音频文件超过 {limit}。"
+
+
 @dataclass(frozen=True, slots=True)
 class UploadedAudio:
     id: str
@@ -70,7 +80,7 @@ class AudioService:
         if len(data) > self.max_bytes:
             raise DomainError(
                 "audio_too_large",
-                "音频文件超过 100 MB。",
+                upload_limit_message(self.max_bytes),
                 status_code=413,
                 details={"max_bytes": self.max_bytes},
             )

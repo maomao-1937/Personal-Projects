@@ -3,7 +3,7 @@ from dataclasses import asdict
 from fastapi import APIRouter, File, Header, UploadFile
 
 from backend.domain.errors import DomainError
-from backend.services.audio import AudioService
+from backend.services.audio import AudioService, upload_limit_message
 from backend.services.auth import AuthService
 
 
@@ -21,7 +21,7 @@ def build_audio_router(audio_service: AudioService, auth: AuthService) -> APIRou
         if len(data) > audio_service.max_bytes:
             raise DomainError(
                 "audio_too_large",
-                "音频文件超过 100 MB。",
+                upload_limit_message(audio_service.max_bytes),
                 status_code=413,
                 details={"max_bytes": audio_service.max_bytes},
             )

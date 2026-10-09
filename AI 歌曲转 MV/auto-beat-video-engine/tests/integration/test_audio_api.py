@@ -1,6 +1,7 @@
 import io
 import wave
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -8,6 +9,7 @@ from backend.api.audio import build_audio_router
 from backend.api.auth import build_auth_router
 from backend.api.errors import install_error_handlers
 from backend.api.projects import build_projects_router
+from backend.domain.errors import DomainError
 from backend.persistence.database import Database
 from backend.persistence.repositories import Repositories
 from backend.services.audio import AudioService
@@ -26,7 +28,7 @@ def _silent_wav(seconds: int) -> bytes:
     return buffer.getvalue()
 
 
-def _scenario(tmp_path) -> tuple[TestClient, str, str]:
+def _scenario(tmp_path, *, max_bytes: int = 100 * 1024 * 1024) -> tuple[TestClient, str, str]:
     database = Database(tmp_path / "app.db")
     database.initialize()
     repositories = Repositories(database)
@@ -36,7 +38,7 @@ def _scenario(tmp_path) -> tuple[TestClient, str, str]:
         database,
         projects,
         LocalArtifactStore(tmp_path / "artifacts"),
-        max_bytes=100 * 1024 * 1024,
+        max_bytes=max_bytes,
         min_seconds=30,
         max_seconds=60,
     )
@@ -80,3 +82,45 @@ def test_upload_persists_valid_audio_metadata(tmp_path) -> None:
     assert payload["project_id"] == project_id
     assert payload["duration_ms"] == 30_000
     assert payload["status"] == "uploaded"
+
+
+def test_upload_error_reports_the_configured_size_limit(tmp_path) -> None:
+    client, token, project_id = _scenario(tmp_path, max_bytes=1024 * 1024)
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/audio",
+        headers={"Authorization": f"Bearer {token}"},
+        files={"audio": ("large.wav", b"x" * (1024 * 1024 + 1), "audio/wav")},
+    )
+
+    assert response.status_code == 413
+    assert response.json()["error"]["message"] == "音频文件超过 1 MB。"
+    assert response.json()["error"]["details"]["max_bytes"] == 1024 * 1024
+
+
+def test_audio_service_uses_the_same_configured_size_limit(tmp_path) -> None:
+    database = Database(tmp_path / "service.db")
+    database.initialize()
+    repositories = Repositories(database)
+    user = repositories.users.create()
+    project = repositories.projects.create(user.id, "MV")
+    audio = AudioService(
+        database,
+        ProjectService(repositories.projects),
+        LocalArtifactStore(tmp_path / "artifacts"),
+        max_bytes=1024 * 1024,
+        min_seconds=30,
+        max_seconds=60,
+    )
+
+    with pytest.raises(DomainError) as error:
+        audio.upload(
+            user.id,
+            project.id,
+            filename="large.wav",
+            content_type="audio/wav",
+            data=b"x" * (1024 * 1024 + 1),
+        )
+
+    assert error.value.status_code == 413
+    assert error.value.message == "音频文件超过 1 MB。"
