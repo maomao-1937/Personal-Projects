@@ -105,6 +105,30 @@ def test_restore_does_not_overwrite_an_existing_database(tmp_path: Path) -> None
     assert object_store.download_count == 0
 
 
+def test_restore_does_not_overwrite_a_database_created_during_download(tmp_path: Path) -> None:
+    remote_path = tmp_path / "remote.db"
+    remote_content = create_sqlite(remote_path, value="remote truth")
+    database_path = tmp_path / "runtime" / "app.db"
+
+    class RacingObjectStore(FakeObjectStore):
+        def download_file(self, bucket: str, key: str, filename: str) -> None:
+            super().download_file(bucket, key, filename)
+            create_sqlite(database_path, value="local truth")
+
+    service = DatabaseBackupService(
+        database_path=database_path,
+        object_store=RacingObjectStore(remote_content),
+        bucket="ai-interrogation-backup",
+        object_key="db-backup/ai-interrogation.db",
+    )
+
+    assert service.restore_if_missing() is False
+    with sqlite3.connect(database_path) as connection:
+        assert connection.execute("SELECT value FROM case_state").fetchone() == (
+            "local truth",
+        )
+
+
 def test_missing_remote_backup_allows_a_first_start(tmp_path: Path) -> None:
     service = DatabaseBackupService(
         database_path=tmp_path / "app.db",

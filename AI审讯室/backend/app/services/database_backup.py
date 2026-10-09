@@ -133,8 +133,12 @@ class DatabaseBackupService:
                     str(restore_path),
                 )
                 self._validate_snapshot(restore_path)
-                os.replace(restore_path, self.database_path)
+                # A second process may create the database while the snapshot
+                # downloads. Publish only if the destination is still absent.
+                os.link(restore_path, self.database_path)
             except FileNotFoundError:
+                return False
+            except FileExistsError:
                 return False
             except Exception as exc:
                 if isinstance(exc, DatabaseBackupError):
