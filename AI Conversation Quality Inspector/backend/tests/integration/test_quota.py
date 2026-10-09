@@ -110,6 +110,35 @@ def test_expired_reservation_is_reclaimed(quota_context) -> None:
         assert row.error_type == "RESERVATION_EXPIRED"
 
 
+def test_reclaim_continues_when_an_expired_attempt_completes_concurrently(
+    quota_context, completed_metadata: CompletionMetadata, monkeypatch
+) -> None:
+    service, factory, invite_id = quota_context
+    attempts = [service.reserve(invite_id, str(uuid4()), "sales", 120, 4) for _ in range(2)]
+    with factory.begin() as session:
+        for attempt in attempts:
+            row = session.get(AnalysisAttempt, attempt.id)
+            assert row is not None
+            row.created_at = utc_now() - timedelta(seconds=181)
+
+    original_release = service.release
+    raced = False
+
+    def release_after_completion(attempt_id: str, error_type: str) -> None:
+        nonlocal raced
+        if not raced:
+            raced = True
+            service.consume(attempt_id, completed_metadata)
+        original_release(attempt_id, error_type)
+
+    monkeypatch.setattr(service, "release", release_after_completion)
+    assert service.reclaim_expired() == 1
+    assert service.remaining(invite_id) == 49
+    with factory() as session:
+        statuses = [session.get(AnalysisAttempt, attempt.id).quota_status for attempt in attempts]
+    assert set(statuses) == {QuotaStatus.CONSUMED, QuotaStatus.RELEASED}
+
+
 def test_parallel_reservations_never_exceed_limit(
     quota_context, completed_metadata: CompletionMetadata
 ) -> None:

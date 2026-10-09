@@ -223,9 +223,22 @@ class QuotaService:
                     )
                 )
             )
+        reclaimed = 0
         for attempt_id in attempt_ids:
-            self.release(attempt_id, "RESERVATION_EXPIRED")
-        return len(attempt_ids)
+            try:
+                self.release(attempt_id, "RESERVATION_EXPIRED")
+            except AppError as exc:
+                if exc.code != "QUOTA_STATE_INVALID":
+                    raise
+                with self._session_factory() as session:
+                    attempt = session.get(AnalysisAttempt, attempt_id)
+                    if attempt is not None and attempt.quota_status == QuotaStatus.RESERVED:
+                        raise
+                # The analysis completed or another worker released it after
+                # the candidate list was read; continue reclaiming the rest.
+                continue
+            reclaimed += 1
+        return reclaimed
 
     def remaining(self, invite_id: str) -> int:
         with self._session_factory() as session:
