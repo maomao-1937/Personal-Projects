@@ -67,9 +67,9 @@ export default function AccessPage() {
   return (
     <main className="grid min-h-screen min-w-0 grid-cols-1 bg-paper pt-16 lg:grid-cols-2">
       <section className="relative hidden min-h-[calc(100vh-64px)] overflow-hidden bg-stage lg:block" aria-label="写真效果示例">
-        <Image src="/style-previews/fugu.jpg" alt="复古电影风格 AI 写真效果示例" fill priority sizes="50vw" className="object-cover" />
+        <Image src="/style-previews/zhichang.jpg" alt="职场写真风格 AI 写真效果示例" fill priority sizes="50vw" className="object-cover" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#141517] via-[#141517]/70 to-transparent px-10 pb-10 pt-24 text-white xl:px-16">
-          <p className="text-xs text-white/75">复古电影 · 效果示例</p>
+          <p className="text-xs text-white/75">职场写真 · 效果示例</p>
           <h1 className="display-title mt-4 max-w-lg text-4xl xl:text-5xl">从熟悉的自拍，<br />走进新的画面。</h1>
         </div>
       </section>

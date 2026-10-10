@@ -20,35 +20,32 @@ export default function HomePage() {
     <main className="pt-16">
       <section className="page-shell grid items-center gap-10 py-10 sm:py-14 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 lg:py-20">
         <div className="max-w-xl">
-          <h1 className="display-title max-w-[9em] text-[clamp(3rem,4.2vw,4.25rem)] leading-[1.08]">
-            一张自拍，<br />拍出新的自己。
+          <h1 className="display-title max-w-[9em] text-[clamp(2.4rem,4.2vw,4.25rem)] leading-[1.08]">
+            你的写真，<br />从一张自拍开始。
           </h1>
           <p className="mt-7 max-w-[30rem] text-base leading-8 text-muted sm:text-lg">
-            从你熟悉的照片出发，描述一个画面，或挑选一个写真主题。创作、查看和下载，都在这里完成。
+            上传自拍，选主题或描述画面。<br />完成后即可查看并下载。
           </p>
           <Link href="/access?next=%2Fstudio" className="mt-8 inline-flex min-h-12 items-center justify-center gap-3 rounded-lg bg-brand px-6 text-sm font-semibold text-white transition-colors hover:bg-[#a83d27] focus-visible:outline-white">
             使用邀请码开始 <ArrowRight size={18} aria-hidden="true" />
           </Link>
-          <div className="mt-12 grid max-w-md grid-cols-3 gap-4 border-t border-line pt-5 text-xs leading-5 text-muted sm:text-sm">
-            <span>一张自拍</span><span>描述或选主题</span><span>私人查看结果</span>
-          </div>
         </div>
 
         <div className="grid grid-cols-[minmax(0,1fr)_86px] gap-2.5 sm:grid-cols-[minmax(0,1fr)_128px] sm:gap-4" aria-label="AI 写真效果示例">
           <figure className="relative min-h-[380px] overflow-hidden rounded-xl bg-stage sm:min-h-[540px]">
-            <Image src="/style-previews/fugu.jpg" alt="复古电影风格 AI 写真示例" fill priority sizes="(max-width: 1023px) 75vw, 42vw" className="object-cover" />
+            <Image src="/style-previews/zhichang.jpg" alt="职场写真风格 AI 写真示例" fill priority sizes="(max-width: 1023px) 75vw, 42vw" className="object-cover" />
             <figcaption className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-[#141517]/85 px-4 py-3 text-sm text-white sm:px-5">
-              <span>复古电影</span><span className="text-xs text-white/70">效果示例</span>
+              <span>职场写真</span><span className="text-xs text-white/70">效果示例</span>
             </figcaption>
           </figure>
           <div className="grid min-h-[380px] grid-rows-2 gap-2.5 sm:min-h-[540px] sm:gap-4">
             <figure className="relative overflow-hidden rounded-xl bg-stage">
-              <Image src="/style-previews/zhichang.jpg" alt="职场写真效果示例" fill priority sizes="(max-width: 1023px) 23vw, 12vw" className="object-cover" />
-              <figcaption className="sr-only">职场写真效果示例</figcaption>
+              <Image src="/style-previews/fugu.jpg" alt="复古电影写真效果示例" fill priority sizes="(max-width: 1023px) 23vw, 12vw" className="object-cover" />
+              <figcaption className="absolute inset-x-0 bottom-0 bg-[#141517]/85 px-2 py-2 text-center text-xs text-white">复古</figcaption>
             </figure>
             <figure className="relative overflow-hidden rounded-xl bg-stage">
               <Image src="/style-previews/guofeng.jpg" alt="国风写真效果示例" fill sizes="(max-width: 1023px) 23vw, 12vw" className="object-cover" />
-              <figcaption className="sr-only">国风写真效果示例</figcaption>
+              <figcaption className="absolute inset-x-0 bottom-0 bg-[#141517]/85 px-2 py-2 text-center text-xs text-white">国风</figcaption>
             </figure>
           </div>
         </div>
