@@ -50,7 +50,7 @@ function AccessForm() {
 
   return (
     <>
-      <form onSubmit={submit} className="mt-8 space-y-5" noValidate>
+      <form onSubmit={submit} className="mt-8 space-y-4" noValidate>
         <Input label="邀请码" value={form.invite_token} onChange={(event) => update('invite_token', event.target.value)} autoComplete="off" placeholder="输入你收到的邀请码" leftIcon={<KeyRound size={17} />} error={errors.invite_token} required />
         <Input label="邮箱" type="email" value={form.email} onChange={(event) => update('email', event.target.value)} autoComplete="email" placeholder="name@example.com" leftIcon={<Mail size={17} />} error={errors.email} required />
         <Input label="昵称" value={form.nickname} onChange={(event) => update('nickname', event.target.value)} autoComplete="nickname" placeholder="怎么称呼你" leftIcon={<UserRound size={17} />} error={errors.nickname} maxLength={20} required />
@@ -58,28 +58,26 @@ function AccessForm() {
         {requestError && <p className="rounded-lg bg-[#fff0f1] px-4 py-3 text-sm text-signal" role="alert">{requestError}</p>}
         <Button type="submit" size="lg" fullWidth loading={submitting}>使用邀请码进入</Button>
       </form>
-      <p className="mt-6 text-center text-xs leading-5 text-muted">每个邀请码仅可使用一次，照片与结果仅本人可访问</p>
+      <p className="mt-5 text-xs leading-5 text-muted">每个邀请码仅可使用一次。照片与结果仅当前账户可查看。</p>
     </>
   );
 }
 
 export default function AccessPage() {
   return (
-    <main className="grid min-h-screen min-w-0 grid-cols-1 overflow-hidden bg-canvas pt-16 lg:grid-cols-[0.9fr_1.1fr]">
-      <section className="relative hidden min-h-[calc(100vh-64px)] overflow-hidden bg-stage p-5 lg:block" aria-label="写真预览">
-        <div className="relative h-full overflow-hidden rounded-[22px]">
-          <Image src="/style-previews/fugu.jpg" alt="AI 写真效果示例" fill priority sizes="45vw" className="object-cover opacity-90" />
-          <div className="absolute inset-0 bg-black/25" />
-          <div className="absolute left-7 top-7 flex items-center gap-3 text-white"><span className="h-2 w-2 rounded-full bg-[#f06a47]" /><span className="editorial-kicker text-white/80">Private access / 01</span></div>
-          <div className="absolute inset-x-7 bottom-7 border-l border-white/40 pl-5 text-white"><p className="editorial-kicker text-white/65">AI MIRROR REALM</p><h1 className="display-title mt-3 max-w-xl text-4xl xl:text-5xl">从一张熟悉的自拍，<br />看见新的自己</h1><p className="mt-5 max-w-sm text-sm leading-6 text-white/70">一张照片，多个可能。进入后，你可以描述画面，也可以直接选择一个主题。</p></div>
+    <main className="grid min-h-screen min-w-0 grid-cols-1 bg-paper pt-16 lg:grid-cols-2">
+      <section className="relative hidden min-h-[calc(100vh-64px)] overflow-hidden bg-stage lg:block" aria-label="写真效果示例">
+        <Image src="/style-previews/fugu.jpg" alt="复古电影风格 AI 写真效果示例" fill priority sizes="50vw" className="object-cover" />
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#141517] via-[#141517]/70 to-transparent px-10 pb-10 pt-24 text-white xl:px-16">
+          <p className="text-xs text-white/75">复古电影 · 效果示例</p>
+          <h1 className="display-title mt-4 max-w-lg text-4xl xl:text-5xl">从熟悉的自拍，<br />走进新的画面。</h1>
         </div>
       </section>
-      <section className="flex min-w-0 items-center bg-canvas px-5 py-12 sm:px-12 lg:px-16 xl:px-24">
-        <div className="mx-auto min-w-0 w-full max-w-md rounded-[22px] border border-line bg-paper p-6 shadow-card sm:p-9">
-          <div className="flex items-center justify-between gap-4"><p className="editorial-kicker text-brand">Invite only</p><span className="text-xs tabular-nums text-muted">01 / 01</span></div>
-          <h2 className="display-title mt-5 text-4xl sm:text-5xl">进入 AI 镜界</h2>
-          <p className="mt-4 text-muted">所有体验者都需要邀请码。验证后即可进入创作工作台。</p>
-          <div className="mt-6 h-px bg-line" />
+      <section className="flex min-w-0 items-center px-5 py-12 sm:px-12 lg:px-16 xl:px-24">
+        <div className="mx-auto min-w-0 w-full max-w-md">
+          <h2 className="display-title text-4xl sm:text-5xl">进入 AI 镜界</h2>
+          <p className="mt-4 text-base leading-7 text-muted">填写邀请码和账户信息，进入你的私人写真工作台。</p>
+          <div className="mt-8 flex items-center gap-3 border-t border-line pt-4 text-xs text-muted"><span className="h-2 w-2 rounded-full bg-brand" aria-hidden="true" />仅限受邀体验</div>
           <Suspense fallback={<p className="mt-8 text-sm text-muted">正在加载…</p>}><AccessForm /></Suspense>
         </div>
       </section>

@@ -73,30 +73,44 @@ function TaskContent() {
   const running = task.status === 'pending' || task.status === 'processing';
   const completed = task.status === 'completed' && task.result_url;
   return (
-    <main className="min-h-screen bg-stage pb-24 pt-16 lg:pb-0">
-      <div className="page-shell py-8 sm:py-10">
-        <div className="mb-6 flex items-center justify-between gap-4"><div><p className="editorial-kicker text-[#f06a47]">Portrait task</p><h1 className="mt-2 text-2xl font-semibold text-white">{completed ? '你的写真已生成' : running ? '正在生成写真' : '这次没有生成完成'}</h1></div><Link href="/works" className="text-sm font-medium text-white/60 hover:text-white">我的写真</Link></div>
-        <div className="overflow-hidden rounded-[24px] border border-white/10 bg-paper shadow-card lg:grid lg:h-[680px] lg:grid-cols-[minmax(0,1.25fr)_420px]">
-          <section className="flex min-h-[500px] items-center justify-center bg-stage p-5 sm:p-8">
-            {completed ? (
-              <div className="relative h-full min-h-[460px] w-full max-w-[580px] overflow-hidden rounded-2xl bg-[#1d1e23]">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={task.result_url!} alt="生成完成的 AI 写真" className="h-full w-full object-contain" /></div>
-            ) : style?.previewImage ? (
-              <div className="relative h-full min-h-[460px] w-full max-w-[580px] overflow-hidden rounded-2xl bg-[#1d1e23]"><Image src={style.previewImage} alt={`${style.name}主题预览`} fill sizes="(max-width:1023px) 100vw, 55vw" className="object-cover opacity-35" /><div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center text-white">{running ? <Loader2 size={34} className="animate-spin" /> : <AlertCircle size={34} />}<p className="mt-6 text-xl font-semibold">{running ? 'AI 正在制作你的写真' : '生成没有完成'}</p><p className="mt-2 max-w-sm text-sm leading-6 text-white/60">{running ? '通常需要一点时间，你可以离开此页，任务会继续进行。' : '自拍不会公开展示；重新上传后即可再次生成。'}</p></div></div>
-            ) : <div className="text-center text-white">{running ? <Loader2 size={34} className="mx-auto animate-spin" /> : <AlertCircle size={34} className="mx-auto" />}<p className="mt-5">{running ? 'AI 正在制作你的写真' : '生成没有完成'}</p></div>}
+    <main className="min-h-screen bg-canvas pb-24 pt-16 lg:pb-12">
+      <div className="page-shell py-7 sm:py-10">
+        <div className="flex items-end justify-between gap-4">
+          <div><h1 className="display-title text-3xl sm:text-4xl">{completed ? '你的写真' : running ? '正在生成写真' : '这次生成未完成'}</h1><p className="mt-2 text-sm text-muted">从创作方向到最终结果，都可以在这里查看。</p></div>
+          <Link href="/works" className="hidden min-h-11 items-center text-sm font-medium text-muted hover:text-ink sm:inline-flex">返回我的写真</Link>
+        </div>
+        <div className="mt-6 overflow-hidden rounded-xl bg-paper lg:grid lg:min-h-[720px] lg:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.85fr)]">
+          <section className="darkroom-surface flex min-h-[430px] flex-col p-4 sm:min-h-[570px] sm:p-6 lg:min-h-[720px]" aria-label="写真结果">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4 text-xs">
+              <span className="font-medium text-white/80">{completed ? '生成结果' : running ? '制作中' : '任务未完成'}</span>
+              <span className="text-white/55">AI 镜界 · 私人写真</span>
+            </div>
+            <div className="flex min-h-0 flex-1 items-center justify-center py-4">
+              {completed ? (
+                <div className="photo-mat relative flex h-[320px] w-full max-w-[560px] items-center justify-center overflow-hidden sm:h-[470px] lg:h-[570px]">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={task.result_url!} alt="生成完成的 AI 写真" className="h-full w-full object-contain" /></div>
+              ) : running ? (
+                <div className="photo-mat relative flex h-[320px] w-full max-w-[560px] flex-col items-center justify-center overflow-hidden px-6 text-center sm:h-[470px] lg:h-[570px]">
+                  {style?.previewImage && <Image src={style.previewImage} alt="" fill sizes="(max-width:1023px) 100vw, 55vw" className="object-cover opacity-20" />}
+                  <div className="relative z-10 text-white"><Loader2 size={30} className="mx-auto animate-spin" aria-hidden="true" /><p className="mt-5 text-lg font-semibold">正在制作你的写真</p><p className="mt-2 text-sm text-white/70">主题图片仅供参考，结果尚未生成。</p></div>
+                </div>
+              ) : (
+                <div className="photo-mat flex h-[320px] w-full max-w-[560px] flex-col items-center justify-center px-6 text-center sm:h-[470px] lg:h-[570px]"><AlertCircle size={32} className="text-[#f2b0aa]" aria-hidden="true" /><p className="mt-5 text-lg font-semibold">没有生成结果</p><p className="mt-2 max-w-xs text-sm leading-6 text-white/70">这条任务记录已保留。可以重新上传照片，再试一次。</p></div>
+              )}
+            </div>
+            <p className="border-t border-white/10 pt-4 text-xs leading-5 text-white/65">{completed ? '这是本次任务的实际生成结果。' : running ? '页面会自动更新状态；你也可以稍后从「我的写真」返回。' : '这次没有生成图片，你可以返回工作台重新尝试。'}</p>
           </section>
-
-          <aside className="flex flex-col justify-between border-t border-line p-6 sm:p-8 lg:border-l lg:border-t-0">
+          <aside className="flex flex-col justify-between border-t border-line p-5 sm:p-7 lg:border-l lg:border-t-0">
             <div>
-              <div className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${completed ? 'bg-[#e3f1ea] text-success' : running ? 'bg-[#f2ddd7] text-brand' : 'bg-[#fae4e5] text-signal'}`}>{completed ? <Check size={16} /> : running ? <Loader2 size={16} className="animate-spin" /> : <AlertCircle size={16} />}{completed ? '生成完成' : running ? '生成中' : '生成失败'}</div>
-              <h2 className="display-title mt-6 text-4xl">{completed ? '写真已就绪' : running ? '稍等片刻' : '重新上传再试'}</h2>
-              <p className="mt-4 leading-7 text-muted">{completed ? `已按「${styleName}」完成，可以直接下载。` : running ? '完成后页面会自动更新。你也可以去我的写真，稍后再回来查看。' : '这次任务没有完成。重新上传一张自拍后即可再次生成。'}</p>
-              <dl className="mt-8 divide-y divide-line border-y border-line text-sm"><div className="flex justify-between py-4"><dt className="text-muted">创作方向</dt><dd className="font-medium">{styleName}</dd></div><div className="flex justify-between py-4"><dt className="text-muted">创建时间</dt><dd>{new Date(task.created_at).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</dd></div></dl>
+              <p className={`inline-flex items-center gap-2 text-sm font-medium ${completed ? 'text-success' : running ? 'text-brand' : 'text-signal'}`}>{completed ? <Check size={17} aria-hidden="true" /> : running ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <AlertCircle size={17} aria-hidden="true" />}{completed ? '生成完成' : running ? '正在生成' : '生成失败'}</p>
+              <h2 className="display-title mt-5 text-3xl">{completed ? '可以下载了' : running ? '结果还在路上' : '重新制作一张'}</h2>
+              <p className="mt-4 text-sm leading-7 text-muted">{completed ? '写真已经保存在你的作品中，可以直接下载。' : running ? '无需停留在此页。完成后，这条任务会在我的写真中更新。' : '本次任务没有完成。返回工作台重新上传自拍并选择创作方向。'}</p>
+              <dl className="mt-8 divide-y divide-line border-y border-line text-sm"><div className="flex justify-between gap-4 py-4"><dt className="text-muted">创作方向</dt><dd className="text-right font-medium">{styleName}</dd></div><div className="flex justify-between gap-4 py-4"><dt className="text-muted">创建时间</dt><dd className="text-right">{new Date(task.created_at).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</dd></div></dl>
             </div>
             <div className="mt-10 grid gap-3">
               {completed && <Button size="lg" fullWidth loading={downloading} leftIcon={<Download size={18} />} onClick={download}>下载写真</Button>}
               {running && <Button variant="outline" size="lg" fullWidth leftIcon={<RefreshCw size={18} />} onClick={() => setRefreshKey((key) => key + 1)}>刷新状态</Button>}
-              <Button variant={completed ? 'outline' : 'primary'} size="lg" fullWidth leftIcon={<RefreshCw size={18} />} onClick={again}>{completed ? '再做一张' : '重新上传自拍'}</Button>
-              <Link href="/studio" className="inline-flex min-h-11 items-center justify-center text-sm font-medium text-muted hover:text-ink">调整创作方向</Link>
+              {!running && <Button variant={completed ? 'outline' : 'primary'} size="lg" fullWidth leftIcon={<RefreshCw size={18} />} onClick={again}>{completed ? '再做一张' : '重新制作'}</Button>}
+              <Link href="/works" className="inline-flex min-h-11 items-center justify-center text-sm font-medium text-muted hover:text-ink">返回我的写真</Link>
               {!running && <Button variant="ghost" size="sm" fullWidth loading={deleting} leftIcon={<Trash2 size={16} />} className="text-muted" onClick={remove}>删除这条记录</Button>}
             </div>
           </aside>
@@ -108,7 +122,7 @@ function TaskContent() {
 }
 
 function FullState({ icon, title, copy, action }: { icon: React.ReactNode; title: string; copy: string; action?: React.ReactNode }) {
-  return <main className="page-shell flex min-h-screen items-center justify-center pt-16"><div className="w-full max-w-xl rounded-2xl border border-line bg-paper p-10 text-center shadow-card"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#f0f0f3] text-muted">{icon}</div><h1 className="display-title mt-6 text-4xl">{title}</h1><p className="mt-4 text-muted">{copy}</p>{action && <div className="mt-7">{action}</div>}</div></main>;
+  return <main className="page-shell flex min-h-screen items-center justify-center pt-16"><div className="w-full max-w-xl border-y border-line py-12 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center text-muted">{icon}</div><h1 className="display-title mt-5 text-3xl">{title}</h1><p className="mt-4 text-muted">{copy}</p>{action && <div className="mt-7">{action}</div>}</div></main>;
 }
 
 export default function TaskPage() { return <ProtectedRoute><TaskContent /></ProtectedRoute>; }

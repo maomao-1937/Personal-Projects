@@ -5,7 +5,7 @@
 :root {
   --canvas: #f2f0ec;
   --paper: #fffdf9;
-  --stage: #0d0e11;
+  --stage: #141517;
   --ink: #171612;
   --muted: #68645e;
   --line: #d9d5ce;
@@ -103,10 +103,21 @@ a {
 
 .display-title {
   font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
-  font-weight: 750;
-  letter-spacing: -0.04em;
-  line-height: 1.04;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
   text-wrap: balance;
+}
+
+.darkroom-surface {
+  background-color: var(--stage);
+  color: #fffdf9;
+}
+
+.photo-mat {
+  background-color: #202124;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
 }
 
 .photo-frame {

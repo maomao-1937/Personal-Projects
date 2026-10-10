@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Check, ImagePlus, LockKeyhole, ShieldCheck, Upload } from 'lucide-react';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -80,38 +81,73 @@ function StudioContent() {
   const step = uploadState !== 'uploaded' ? 1 : hasDirection ? 3 : 2;
 
   return (
-    <main className="min-h-screen bg-stage pb-28 pt-16 lg:pb-10">
-      <div className="page-shell py-8 sm:py-10">
-        <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <div><p className="editorial-kicker text-[#f06a47]">AI 写真工作台</p><h1 className="display-title mt-2 text-4xl text-white sm:text-5xl">创建你的写真</h1></div>
-          <ol className="flex items-center gap-2 text-xs font-medium text-white/55" aria-label="创作步骤">
-            {['上传自拍', '描述或选主题', '开始生成'].map((label, index) => <li key={label} className={`flex items-center gap-2 rounded-lg px-3 py-2 ${step === index + 1 ? 'bg-[#f2ddd7] text-brand' : step > index + 1 ? 'text-success' : ''}`}><span>{step > index + 1 ? '✓' : index + 1}</span>{label}</li>)}
-          </ol>
+    <main className="min-h-screen bg-canvas pb-28 pt-16 lg:pb-12">
+      <div className="page-shell py-7 sm:py-10">
+        <div className="flex items-end justify-between gap-4">
+          <div><h1 className="display-title text-3xl sm:text-4xl">创建写真</h1><p className="mt-2 text-sm text-muted">一张自拍，一个想法，完成一张属于你的写真。</p></div>
+          <Link href="/works" className="hidden min-h-11 items-center text-sm font-medium text-muted hover:text-ink sm:inline-flex">我的写真</Link>
         </div>
+        <ol className="mt-6 grid grid-cols-3 border-y border-line text-xs sm:text-sm" aria-label="创作步骤">
+          {['上传自拍', '定画面', '生成写真'].map((label, index) => (
+            <li key={label} aria-current={step === index + 1 ? 'step' : undefined} className={`flex min-h-14 items-center gap-2 border-r border-line px-2 last:border-r-0 sm:px-4 ${step === index + 1 ? 'font-semibold text-ink' : step > index + 1 ? 'text-success' : 'text-muted'}`}>
+              <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs tabular-nums ${step === index + 1 ? 'bg-brand text-white' : step > index + 1 ? 'bg-[#e4f0e9] text-success' : 'bg-[#e8e5df] text-muted'}`}>{step > index + 1 ? <Check size={14} aria-hidden="true" /> : index + 1}</span>
+              <span>{label}</span>
+            </li>
+          ))}
+        </ol>
 
-        <div className="overflow-hidden rounded-[24px] border border-white/10 bg-paper shadow-card lg:grid lg:h-[680px] lg:grid-cols-[minmax(0,1.25fr)_440px]">
-          <section className={`flex items-center justify-center bg-stage p-5 sm:p-8 lg:min-h-0 ${previewUrl ? 'min-h-[310px]' : 'min-h-[480px]'}`} aria-label="自拍预览">
-            <div
-              className={`relative flex h-full w-full max-w-[560px] items-center justify-center overflow-hidden rounded-2xl border ${previewUrl ? 'min-h-[280px]' : 'min-h-[430px]'} ${dragActive ? 'border-brand' : 'border-white/15'} bg-[#1d1e23]`}
-              onDragOver={(event) => { event.preventDefault(); setDragActive(true); }} onDragLeave={() => setDragActive(false)} onDrop={(event) => { event.preventDefault(); setDragActive(false); const dropped = event.dataTransfer.files[0]; if (dropped) void uploadFile(dropped); }}
-            >
-              {previewUrl ? <Image src={previewUrl} alt="已上传自拍预览" fill unoptimized sizes="(max-width:1023px) 100vw, 55vw" className="object-contain" /> : (
-                <button type="button" onClick={() => inputRef.current?.click()} className="flex h-full w-full flex-col items-center justify-center px-8 text-center text-white hover:bg-white/[0.03]"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10"><Upload size={25} /></div><span className="mt-5 text-lg font-semibold">上传一张自拍</span><span className="mt-2 max-w-xs text-sm leading-6 text-white/55">点击选择或拖放照片到这里<br />正脸、光线均匀、五官无遮挡效果更好</span><span className="mt-5 rounded-lg border border-white/15 px-4 py-2 text-sm">选择照片</span></button>
-              )}
+        <div className="mt-6 overflow-hidden rounded-xl bg-paper lg:grid lg:min-h-[720px] lg:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.85fr)]">
+          <section className="darkroom-surface flex min-h-[365px] flex-col p-4 sm:min-h-[570px] sm:p-6 lg:min-h-[720px]" aria-label="自拍预览">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4 text-xs">
+              <span className="font-medium text-white/80">原始照片</span>
+              <span className={uploadState === 'uploaded' ? 'text-[#a8d7c0]' : uploadState === 'error' ? 'text-[#f2b0aa]' : 'text-white/55'}>{uploadState === 'uploaded' ? '已上传' : uploadState === 'uploading' ? '正在上传' : uploadState === 'error' ? '上传未完成' : '等待上传'}</span>
             </div>
+            <div className="flex min-h-0 flex-1 items-center justify-center py-4">
+              <div
+                className={`photo-mat relative flex h-[260px] w-full max-w-[560px] items-center justify-center overflow-hidden sm:h-[470px] lg:h-[570px] ${dragActive ? '!border-brand' : ''}`}
+                onDragOver={(event) => { event.preventDefault(); setDragActive(true); }}
+                onDragLeave={() => setDragActive(false)}
+                onDrop={(event) => { event.preventDefault(); setDragActive(false); const dropped = event.dataTransfer.files[0]; if (dropped) void uploadFile(dropped); }}
+              >
+                {previewUrl ? <Image src={previewUrl} alt="已选择的自拍预览" fill unoptimized sizes="(max-width:1023px) 100vw, 55vw" className="object-contain" /> : (
+                  <button type="button" onClick={() => inputRef.current?.click()} className="flex h-full w-full flex-col items-center justify-center px-6 text-center text-white transition-colors hover:bg-white/[0.03]">
+                    <Upload size={28} strokeWidth={1.5} aria-hidden="true" />
+                    <span className="mt-5 text-lg font-semibold">上传一张自拍</span>
+                    <span className="mt-2 max-w-xs text-sm leading-6 text-white/65">点击选择照片，也可以拖放到这里</span>
+                    <span className="mt-5 inline-flex min-h-11 items-center rounded-lg border border-white/30 px-5 text-sm font-medium">选择照片</span>
+                  </button>
+                )}
+              </div>
+            </div>
+            <p className="border-t border-white/10 pt-4 text-xs leading-5 text-white/65">{previewUrl ? '这张照片将作为本次创作的输入。' : '建议使用单人正脸、光线均匀且五官清晰的照片。'}</p>
           </section>
 
           <aside className="flex min-h-0 flex-col border-t border-line lg:border-l lg:border-t-0">
-            <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-7">
-              <div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-semibold">{uploadState === 'uploaded' ? '定义你的写真' : '先上传自拍'}</h2><p className="mt-1 text-sm text-muted">{uploadState === 'uploaded' ? '写下画面描述，也可以再选一个主题' : '支持 JPG、PNG、WebP，最大 10MB'}</p></div>{previewUrl && <Button variant="ghost" size="sm" leftIcon={<ImagePlus size={16} />} onClick={() => inputRef.current?.click()}>更换</Button>}</div>
+            <div className="min-h-0 flex-1 p-5 sm:p-7 lg:max-h-[620px] lg:overflow-y-auto">
+              <div className="flex items-start justify-between gap-4">
+                <div><h2 className="text-xl font-semibold">{uploadState === 'uploaded' ? '定义画面' : '准备照片'}</h2><p className="mt-2 text-sm leading-6 text-muted">{uploadState === 'uploaded' ? '写下想法，或从主题预览中选一个方向。' : '支持 JPG、PNG、WebP，最大 10MB。'}</p></div>
+                {previewUrl && <Button variant="ghost" size="sm" leftIcon={<ImagePlus size={16} />} onClick={() => inputRef.current?.click()}>更换照片</Button>}
+              </div>
               <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => { const chosen = event.target.files?.[0]; if (chosen) void uploadFile(chosen); event.currentTarget.value = ''; }} />
 
-              {uploadState === 'uploading' && <div className="mt-6 rounded-xl bg-[#f1f1f4] p-4 text-sm text-muted" role="status">正在安全上传照片…</div>}
-              {uploadState === 'error' && <div className="mt-6 rounded-xl bg-[#fff0f1] p-4 text-sm text-signal" role="alert"><AlertCircle size={17} className="mr-2 inline" />{uploadError}{file && <button type="button" onClick={() => void uploadFile(file)} className="ml-2 font-semibold underline">重试</button>}</div>}
-              {uploadState !== 'uploaded' && uploadState !== 'uploading' && <div className="mt-8 space-y-4 border-t border-line pt-6"><p className="text-sm font-semibold">照片建议</p>{['使用单人正脸自拍', '保持光线均匀、五官清晰', '避免墨镜、口罩或大面积遮挡'].map((tip) => <div key={tip} className="flex items-center gap-3 text-sm text-muted"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#eaf7f1] text-xs text-success">✓</span>{tip}</div>)}</div>}
+              {uploadState === 'uploading' && <p className="mt-6 border-t border-line pt-5 text-sm text-muted" role="status">正在上传照片，请稍候…</p>}
+              {uploadState === 'error' && <div className="mt-6 rounded-lg bg-[#fff0f1] p-4 text-sm text-signal" role="alert"><AlertCircle size={17} className="mr-2 inline" />{uploadError}{file && <button type="button" onClick={() => void uploadFile(file)} className="ml-2 font-semibold underline">重试上传</button>}</div>}
+              {uploadState !== 'uploaded' && uploadState !== 'uploading' && (
+                <>
+                  <div className="mt-8 border-t border-line pt-5">
+                    <h3 className="text-sm font-semibold">选照片时留意</h3>
+                    <ul className="mt-4 space-y-3 text-sm leading-6 text-muted">
+                      <li>单人正脸，五官没有被遮挡</li>
+                      <li>光线均匀，画面清晰</li>
+                      <li>避免墨镜、口罩和过度滤镜</li>
+                    </ul>
+                  </div>
+                  {styles.length > 0 && <div className="mt-8 border-t border-line pt-5"><p className="text-sm font-semibold">上传后可以选择主题</p><div className="mt-4 grid grid-cols-3 gap-2">{styles.slice(0, 3).map((style) => <figure key={style.id}><div className="photo-frame aspect-[3/4]"><Image src={style.previewImage} alt={`${style.name}主题效果示例`} fill sizes="120px" className="object-cover" /></div><figcaption className="mt-2 truncate text-xs text-muted">{style.name}</figcaption></figure>)}</div><p className="mt-3 text-xs text-muted">以上为主题效果示例，并非你的生成结果。</p></div>}
+                </>
+              )}
 
               {uploadState === 'uploaded' && <>
-                <div className="mt-7">
+                <div className="mt-7 border-t border-line pt-6">
                   <div className="flex items-end justify-between gap-4"><label htmlFor="portrait-prompt" className="text-sm font-semibold">描述你想要的画面</label><span className="text-xs tabular-nums text-muted">{userPrompt.length}/{MAX_PROMPT_LENGTH}</span></div>
                   <textarea
                     id="portrait-prompt"
@@ -121,27 +157,29 @@ function StudioContent() {
                     placeholder="例如：雨夜街头，黑色风衣，电影感侧光"
                     aria-describedby="portrait-system-note"
                     onChange={(event) => { setUserPrompt(event.target.value); setGenerateError(''); }}
-                    className="mt-2 min-h-28 w-full resize-y rounded-xl border border-line bg-paper px-4 py-3 text-sm leading-6 text-ink outline-none transition-colors placeholder:text-[#9a9ca3] focus:border-brand focus:ring-2 focus:ring-[#c84b31]/15"
+                    className="mt-3 min-h-28 w-full resize-y rounded-lg border border-line bg-paper px-4 py-3 text-sm leading-6 text-ink outline-none transition-colors placeholder:text-[#75716c] focus:border-brand focus:ring-2 focus:ring-[#c84b31]/15"
                   />
-                  <p id="portrait-system-note" className="mt-3 flex items-start gap-2 text-xs leading-5 text-muted"><ShieldCheck size={15} className="mt-0.5 shrink-0 text-success" />系统会自动补充人物一致性、画质和安全约束。</p>
+                  <p id="portrait-system-note" className="mt-3 flex items-start gap-2 text-xs leading-5 text-muted"><ShieldCheck size={15} className="mt-0.5 shrink-0 text-success" aria-hidden="true" />系统会补充人物一致性、画质和安全约束。</p>
                 </div>
-
-                <div className="my-7 flex items-center gap-3 text-xs font-medium text-muted"><span className="h-px flex-1 bg-line" /><span>也可以选择一个主题</span><span className="h-px flex-1 bg-line" /></div>
-
-                {stylesLoading ? <div className="grid grid-cols-2 gap-3">{[0,1,2,3].map((item) => <div key={item} className="aspect-[4/5] animate-pulse rounded-xl bg-[#ededf0]" />)}</div> : stylesError ? <div className="rounded-xl bg-[#fff0f1] p-4 text-sm text-signal">主题暂时无法加载，你仍可使用上方描述生成。<button type="button" onClick={retry} className="ml-2 font-semibold underline">重新连接</button></div> : (
-                  <div className="flex gap-3 overflow-x-auto pb-2 lg:grid lg:grid-cols-2 lg:overflow-visible lg:pb-0">
-                    {styles.map((style) => {
-                      const selected = style.id === selectedId;
-                      return <button key={style.id} type="button" disabled={!style.isServerBacked} aria-pressed={selected} onClick={() => selectStyle(style.id, style.isServerBacked)} className={`group relative w-[148px] shrink-0 overflow-hidden rounded-xl border-2 text-left transition-colors lg:w-auto ${selected ? 'border-brand' : 'border-transparent hover:border-[#c8cad1]'} disabled:cursor-not-allowed disabled:opacity-50`}><div className="relative aspect-[4/5]"><Image src={style.previewImage} alt={`${style.name}主题效果`} fill sizes="220px" className="object-cover" /></div><div className="absolute inset-x-0 bottom-0 bg-black/65 px-3 py-2.5 text-sm font-medium text-white">{style.name}</div>{selected && <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-brand text-white"><Check size={16} /></span>}</button>;
-                    })}
-                  </div>
-                )}
+                <div className="mt-8 border-t border-line pt-6">
+                  <h3 className="text-sm font-semibold">选择主题 <span className="font-normal text-muted">（可选）</span></h3>
+                  <p className="mt-1 text-xs leading-5 text-muted">可以只用文字描述，也可以同时选一个主题。</p>
+                  {stylesLoading ? <div className="mt-4 grid grid-cols-2 gap-3">{[0,1,2,3].map((item) => <div key={item} className="aspect-[4/5] animate-pulse rounded-lg bg-[#e8e5df]" />)}</div> : stylesError ? <div className="mt-4 rounded-lg bg-[#fff0f1] p-4 text-sm text-signal">主题暂时无法加载，仍可使用文字描述生成。<button type="button" onClick={retry} className="ml-2 font-semibold underline">重新连接</button></div> : (
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      {styles.map((style) => {
+                        const selected = style.id === selectedId;
+                        return <button key={style.id} type="button" disabled={!style.isServerBacked} aria-pressed={selected} onClick={() => selectStyle(style.id, style.isServerBacked)} className={`group overflow-hidden rounded-lg border-2 text-left transition-colors ${selected ? 'border-brand' : 'border-transparent hover:border-[#bdb7af]'} disabled:cursor-not-allowed disabled:opacity-50`}><div className="photo-frame aspect-[4/5] rounded-none"><Image src={style.previewImage} alt={`${style.name}主题效果示例`} fill sizes="220px" className="object-cover" />{selected && <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-brand text-white"><Check size={16} aria-hidden="true" /></span>}</div><span className="block bg-paper px-2 py-2 text-sm font-medium">{style.name}</span></button>;
+                      })}
+                    </div>
+                  )}
+                  {selectedStyle?.isServerBacked && <p className="mt-4 text-xs leading-5 text-muted">已选择「{selectedStyle.name}」；{hasCustomPrompt ? '生成时会与你的文字描述合并。' : '它将作为这次创作的画面方向。'}</p>}
+                </div>
               </>}
             </div>
             <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper p-4 pb-[max(16px,env(safe-area-inset-bottom))] lg:static lg:z-auto lg:p-7">
               {generateError && <p className="mb-4 rounded-lg bg-[#fff0f1] px-4 py-3 text-sm text-signal" role="alert">{generateError}</p>}
               <Button size="lg" fullWidth loading={generating} disabled={!hasDirection || uploadState !== 'uploaded' || !selfieRef} onClick={generate}>{generating ? '正在创建任务…' : uploadState !== 'uploaded' ? '先上传自拍' : !hasDirection ? '输入描述或选择主题' : '生成写真'}</Button>
-              <p className="mt-3 flex items-center justify-center gap-2 text-xs text-muted"><LockKeyhole size={13} />照片与结果仅自己可见</p>
+              <p className="mt-3 flex items-center justify-center gap-2 text-xs text-muted"><LockKeyhole size={13} aria-hidden="true" />照片与结果仅当前账户可查看</p>
             </div>
           </aside>
         </div>
