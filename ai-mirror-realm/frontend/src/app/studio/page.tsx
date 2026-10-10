@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, Check, ImagePlus, LockKeyhole, ShieldCheck, Upload } from 'lucide-react';
+import { AlertCircle, ArrowRight, Check, ImagePlus, LockKeyhole, ShieldCheck, Upload } from 'lucide-react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/Button';
 import { createPortrait, getErrorMessage, uploadSelfie } from '@/lib/api';
@@ -46,6 +46,7 @@ function StudioContent() {
   useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
 
   const selectedStyle = useMemo(() => styles.find((style) => style.id === selectedId), [selectedId, styles]);
+  const referenceStyle = selectedStyle?.isServerBacked ? selectedStyle : null;
   const uploadFile = useCallback(async (nextFile: File) => {
     setUploadError(''); setGenerateError('');
     if (!ALLOWED_TYPES.includes(nextFile.type)) { setUploadError('请选择 JPG、PNG 或 WebP 图片'); setUploadState('error'); return; }
@@ -96,15 +97,28 @@ function StudioContent() {
           ))}
         </ol>
 
-        <div className="mt-6 overflow-hidden rounded-xl bg-paper lg:grid lg:min-h-[720px] lg:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.85fr)]">
-          <section className="darkroom-surface flex min-h-[365px] flex-col p-4 sm:min-h-[570px] sm:p-6 lg:min-h-[720px]" aria-label="自拍预览">
+        <div className="studio-workspace mt-6 overflow-hidden rounded-xl bg-paper lg:grid lg:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.85fr)]">
+          <section className="darkroom-surface flex min-h-[365px] flex-col p-4 sm:min-h-[570px] sm:p-6 lg:h-full lg:min-h-0" aria-label="本次创作预览">
             <div className="flex items-center justify-between border-b border-white/10 pb-4 text-xs">
-              <span className="font-medium text-white/80">原始照片</span>
+              <span className="font-medium text-white/80">{uploadState === 'uploaded' && previewUrl && referenceStyle ? '本次创作方向' : '原始照片'}</span>
               <span className={uploadState === 'uploaded' ? 'text-[#a8d7c0]' : uploadState === 'error' ? 'text-[#f2b0aa]' : 'text-white/55'}>{uploadState === 'uploaded' ? '已上传' : uploadState === 'uploading' ? '正在上传' : uploadState === 'error' ? '上传未完成' : '等待上传'}</span>
             </div>
             <div className="flex min-h-0 flex-1 items-center justify-center py-4">
+              {uploadState === 'uploaded' && previewUrl && referenceStyle ? (
+                <div className="grid w-full max-w-[680px] grid-cols-[minmax(0,1fr)_20px_minmax(0,1fr)] items-center gap-2 sm:gap-4" aria-label="自拍与主题参考对照">
+                  <figure className="min-w-0">
+                    <div className="photo-mat relative aspect-[3/4] overflow-hidden"><Image src={previewUrl} alt="已上传的自拍" fill unoptimized sizes="(max-width:1023px) 42vw, 24vw" className="object-contain" /></div>
+                    <figcaption className="mt-3 truncate text-center text-xs text-white/75">你的自拍</figcaption>
+                  </figure>
+                  <ArrowRight size={18} className="text-white/45" aria-hidden="true" />
+                  <figure className="min-w-0">
+                    <div className="photo-mat relative aspect-[3/4] overflow-hidden"><Image src={referenceStyle.previewImage} alt={`${referenceStyle.name}主题效果示例`} fill sizes="(max-width:1023px) 42vw, 24vw" className="object-cover" /><span className="absolute bottom-2 left-2 rounded bg-black/75 px-2 py-1 text-[11px] font-medium text-white">效果示例</span></div>
+                    <figcaption className="mt-3 truncate text-center text-xs text-white/75">{referenceStyle.name}</figcaption>
+                  </figure>
+                </div>
+              ) : (
               <div
-                className={`photo-mat relative flex h-[260px] w-full max-w-[560px] items-center justify-center overflow-hidden sm:h-[470px] lg:h-[570px] ${dragActive ? '!border-brand' : ''}`}
+                className={`photo-mat relative flex h-[260px] w-full max-w-[560px] items-center justify-center overflow-hidden sm:h-[470px] lg:h-full ${dragActive ? '!border-brand' : ''}`}
                 onDragOver={(event) => { event.preventDefault(); setDragActive(true); }}
                 onDragLeave={() => setDragActive(false)}
                 onDrop={(event) => { event.preventDefault(); setDragActive(false); const dropped = event.dataTransfer.files[0]; if (dropped) void uploadFile(dropped); }}
@@ -118,15 +132,16 @@ function StudioContent() {
                   </button>
                 )}
               </div>
+              )}
             </div>
-            <p className="border-t border-white/10 pt-4 text-xs leading-5 text-white/65">{previewUrl ? '这张照片将作为本次创作的输入。' : '建议使用单人正脸、光线均匀且五官清晰的照片。'}</p>
+            <p className="border-t border-white/10 pt-4 text-xs leading-5 text-white/65">{uploadState === 'uploaded' && previewUrl && referenceStyle ? '右侧是主题效果示例，仅用于说明画面方向；生成结果会在下一步显示。' : previewUrl ? '这张照片将作为本次创作的输入。' : '建议使用单人正脸、光线均匀且五官清晰的照片。'}</p>
           </section>
 
-          <aside className="flex min-h-0 flex-col border-t border-line lg:border-l lg:border-t-0">
-            <div className="min-h-0 flex-1 p-5 sm:p-7 lg:max-h-[620px] lg:overflow-y-auto">
+          <aside className="flex min-h-0 flex-col border-t border-line lg:h-full lg:border-l lg:border-t-0">
+            <div className="min-h-0 flex-1 p-5 sm:p-7 lg:overflow-y-auto">
               <div className="flex items-start justify-between gap-4">
                 <div><h2 className="text-xl font-semibold">{uploadState === 'uploaded' ? '定义画面' : '准备照片'}</h2><p className="mt-2 text-sm leading-6 text-muted">{uploadState === 'uploaded' ? '写下想法，或从主题预览中选一个方向。' : '支持 JPG、PNG、WebP，最大 10MB。'}</p></div>
-                {previewUrl && <Button variant="ghost" size="sm" leftIcon={<ImagePlus size={16} />} onClick={() => inputRef.current?.click()}>更换照片</Button>}
+                {previewUrl && <Button variant="ghost" size="sm" className="shrink-0 whitespace-nowrap" leftIcon={<ImagePlus size={16} />} onClick={() => inputRef.current?.click()}>更换照片</Button>}
               </div>
               <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => { const chosen = event.target.files?.[0]; if (chosen) void uploadFile(chosen); event.currentTarget.value = ''; }} />
 
@@ -176,7 +191,7 @@ function StudioContent() {
                 </div>
               </>}
             </div>
-            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper p-4 pb-[max(16px,env(safe-area-inset-bottom))] lg:static lg:z-auto lg:p-7">
+            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper p-4 pb-[max(16px,env(safe-area-inset-bottom))] lg:static lg:z-auto lg:shrink-0 lg:p-7">
               {generateError && <p className="mb-4 rounded-lg bg-[#fff0f1] px-4 py-3 text-sm text-signal" role="alert">{generateError}</p>}
               <Button size="lg" fullWidth loading={generating} disabled={!hasDirection || uploadState !== 'uploaded' || !selfieRef} onClick={generate}>{generating ? '正在创建任务…' : uploadState !== 'uploaded' ? '先上传自拍' : !hasDirection ? '输入描述或选择主题' : '生成写真'}</Button>
               <p className="mt-3 flex items-center justify-center gap-2 text-xs text-muted"><LockKeyhole size={13} aria-hidden="true" />照片与结果仅当前账户可查看</p>

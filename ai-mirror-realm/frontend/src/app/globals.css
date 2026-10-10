@@ -120,6 +120,12 @@ a {
   border-radius: 12px;
 }
 
+@media (min-width: 1024px) {
+  .studio-workspace {
+    height: clamp(560px, calc(100dvh - 300px), 720px);
+  }
+}
+
 .photo-frame {
   position: relative;
   overflow: hidden;
