@@ -118,6 +118,26 @@ describe("training service", () => {
     });
   });
 
+  it("同一请求编号不能被复用来提交另一份回答", async () => {
+    const deps = makeDeps(db, createMockTutor());
+    const clientRequestId = randomUUID();
+    await startTraining(conceptId, deps);
+    await submitAttempt(
+      conceptId,
+      { clientRequestId, userAnswer: "RAG 就是搜索资料。" },
+      deps,
+    );
+
+    await expect(
+      submitAttempt(
+        conceptId,
+        { clientRequestId, userAnswer: "RAG 会检索资料并用于生成回答。" },
+        deps,
+      ),
+    ).rejects.toMatchObject({ name: "ConflictError" });
+    expect(createTrainingRepository(db).getTrainingView(conceptId)?.attempts).toHaveLength(1);
+  });
+
   it("AI 失败后保留用户回答并允许重试原 Attempt", async () => {
     const training = createTrainingRepository(db);
     const mock = createMockTutor();

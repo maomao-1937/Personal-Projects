@@ -120,6 +120,9 @@ function resolveAttemptForSubmission(
   if (existing.conceptId !== conceptId) {
     throw new ConflictError("请求编号已用于另一个知识点");
   }
+  if (existing.userAnswer !== input.userAnswer) {
+    throw new ConflictError("请求编号已用于另一份回答");
+  }
 
   if (!input.retryAttemptId) {
     return { attempt: existing, shouldProcess: false };
