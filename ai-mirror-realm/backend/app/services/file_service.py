@@ -23,6 +23,18 @@ async def save_upload(file: UploadFile, subdir: str = "") -> str:
             detail=f"文件大小超过限制 ({settings.MAX_FILE_SIZE // 1024 // 1024}MB)",
         )
 
+    signatures = {
+        "jpg": content.startswith(b"\xff\xd8\xff"),
+        "jpeg": content.startswith(b"\xff\xd8\xff"),
+        "png": content.startswith(b"\x89PNG\r\n\x1a\n"),
+        "webp": content.startswith(b"RIFF") and content[8:12] == b"WEBP",
+    }
+    if not signatures[ext]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="文件内容与图片格式不一致，请重新选择 JPG、PNG 或 WebP 图片",
+        )
+
     filename = f"{uuid.uuid4().hex}.{ext}"
     save_dir = settings.UPLOAD_DIR / subdir if subdir else settings.UPLOAD_DIR
     save_dir.mkdir(parents=True, exist_ok=True)
