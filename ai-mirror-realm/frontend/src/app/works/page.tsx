@@ -25,17 +25,22 @@ function WorksContent() {
 
   const counts = useMemo(() => ({ all: portraits.length, completed: portraits.filter((item) => item.status === 'completed').length, processing: portraits.filter((item) => item.status === 'pending' || item.status === 'processing').length, failed: portraits.filter((item) => item.status === 'failed').length }), [portraits]);
   const filters = useMemo<Filter[]>(() => counts.failed ? ['all', 'completed', 'processing', 'failed'] : ['all', 'completed', 'processing'], [counts.failed]);
-  const visible = useMemo(() => portraits.filter((portrait) => filter === 'all' || (filter === 'processing' ? portrait.status === 'pending' || portrait.status === 'processing' : portrait.status === filter)), [filter, portraits]);
+  const visible = useMemo(() => {
+    const items = portraits.filter((portrait) => filter === 'all' || (filter === 'processing' ? portrait.status === 'pending' || portrait.status === 'processing' : portrait.status === filter));
+    if (filter !== 'all') return items;
+    const rank = (status: PortraitRecord['status']) => status === 'pending' || status === 'processing' ? 0 : status === 'completed' ? 1 : 2;
+    return [...items].sort((a, b) => rank(a.status) - rank(b.status) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [filter, portraits]);
 
   return (
-    <main className="min-h-screen bg-canvas pt-16">
-      <header className="border-b border-line bg-paper">
-        <div className="page-shell flex flex-col gap-5 py-9 sm:flex-row sm:items-end sm:justify-between sm:py-12">
-          <div><h1 className="display-title text-3xl sm:text-4xl">我的写真</h1><p className="mt-3 text-sm leading-6 text-muted">已完成的结果与进行中的任务，都在这里。</p></div>
+    <main className="min-h-screen bg-[#f6f6f4] pt-16">
+      <header>
+        <div className="mx-auto flex w-[calc(100%-32px)] max-w-[1480px] flex-col gap-5 py-7 sm:w-[calc(100%-48px)] sm:flex-row sm:items-end sm:justify-between">
+          <div><p className="text-[11px] font-semibold tracking-[0.18em] text-muted">AI 镜界 / 私人作品</p><h1 className="display-title mt-2 text-[28px] sm:text-[34px]">我的写真</h1><p className="mt-2 text-sm leading-6 text-muted">你的生成结果和正在进行的创作。</p></div>
           <Link href="/studio" className="inline-flex min-h-11 w-fit items-center gap-2 rounded-lg bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-[#a83d27]">创建新写真 <ArrowRight size={17} aria-hidden="true" /></Link>
         </div>
       </header>
-      <div className="page-shell py-7 sm:py-10">
+      <div className="mx-auto w-[calc(100%-32px)] max-w-[1480px] pb-10 sm:w-[calc(100%-48px)]">
         <div className="flex gap-1 overflow-x-auto border-b border-line" aria-label="写真状态筛选">
           {filters.map((item) => <button key={item} type="button" aria-pressed={filter === item} onClick={() => setFilter(item)} className={`min-h-11 shrink-0 border-b-2 px-4 text-sm font-medium transition-colors ${filter === item ? 'border-brand text-ink' : 'border-transparent text-muted hover:text-ink'}`}>{labels[item]} <span className="ml-1 tabular-nums text-xs">{counts[item]}</span></button>)}
         </div>
@@ -46,7 +51,7 @@ function WorksContent() {
         ) : visible.length === 0 ? (
           <EmptyState icon={<ImageIcon />} title={portraits.length ? `没有${labels[filter]}的写真` : '从第一张写真开始'} copy={portraits.length ? '切换分类查看其他任务。' : '上传一张自拍，再描述画面或选择主题。'} action={portraits.length ? <Button variant="outline" onClick={() => setFilter('all')}>查看全部</Button> : <Link href="/studio" className="inline-flex min-h-11 items-center rounded-lg bg-brand px-6 text-sm font-semibold text-white">开始创作</Link>} />
         ) : (
-          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
             {visible.map((portrait) => {
               const style = styles.find((item) => item.id === portrait.style_id);
               const running = portrait.status === 'pending' || portrait.status === 'processing';
@@ -54,11 +59,11 @@ function WorksContent() {
               const styleName = portrait.style_id === CUSTOM_STYLE_ID ? '自定义创作' : style?.name || '写真任务';
               return (
                 <Link key={portrait.id} href={`/studio/tasks/${encodeURIComponent(portrait.id)}`} className="group block rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
-                  <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-stage">
+                  <div className={running ? 'relative aspect-[3/4] overflow-hidden rounded-[12px] bg-[#242426]' : completed ? 'relative aspect-[3/4] overflow-hidden rounded-[12px] bg-[#242426]' : 'relative aspect-[3/4] overflow-hidden rounded-[12px] border border-[#dededb] bg-[#eae9e6]'}>
                     {completed ? <img src={portrait.result_url!} alt={`${styleName}写真结果`} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /> : (
-                      <div className="relative flex h-full flex-col items-center justify-center px-3 text-center text-white">
-                        {running && style?.previewImage && <Image src={style.previewImage} alt="" fill sizes="(max-width:639px) 50vw, 25vw" className="object-cover opacity-20" />}
-                        <div className="relative z-10">{running ? <Clock3 size={25} className="mx-auto" aria-hidden="true" /> : <AlertCircle size={25} className="mx-auto text-[#f2b0aa]" aria-hidden="true" />}<p className="mt-3 text-sm font-medium">{running ? '结果生成中' : '本次未完成'}</p><p className="mt-2 text-[11px] leading-4 text-white/70">{running && style?.previewImage ? '背景是主题参考' : '打开任务查看详情'}</p></div>
+                      <div className={running ? 'relative flex h-full flex-col items-center justify-center px-3 text-center text-white' : 'relative flex h-full flex-col items-center justify-center px-3 text-center text-ink'}>
+                        {running && style?.previewImage && <Image src={style.previewImage} alt="" fill sizes="(max-width:639px) 50vw, 25vw" className="object-cover opacity-35" />}
+                        <div className="relative z-10">{running ? <Clock3 size={25} className="mx-auto" aria-hidden="true" /> : <AlertCircle size={25} className="mx-auto text-signal" aria-hidden="true" />}<p className="mt-3 text-sm font-medium">{running ? '结果生成中' : '本次未完成'}</p><p className={running ? 'mt-2 text-[11px] leading-4 text-white/80' : 'mt-2 text-[11px] leading-4 text-muted'}>{running && style?.previewImage ? '背景是主题效果示例' : '打开任务查看详情'}</p></div>
                       </div>
                     )}
                   </div>

@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --canvas: #f2f0ec;
-  --paper: #fffdf9;
+  --canvas: #f6f6f4;
+  --paper: #ffffff;
   --stage: #141517;
-  --ink: #171612;
-  --muted: #68645e;
-  --line: #d9d5ce;
+  --ink: #171715;
+  --muted: #666660;
+  --line: #e2e1dd;
   --brand: #c84b31;
   --signal: #b33942;
   --success: #237659;
