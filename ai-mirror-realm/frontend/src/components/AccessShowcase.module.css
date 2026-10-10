@@ -1,0 +1,46 @@
+.image {
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  transform: scale(1.04) translateY(-0.5%);
+  transition: opacity 850ms ease;
+}
+
+.activeImage {
+  opacity: 1;
+  animation: access-image-drift 5600ms ease-out both;
+}
+
+.stopped .activeImage {
+  animation-play-state: paused;
+}
+
+.progress {
+  position: absolute;
+  inset: 0;
+  background: #fffdf9;
+}
+
+.progressPlaying {
+  transform-origin: left center;
+  animation: access-progress 5600ms linear both;
+}
+
+@keyframes access-image-drift {
+  from { transform: scale(1) translateY(0); }
+  to { transform: scale(1.04) translateY(-0.5%); }
+}
+
+@keyframes access-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@media (max-width: 1023px) {
+  .image { object-position: center 38%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image, .activeImage { animation: none; transform: none; transition: none; }
+  .progressPlaying { animation: none; }
+}
