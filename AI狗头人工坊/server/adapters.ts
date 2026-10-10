@@ -57,8 +57,9 @@ export function extractImage(payload: unknown) {
   const result = responseSchema.safeParse(payload);
   if (!result.success || result.data.error || result.data.code) throw new PublicError('供应商未返回可用图像。请检查接口类型、模型权限和输入要求。', 502);
   const r = result.data;
-  if (r.data?.[0]?.b64_json) return { base64: r.data[0].b64_json, requestId: r.request_id };
-  if (r.data?.[0]?.url) return { url: r.data[0].url, requestId: r.request_id };
+  const dataImage = r.data?.find(item => item.b64_json || item.url);
+  if (dataImage?.b64_json) return { base64: dataImage.b64_json, requestId: r.request_id };
+  if (dataImage?.url) return { url: dataImage.url, requestId: r.request_id };
   const qwen = r.output?.choices?.flatMap(c => c.message.content).find(c => c.image)?.image;
   if (qwen) return { url: qwen, requestId: r.request_id };
   const gemini = r.candidates?.flatMap(c => c.content?.parts || []).filter(p => !p.thought).find(p => p.inlineData || p.inline_data);

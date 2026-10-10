@@ -50,6 +50,10 @@ test('extracts only final Gemini output, never an intermediate thought image', (
   assert.throws(() => extractImage({ candidates: [{ content: { parts: [{ thought: true, inlineData: { data: 'not-final' } }] } }] }), PublicError);
   assert.throws(() => extractImage({ output: { choices: [{ message: { content: [{ text: 'no image' }] } }] } }), PublicError);
 });
+test('uses a later valid image when the first provider data item is empty', () => {
+  const result = extractImage({ data: [{}, { b64_json: png.toString('base64') }] });
+  assert.equal(result.base64, png.toString('base64'));
+});
 test('decodes and rejects malformed image bytes despite an accepted MIME prefix', async () => {
   await assert.rejects(normalizeImage('data:image/png;base64,Ym9ndXM='), /无法读取/);
   assert.equal((await normalizeImage(image.dataUrl)).dataUrl.startsWith('data:image/png;base64,'), true);
