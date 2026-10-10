@@ -43,6 +43,10 @@ class UserRegister(BaseModel):
         return self
 
 
+class InviteEntry(BaseModel):
+    invite_token: str = Field(..., min_length=8, max_length=200, description="一次性邀请码")
+
+
 class UserLogin(BaseModel):
     account: str = Field(..., description="手机号或邮箱", min_length=3, max_length=100)
     password: str = Field(..., min_length=6, max_length=128, description="密码")

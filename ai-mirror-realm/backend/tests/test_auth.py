@@ -51,6 +51,42 @@ def test_registration_sets_session_cookie_and_me_uses_it(client, db_session_fact
     assert me.json()["email"] == "cookie@example.com"
 
 
+def test_invite_only_entry_creates_private_session_without_contact(client, db_session_factory):
+    invite_token = issue_invitation(db_session_factory)
+
+    response = client.post("/api/auth/invite-entry", json={"invite_token": invite_token})
+
+    assert response.status_code == 201
+    assert settings.AUTH_COOKIE_NAME in response.cookies
+    user = response.json()["user"]
+    assert user["email"] is None
+    assert user["phone"] is None
+    assert user["invited_at"] is not None
+    assert client.get("/api/auth/me").json()["id"] == user["id"]
+
+    with db_session_factory() as db:
+        assert db.query(User).count() == 1
+
+
+def test_invite_only_entry_rejects_reused_code_without_creating_user(client, db_session_factory):
+    invite_token = issue_invitation(db_session_factory)
+    assert client.post("/api/auth/invite-entry", json={"invite_token": invite_token}).status_code == 201
+
+    second = client.post("/api/auth/invite-entry", json={"invite_token": invite_token})
+
+    assert second.status_code == 403
+    assert second.json()["code"] == "INVITE_UNAVAILABLE"
+    with db_session_factory() as db:
+        assert db.query(User).count() == 1
+
+
+def test_invite_only_entry_requires_code(client):
+    response = client.post("/api/auth/invite-entry", json={})
+
+    assert response.status_code == 400
+    assert response.json()["code"] == "VALIDATION_ERROR"
+
+
 def test_logout_clears_cookie_and_session(client, db_session_factory):
     register_user(client, db_session_factory, email="logout@example.com")
 

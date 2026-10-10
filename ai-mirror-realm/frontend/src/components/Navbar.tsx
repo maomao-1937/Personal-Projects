@@ -29,6 +29,10 @@ export default function Navbar() {
     ? [{ href: '/studio', label: '开始创作' }, { href: '/works', label: '我的写真' }]
     : [{ href: '/#examples', label: '效果示例' }];
   const isCurrent = (href: string) => pathname === href || (href === '/studio' && pathname.startsWith('/studio/'));
+  const handleLogout = () => {
+    if (user && !user.email && !user.phone && !window.confirm('退出后，这个邀请码无法再次使用。再次进入需要新邀请码，且无法找回当前作品。确定退出吗？')) return;
+    void logout();
+  };
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-line bg-paper">
@@ -44,7 +48,7 @@ export default function Navbar() {
             </Link>
           ))}
           {!loading && (user ? (
-            <button type="button" onClick={() => void logout()} className="ml-2 inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm text-muted hover:bg-[#eeebe6] hover:text-ink"><LogOut size={16} />退出</button>
+            <button type="button" onClick={handleLogout} className="ml-2 inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm text-muted hover:bg-[#eeebe6] hover:text-ink"><LogOut size={16} />退出</button>
           ) : (
             <Link href="/access" className="ml-2 inline-flex min-h-10 items-center rounded-lg bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-[#a83d27]">邀请码进入</Link>
           ))}
@@ -56,7 +60,7 @@ export default function Navbar() {
       {menuOpen && (
         <div id="mobile-navigation" className="border-t border-line bg-paper px-5 py-3 sm:hidden">
           {items.map((item) => <Link key={item.href} href={item.href} className="flex min-h-12 items-center border-b border-line text-sm font-medium">{item.label}</Link>)}
-          {!loading && (user ? <button type="button" onClick={() => void logout()} className="flex min-h-12 w-full items-center gap-2 text-left text-sm text-muted"><LogOut size={16} />退出</button> : <Link href="/access" className="mt-3 flex min-h-11 items-center justify-center rounded-lg bg-brand text-sm font-semibold text-white">邀请码进入</Link>)}
+          {!loading && (user ? <button type="button" onClick={handleLogout} className="flex min-h-12 w-full items-center gap-2 text-left text-sm text-muted"><LogOut size={16} />退出</button> : <Link href="/access" className="mt-3 flex min-h-11 items-center justify-center rounded-lg bg-brand text-sm font-semibold text-white">邀请码进入</Link>)}
         </div>
       )}
     </header>

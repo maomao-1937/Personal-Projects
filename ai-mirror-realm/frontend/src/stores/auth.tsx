@@ -12,17 +12,10 @@ export interface User {
   avatar_url?: string | null;
 }
 
-interface RegisterData {
-  invite_token: string;
-  email: string;
-  password: string;
-  nickname: string;
-}
-
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  register: (data: RegisterData) => Promise<void>;
+  enterWithInvite: (inviteToken: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -86,14 +79,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
   }, [pathname, router]);
 
-  const register = async (data: RegisterData) => {
-    const response = await api.post<{ user?: User }>('/auth/register', data);
+  const enterWithInvite = async (inviteToken: string) => {
+    const response = await api.post<{ user?: User }>('/auth/invite-entry', { invite_token: inviteToken });
     if (response.data.user) setUser(response.data.user);
     else await refreshUser();
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, enterWithInvite, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

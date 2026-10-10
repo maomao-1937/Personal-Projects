@@ -1,4 +1,5 @@
 from datetime import datetime
+import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
@@ -6,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import UserRegister, UserLogin, UserOut, AuthSession
+from app.schemas.user import InviteEntry, UserRegister, UserLogin, UserOut, AuthSession
 from app.services.auth_service import (
     hash_password,
     verify_password,
@@ -26,6 +27,50 @@ def _account_exists(message: str) -> HTTPException:
         status_code=status.HTTP_400_BAD_REQUEST,
         detail={"code": "ACCOUNT_EXISTS", "message": message},
     )
+
+
+@router.post("/invite-entry", response_model=AuthSession, status_code=status.HTTP_201_CREATED)
+@limiter.limit("3/hour")
+def invite_entry(
+    request: Request,
+    response: Response,
+    payload: InviteEntry,
+    db: Session = Depends(get_db),
+):
+    """凭一次性邀请码创建无联系信息的私有访问账户。"""
+    invited_at = datetime.utcnow()
+    try:
+        user = User(
+            password_hash=hash_password(secrets.token_urlsafe(32)),
+            nickname="镜界用户",
+        )
+        db.add(user)
+        db.flush()
+
+        if not redeem_invitation(
+            db,
+            raw_token=payload.invite_token,
+            user_id=user.id,
+            now=invited_at,
+        ):
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"code": "INVITE_UNAVAILABLE", "message": "邀请码无效或已失效"},
+            )
+
+        user.invited_at = invited_at
+        db.commit()
+        db.refresh(user)
+    except HTTPException:
+        raise
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="进入失败，请稍后重试")
+
+    token = create_access_token(user.id)
+    set_auth_cookie(response, token)
+    return AuthSession(user=UserOut.model_validate(user))
 
 
 @router.post("/register", response_model=AuthSession, status_code=status.HTTP_201_CREATED)
