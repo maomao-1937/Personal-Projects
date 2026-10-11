@@ -55,12 +55,18 @@ function readBody(req) {
   });
 }
 
-/* 安全拼接静态文件路径，防止目录穿越 */
+/* 仅公开页面实际使用的静态文件，避免把 .env 或服务端源码送给浏览器。 */
+const PUBLIC_FILES = new Set([
+  '/index.html', '/workflow.html', '/css/styles.css',
+  '/js/data.js', '/js/utils.js', '/js/api.js', '/js/app.js',
+]);
+
 function safeJoin(root, urlPath) {
-  const decoded = decodeURIComponent(urlPath.split('?')[0]);
-  const target = path.normalize(path.join(root, decoded));
-  if (!target.startsWith(root)) return null;
-  return target;
+  let decoded;
+  try { decoded = decodeURIComponent(urlPath.split('?')[0]); }
+  catch { return null; }
+  if (!PUBLIC_FILES.has(decoded)) return null;
+  return path.join(root, decoded.slice(1));
 }
 
 /* ---------- 静态文件服务 ---------- */
@@ -69,7 +75,19 @@ function serveStatic(req, res) {
   if (urlPath === '/') urlPath = '/index.html';
 
   const filePath = safeJoin(ROOT, urlPath);
-  if (!filePath) { sendJSON(res, 403, { error: '禁止访问' }); return; }
+  if (!filePath) {
+    /* 保留无扩展名页面路径的旧有回退行为。 */
+    if (/^\/(?:[a-zA-Z0-9_-]+\/?)*$/.test(urlPath)) {
+      fs.readFile(path.join(ROOT, 'index.html'), (err, data) => {
+        if (err) { sendJSON(res, 404, { error: '未找到' }); return; }
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(data);
+      });
+      return;
+    }
+    sendJSON(res, 403, { error: '禁止访问' });
+    return;
+  }
 
   fs.stat(filePath, (err, stat) => {
     if (err || !stat.isFile()) {
@@ -442,10 +460,12 @@ const server = http.createServer((req, res) => {
   sendJSON(res, 405, { error: '方法不允许' });
 });
 
-server.listen(PORT, () => {
+if (require.main === module) server.listen(PORT, () => {
   console.log('========================================');
   console.log('  幻我 · AI 造像馆 后端服务已启动');
   console.log(`  本地地址: http://localhost:${PORT}`);
   console.log(`  API 状态: ${config.hasApiKey ? '已配置 (' + config.api.provider + ' / ' + config.api.model + ')' : '未配置 Key（预览模式）'}`);
   console.log('========================================');
 });
+
+module.exports = server;
