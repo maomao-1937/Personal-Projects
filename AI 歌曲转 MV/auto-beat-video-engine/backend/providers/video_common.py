@@ -34,6 +34,7 @@ def download_mp4(
             "GET",
             video_url,
             timeout=timeout_seconds,
+            follow_redirects=False,
             headers={"Accept": "video/mp4"},
         ) as response:
             if response.status_code >= 400 or 300 <= response.status_code < 400:
