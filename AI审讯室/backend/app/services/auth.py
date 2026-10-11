@@ -71,6 +71,7 @@ class AccessAuthService:
         self._clock = clock
         self._failures: defaultdict[str, deque[float]] = defaultdict(deque)
         self._failure_lock = Lock()
+        self._next_failure_cleanup_at = float("-inf")
 
     @classmethod
     def from_settings(cls, settings: Settings) -> AccessAuthService:
@@ -149,8 +150,19 @@ class AccessAuthService:
 
     def _is_rate_limited(self, source: str, now: float) -> bool:
         with self._failure_lock:
-            failures = self._failures[source]
+            if now >= self._next_failure_cleanup_at:
+                for tracked_source, tracked_failures in list(self._failures.items()):
+                    self._prune(tracked_failures, now)
+                    if not tracked_failures:
+                        del self._failures[tracked_source]
+                self._next_failure_cleanup_at = now + max(self._failure_window_seconds, 1)
+            failures = self._failures.get(source)
+            if failures is None:
+                return False
             self._prune(failures, now)
+            if not failures:
+                del self._failures[source]
+                return False
             return len(failures) >= self._max_failures
 
     def _record_failure(self, source: str, now: float) -> None:

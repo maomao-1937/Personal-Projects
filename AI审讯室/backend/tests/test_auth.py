@@ -97,6 +97,29 @@ def test_successful_login_clears_prior_failures() -> None:
         service.login("WRONG", "127.0.0.1")
 
 
+def test_rate_limit_does_not_keep_successful_or_expired_sources() -> None:
+    now = [1_700_000_000.0]
+    service = AccessAuthService(
+        access_token_hash=sha256(b"ONE-TOKEN").hexdigest(),
+        signing_secret="signing-secret",
+        failure_window_seconds=60,
+        clock=lambda: now[0],
+    )
+
+    for index in range(200):
+        service.login("ONE-TOKEN", f"success-{index}")
+    assert not service._failures
+
+    for index in range(200):
+        with pytest.raises(InvalidAccessTokenError):
+            service.login("WRONG", f"failed-{index}")
+    assert len(service._failures) == 200
+
+    now[0] += 61
+    service.login("ONE-TOKEN", "fresh-source")
+    assert not service._failures
+
+
 def test_missing_configuration_is_reported() -> None:
     service = AccessAuthService(access_token_hash="", signing_secret="")
 
