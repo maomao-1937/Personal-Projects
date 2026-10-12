@@ -106,6 +106,30 @@ describe("session service", () => {
     expect(extractConcepts).toHaveBeenCalledTimes(2);
   });
 
+  it("AI 只给一个字作为资料依据时重试并保存有效引用", async () => {
+    const extractConcepts = vi
+      .fn<AiTutor["extractConcepts"]>()
+      .mockResolvedValueOnce([
+        { title: "错误引用", description: "缺少可核对的依据", sourceContext: "会" },
+      ])
+      .mockResolvedValueOnce([
+        {
+          title: "检索增强生成",
+          description: "理解检索结果如何参与生成",
+          sourceContext: "再把检索结果放入模型上下文",
+        },
+      ]);
+
+    const result = await createStudySession(
+      { title: "RAG 入门", sourceText, clientRequestId: randomUUID() },
+      makeDeps(db, { extractConcepts }),
+    );
+
+    expect(result.mapStatus).toBe("ready");
+    expect(result.concepts[0].sourceContext).toBe("再把检索结果放入模型上下文");
+    expect(extractConcepts).toHaveBeenCalledTimes(2);
+  });
+
   it("AI 连续失败后保留 Session，并复用原 ID 重试", async () => {
     const sessions = createSessionRepository(db);
     const failingExtract = vi

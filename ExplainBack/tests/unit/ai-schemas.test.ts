@@ -95,6 +95,14 @@ describe("sourceContainsContext", () => {
     expect(sourceContainsContext("先检索资料，\n再生成回答。", "先检索资料，再生成回答。")).toBe(true);
     expect(sourceContainsContext("retrieval augmented generation", "retrievalaugmented generation")).toBe(false);
   });
+
+  it("拒绝只引用常见单字或符号作为资料依据", () => {
+    const source = "RAG 会先检索资料，再把结果放进上下文辅助生成。";
+    expect(sourceContainsContext(source, "的")).toBe(false);
+    expect(sourceContainsContext(source, "，")).toBe(false);
+    expect(sourceContainsContext(source, "先检索资料")).toBe(false);
+    expect(sourceContainsContext(source, "先检索资料，再把结果")).toBe(true);
+  });
 });
 
 describe("dual-mode prompts", () => {

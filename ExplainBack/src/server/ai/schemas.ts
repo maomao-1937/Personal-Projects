@@ -80,5 +80,7 @@ export function sourceContainsContext(
 ): boolean {
   const source = normalizeWhitespace(sourceText);
   const context = normalizeWhitespace(sourceContext);
-  return context.length > 0 && source.includes(context);
+  // A very short quote can occur almost anywhere and cannot ground a concept.
+  const evidenceLength = [...context.matchAll(/[\p{L}\p{N}]/gu)].length;
+  return evidenceLength >= 6 && source.includes(context);
 }
