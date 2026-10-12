@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import sharp from 'sharp';
 import { buildPrompt, configSchema, publicProfile, providerInfo, type ModelProfile } from '../shared/models';
 import { createProviderRequest, extractImage, generate, normalizeImage } from '../server/adapters';
@@ -92,6 +93,11 @@ test('URL image responses are retrieved without forwarding provider credentials'
 });
 test('rejects non-image outputs even when a supplier claims success', async () => {
   await assert.rejects(generate(input, signal, async () => ({ status: 200, body: Buffer.from(JSON.stringify({ data: [{ b64_json: Buffer.from('<html>oops</html>').toString('base64') }] })), contentType: 'application/json' })), /不是可用图片/);
+});
+test('rejects animated WebP outputs instead of silently returning only the first frame', async () => {
+  const animated = readFileSync(new URL('./fixtures/animated-output.webp', import.meta.url));
+  assert.equal((await sharp(animated).metadata()).pages, 2);
+  await assert.rejects(generate(input, signal, async () => ({ status: 200, body: Buffer.from(JSON.stringify({ data: [{ b64_json: animated.toString('base64') }] })), contentType: 'application/json' })), /只支持静态图片/);
 });
 test('explains when a decoded result exceeds the image size limit', async () => {
   const noisy = await sharp(randomBytes(3000 * 3000 * 3), { raw: { width: 3000, height: 3000, channels: 3 } }).jpeg({ quality: 75 }).toBuffer();

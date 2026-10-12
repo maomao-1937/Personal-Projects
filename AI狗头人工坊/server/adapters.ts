@@ -95,6 +95,7 @@ export async function generate(input: GenerationInput, signal: AbortSignal, send
     const outputImage = sharp(bytes, { limitInputPixels: 40_000_000 });
     const metadata = await outputImage.metadata();
     if (!['png', 'jpeg', 'webp'].includes(metadata.format || '')) throw new Error('not image');
+    if ((metadata.pages ?? 1) > 1) throw new PublicError('模型返回了动态图片，目前只支持静态图片。', 502);
     const { data, info } = await outputImage.png().toBuffer({ resolveWithObject: true });
     if (data.length > 24 * 1024 * 1024) throw new PublicError('生成图片超过 24 MB，请降低输出尺寸后重试。', 502);
     return { image: `data:image/png;base64,${data.toString('base64')}`, mimeType: 'image/png', width: info.width, height: info.height, durationMs: Date.now() - started, inputHash, requestId: output.requestId?.slice(0, 100), parameters: { inputMaxEdge: 2048, inputFormat: 'png', ...(input.profile.provider === 'seedream' ? { size: '2K', response_format: 'b64_json', stream: false, sequential_image_generation: 'disabled' } : input.profile.provider === 'gemini' ? { responseModalities: ['TEXT', 'IMAGE'] } : input.profile.provider === 'dashscope' ? { n: 1, ...(input.profile.model === 'qwen-image-edit' ? {} : { prompt_extend: false }) } : { n: 1 }) } };
