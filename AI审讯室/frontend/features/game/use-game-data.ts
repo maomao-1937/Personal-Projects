@@ -23,7 +23,10 @@ export function useGameData(
       const casePromise = gameApi.getCase(caseId);
       let sessionPromise: Promise<GameSession>;
       if (currentSessionId) {
-        sessionPromise = gameApi.getSession(currentSessionId).catch((reason: unknown) => {
+        sessionPromise = gameApi.getSession(currentSessionId).then((current) => {
+          if (current.caseId !== caseId && createIfMissing) return gameApi.createSession(caseId);
+          return current;
+        }).catch((reason: unknown) => {
           if (createIfMissing && reason instanceof AppError && reason.code === "SESSION_NOT_FOUND") {
             return gameApi.createSession(caseId);
           }

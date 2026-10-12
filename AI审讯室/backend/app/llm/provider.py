@@ -2,13 +2,18 @@ from __future__ import annotations
 
 import json
 from typing import Protocol
-from urllib.parse import urlsplit
+from urllib.parse import urlparse
 
 import httpx
 
 from app.core.config import Settings
 from app.domain.case_models import CaseSnapshot
-from app.llm.prompts import dialogue_messages, generation_messages, intent_messages, review_messages
+from app.llm.prompts import (
+    dialogue_messages,
+    generation_messages,
+    intent_messages,
+    review_messages,
+)
 
 
 class LLMProviderError(RuntimeError):
@@ -72,17 +77,6 @@ class OpenAICompatibleProvider:
             return UnavailableLLMProvider()
         return cls(settings)
 
-    def analyze_case_json(self, prompt: str) -> str:
-        return self._complete(
-            model=self.review_model,
-            messages=intent_messages(prompt),
-            max_tokens=900,
-            temperature=0.1,
-            response_format={"type": "json_object"},
-            disable_thinking=True,
-            timeout_seconds=min(30, self.timeout_seconds),
-        )
-
     def generate_case_json(self, prompt: str) -> str:
         machine_schema = json.dumps(
             CaseSnapshot.model_json_schema(by_alias=True),
@@ -100,6 +94,17 @@ class OpenAICompatibleProvider:
             temperature=0.6,
             response_format={"type": "json_object"},
             disable_thinking=True,
+        )
+
+    def analyze_case_json(self, prompt: str) -> str:
+        return self._complete(
+            model=self.review_model,
+            messages=intent_messages(prompt),
+            max_tokens=900,
+            temperature=0.1,
+            response_format={"type": "json_object"},
+            disable_thinking=True,
+            timeout_seconds=min(30, self.timeout_seconds),
         )
 
     def review_case_json(self, prompt: str) -> str:
@@ -142,8 +147,10 @@ class OpenAICompatibleProvider:
         }
         if response_format is not None:
             payload["response_format"] = response_format
-        if urlsplit(self.base_url).hostname == "api.deepseek.com":
-            # Keep the token budget for JSON and spoken replies, not reasoning.
+        hostname = (urlparse(self.base_url).hostname or "").lower()
+        if hostname == "api.deepseek.com" or hostname.endswith(".deepseek.com"):
+            # Character replies and JSON generation both need low latency and
+            # deterministic visible output, not hidden reasoning tokens.
             payload["thinking"] = {"type": "disabled"}
         elif disable_thinking:
             payload["enable_thinking"] = False

@@ -9,11 +9,12 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { gameApi } from "@/features/game/api";
+import { getVerdictOptions } from "@/features/game/case-data";
 import { caseRoutes, reportRequirements, withSession } from "@/features/game/session";
 import type { CaseOption, ReportDraft } from "@/features/game/types";
 import { useGameData } from "@/features/game/use-game-data";
 
-const STEPS = ["真相判断", "关键证据", "动机与手法"];
+const STEPS = ["真相判断", "组建证据链", "动机与手法"];
 
 function OptionCard({
   option,
@@ -73,6 +74,7 @@ export function ReportScreen({ caseId }: { caseId: string }) {
   }
 
   const activeSession = session;
+  const verdictOptions = getVerdictOptions(caseData);
 
   const reportUnlocked = session.canSubmitReport || session.stage === "report_required";
   if (!reportUnlocked) {
@@ -127,12 +129,12 @@ export function ReportScreen({ caseId }: { caseId: string }) {
         >
           <ArrowLeft aria-hidden="true" size={16} /> 返回审讯
         </button>
-        <span className="mono-meta">{caseData.caseCode} / FINAL REPORT</span>
+        <span className="mono-meta">{caseData.caseCode} / 结案报告</span>
       </header>
 
       <article className="report-card">
         <header className="report-header">
-          <div><p className="eyebrow eyebrow--ink">DETECTIVE CONCLUSION</p><h1>结案报告</h1><p>{caseData.title} · 本报告由你主动提交</p></div>
+          <div><p className="eyebrow eyebrow--ink">调查员结论</p><h1>结案报告</h1><p>{caseData.title} · 本报告由你主动提交</p></div>
           <div className="report-seal"><FileCheck2 aria-hidden="true" /><span>未封存</span></div>
         </header>
 
@@ -147,9 +149,9 @@ export function ReportScreen({ caseId }: { caseId: string }) {
         <section className="report-step-panel">
           {step === 0 ? (
             <>
-              <div className="report-question"><p className="section-number">STEP 01</p><h2>你认为事件的真实情况是什么？</h2><p>选择一个最符合现有证据的判断。</p></div>
+              <div className="report-question"><span className="data-label">结论 1 / 3</span><h2>{verdictOptions.length > 1 ? "谁需要为案件负责？" : "你认为事件的真实情况是什么？"}</h2><p>选择一个最符合现有证据的判断。</p></div>
               <div className="report-options">
-                {caseData.truthOptions.map((option) => (
+                {verdictOptions.map((option) => (
                   <OptionCard key={option.id} option={option} selected={draft.verdictId === option.id} onSelect={() => setDraft({ ...draft, verdictId: option.id })} />
                 ))}
               </div>
@@ -158,7 +160,7 @@ export function ReportScreen({ caseId }: { caseId: string }) {
 
           {step === 1 ? (
             <>
-              <div className="report-question"><p className="section-number">STEP 02</p><h2>哪些证据构成关键证据链？</h2><p>从已发现证据中选择 1–3 条。只选事实，不选系统推断。</p></div>
+              <div className="report-question"><span className="data-label">结论 2 / 3</span><h2>组建你的关键证据链</h2><p>从已发现证据中选择 1–3 条，让每个判断都能回到事实。</p></div>
               <div className="report-evidence-options">
                 {session.evidence.map((evidence) => {
                   const selected = draft.evidenceIds.includes(evidence.id);
@@ -176,7 +178,7 @@ export function ReportScreen({ caseId }: { caseId: string }) {
           {step === 2 ? (
             <div className="report-double-section">
               <section>
-                <div className="report-question"><p className="section-number">STEP 03-A</p><h2>行为动机</h2><p>选择最能解释嫌疑人为什么行动的原因。</p></div>
+                <div className="report-question"><span className="data-label">动机</span><h2>行为动机</h2><p>选择最能解释嫌疑人为什么行动的原因。</p></div>
                 <div className="report-options report-options--compact">
                   {caseData.motiveOptions.map((option) => (
                     <OptionCard key={option.id} option={option} selected={draft.motiveId === option.id} onSelect={() => setDraft({ ...draft, motiveId: option.id })} />
@@ -184,7 +186,7 @@ export function ReportScreen({ caseId }: { caseId: string }) {
                 </div>
               </section>
               <section>
-                <div className="report-question"><p className="section-number">STEP 03-B</p><h2>实施手法</h2><p>选择与时间线和物证最一致的手法。</p></div>
+                <div className="report-question"><span className="data-label">手法</span><h2>实施手法</h2><p>选择与时间线和物证最一致的手法。</p></div>
                 <div className="report-options report-options--compact">
                   {caseData.methodOptions.map((option) => (
                     <OptionCard key={option.id} option={option} selected={draft.methodId === option.id} onSelect={() => setDraft({ ...draft, methodId: option.id })} />
@@ -196,7 +198,7 @@ export function ReportScreen({ caseId }: { caseId: string }) {
         </section>
 
         <footer className="report-footer">
-          <div><span className="mono-id">PROGRESS</span><strong>{step + 1} / 3</strong></div>
+          <div><span className="mono-id">填写进度</span><strong>{step + 1} / 3</strong></div>
           <div className="report-actions">
             {step > 0 ? <Button variant="ghost" onClick={() => setStep(step - 1)}><ArrowLeft aria-hidden="true" size={16} /> 上一步</Button> : null}
             {step < 2 ? (

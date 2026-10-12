@@ -6,11 +6,13 @@ from app.domain.types import DomainModel
 
 
 class CaseIntent(DomainModel):
-    """A bounded creative direction, with no solution or game-rule authority."""
+    """A bounded creative direction with no authority over game rules or truth."""
 
     model_config = ConfigDict(
-        extra="forbid", str_strip_whitespace=True,
-        populate_by_name=True, serialize_by_alias=True,
+        extra="forbid",
+        str_strip_whitespace=True,
+        populate_by_name=True,
+        serialize_by_alias=True,
     )
 
     scene: str = Field(min_length=2, max_length=80)

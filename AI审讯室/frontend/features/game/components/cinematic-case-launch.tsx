@@ -2,7 +2,7 @@
 
 import { gsap } from "gsap";
 import Image from "next/image";
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 
 import aiSuspectAsset from "@/public/images/case-launch/ai-suspect.png";
 import interrogatorAsset from "@/public/images/case-launch/interrogator.png";
@@ -11,22 +11,12 @@ import { type CaseLaunchCompletion, useCaseLaunch } from "../use-case-launch";
 
 const PROMPT = "用 8 次提问，审讯一个会撒谎、却无法改写真相的 AI 嫌疑人。";
 const CAGE_BARS = Array.from({ length: 7 }, (_, index) => index);
-const EXAMPLE_PROMPTS = [
-  "博物馆闭馆后，一幅展画被调包",
-  "校园社团的比赛作品提前泄露",
-  "深夜便利店的寄存包裹不见了",
-] as const;
 
 export type CinematicCaseLaunchProps = {
   onComplete?: (completion: CaseLaunchCompletion) => void | Promise<void>;
 };
 
 export function CinematicCaseLaunch({ onComplete }: CinematicCaseLaunchProps = {}) {
-  const [prompt, setPrompt] = useState("");
-  const [usingFallback, setUsingFallback] = useState(false);
-  const promptId = useId();
-  const promptLength = Array.from(prompt.trim()).length;
-  const validPrompt = promptLength > 0 && promptLength <= 500;
   const launch = useCaseLaunch({
     introDurationMs: 4_000,
     lockedDurationMs: 500,
@@ -52,20 +42,6 @@ export function CinematicCaseLaunch({ onComplete }: CinematicCaseLaunchProps = {
   }, []);
 
   useLayoutEffect(() => {
-    if (launch.lifecycleState === "ERROR") {
-      timelineRef.current?.kill();
-      timelineRef.current = null;
-      ceremonyPlayedRef.current = false;
-      // Restore the CSS starting scene as well as the editable composer so a
-      // failed request cannot leave GSAP's inline hiding styles behind.
-      gsap.set(copyRef.current, { clearProps: "opacity,visibility,filter,transform" });
-      gsap.set([
-        rearLightRef.current, blackoutRef.current, cageRef.current,
-        latchRef.current, spotlightRef.current, suspectRef.current,
-        interrogatorRef.current,
-      ], { clearProps: "opacity,visibility,transform" });
-      return;
-    }
     if (launch.lifecycleState !== "CEREMONY" || ceremonyPlayedRef.current) return;
     ceremonyPlayedRef.current = true;
 
@@ -156,10 +132,11 @@ export function CinematicCaseLaunch({ onComplete }: CinematicCaseLaunchProps = {
       ref={scopeRef}
       className={`cinematic-launch cinematic-launch--${launch.lifecycleState.toLowerCase()}`}
       data-launch-state={launch.lifecycleState}
+      data-scene-version="v3"
       aria-label="AI 嫌疑人案件生成场景"
       aria-busy={launch.busy}
     >
-      <div className="cinematic-stage" aria-hidden="true">
+      <div className="cinematic-stage" data-testid="containment-shell" aria-hidden="true">
         <div className="cinematic-stage__wall" />
         <div className="cinematic-stage__floor" />
         <div ref={rearLightRef} className="rear-light">
@@ -174,7 +151,7 @@ export function CinematicCaseLaunch({ onComplete }: CinematicCaseLaunchProps = {
           <span className="overhead-light__pool" />
         </div>
 
-        <div ref={suspectRef} className="suspect-seat">
+        <div ref={suspectRef} className="suspect-seat" data-testid="ai-suspect">
           <Image className="suspect-seat__asset" src={aiSuspectAsset} alt="" width={1024} height={1536} priority />
           <span className="ai-reconstruction ai-reconstruction--head" />
           <span className="ai-reconstruction ai-reconstruction--torso" />
@@ -185,11 +162,11 @@ export function CinematicCaseLaunch({ onComplete }: CinematicCaseLaunchProps = {
           <span className="ai-node ai-node--three" />
         </div>
 
-        <div ref={interrogatorRef} className="interrogator-silhouette">
+        <div ref={interrogatorRef} className="interrogator-silhouette" data-testid="foreground-interrogator">
           <Image className="interrogator-silhouette__asset" src={interrogatorAsset} alt="" width={1024} height={1536} priority />
         </div>
 
-        <div ref={cageRef} className="containment-frame">
+        <div ref={cageRef} className="containment-frame" data-testid="containment-gate">
           <div className="containment-frame__depth" />
           <div className="containment-frame__roof" />
           <div className="containment-frame__bars">
@@ -220,57 +197,24 @@ export function CinematicCaseLaunch({ onComplete }: CinematicCaseLaunchProps = {
           <span className="cinematic-copy__truth">无法改写真相</span>的
           <span className="cinematic-copy__shift">AI 嫌疑人</span>。
         </p>
-        <form className="case-composer" onSubmit={(event) => {
-          event.preventDefault();
-          if (!validPrompt || launch.busy) return;
-          setUsingFallback(false);
-          void launch.startGenerated(prompt.trim());
-        }}>
-          <label htmlFor={promptId}>你想审讯什么样的案件？</label>
-          <textarea
-            id={promptId}
-            name="prompt"
-            rows={3}
-            value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
-            disabled={launch.busy}
-            aria-describedby={`${promptId}-hint ${promptId}-count`}
-            aria-invalid={promptLength > 500}
-            placeholder="描述场景、发生的事，或你想审讯的人……"
-          />
-          <div className="case-composer__meta">
-            <p id={`${promptId}-hint`}>从你的想法开始，生成一宗可审讯的虚构案件。</p>
-            <span id={`${promptId}-count`}>{promptLength} / 500 字</span>
-          </div>
-          {promptLength > 500 ? <p className="case-composer__validation">案件想法最多 500 字，请缩短后再生成。</p> : null}
-          <div className="case-composer__examples" role="group" aria-label="试试这些案件方向">
-            {EXAMPLE_PROMPTS.map((example) => (
-              <button key={example} type="button" onClick={() => setPrompt(example)} disabled={launch.busy}>{example}</button>
-            ))}
-          </div>
-          <button className="cinematic-launch__button" type="submit" disabled={launch.busy || !validPrompt}>
-            <span>{launch.lifecycleState === "ERROR" ? "重新生成案件" : "生成案件"}</span>
-            <i aria-hidden="true">开始</i>
-          </button>
-        </form>
-        {launch.lifecycleState === "ERROR" && launch.error ? (
-          <div className="cinematic-feedback__error" role="alert">
-            <p>{launch.error}</p>
-            <p>保留了你的想法，可修改后重新生成。</p>
-            <button type="button" onClick={() => {
-              setUsingFallback(true);
-              void launch.startFallback();
-            }} disabled={launch.busy}>改用精修固定案继续体验</button>
-          </div>
-        ) : null}
+        <button className="cinematic-launch__button" type="button" onClick={() => void launch.startGenerated()} disabled={launch.busy}>
+          <span>生成案件</span>
+          <i aria-hidden="true">开始</i>
+        </button>
       </div>
 
       <div className="cinematic-feedback">
         {isGenerating ? (
-          <p className="cinematic-feedback__status" role="status"><span aria-hidden="true" />{usingFallback ? "正在调取精修固定案件，请稍候。" : "正在理解你的案件方向并生成案件，请保持页面开启。"}</p>
+          <p className="cinematic-feedback__status" role="status"><span aria-hidden="true" />{launch.phaseText}</p>
         ) : null}
         {isLocking ? (
           <div className="cinematic-feedback__locked" role="status"><strong>TRUTH LOCKED</strong><span>真相已封存</span></div>
+        ) : null}
+        {launch.lifecycleState === "ERROR" && launch.error ? (
+          <div className="cinematic-feedback__error" role="alert">
+            <p>{launch.error}</p>
+            <button type="button" onClick={() => void launch.startFallback()}>改用精修固定案继续体验</button>
+          </div>
         ) : null}
       </div>
     </section>

@@ -18,10 +18,10 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3011,http://127.0.0.1:3011"
     llm_enabled: bool = False
     llm_api_key: SecretStr = SecretStr("")
-    llm_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    llm_case_model: str = "qwen3.6-plus"
-    llm_review_model: str = "qwen3.6-plus"
-    llm_dialogue_model: str = "qwen-plus-character"
+    llm_base_url: str = "https://api.deepseek.com"
+    llm_case_model: str = "deepseek-flash"
+    llm_review_model: str = "deepseek-flash"
+    llm_dialogue_model: str = "deepseek-flash"
     # Keep below the 120-second pending turn lease so a live request cannot be
     # reclaimed while its provider call is still within the configured timeout.
     llm_timeout_seconds: float = Field(default=90, gt=0, le=90)

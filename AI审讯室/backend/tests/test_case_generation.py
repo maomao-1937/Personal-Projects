@@ -43,7 +43,8 @@ class FakeProvider:
         self.review_calls = 0
 
     def generate_case_json(self, prompt: str) -> str:
-        assert "5 条证据" in prompt
+        assert "6 条证据" in prompt
+        assert "3 名嫌疑人" in prompt
         self.case_calls += 1
         return next(self.case_outputs)
 

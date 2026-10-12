@@ -4,6 +4,7 @@ const backendUrl = process.env.BACKEND_URL ?? "http://127.0.0.1:8011";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  allowedDevOrigins: ["127.0.0.1"],
   async rewrites() {
     return [
       {

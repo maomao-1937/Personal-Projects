@@ -1,4 +1,5 @@
 import type {
+  CaseListItem,
   GameSession,
   PublicCase,
   ReportDraft,
@@ -98,6 +99,7 @@ export const authApi = {
 };
 
 export const gameApi = {
+  listCases: () => apiRequest<CaseListItem[] | { cases: CaseListItem[] }>("/cases"),
   getCase: (caseId: string) =>
     apiRequest<PublicCase>(`/cases/${encodeURIComponent(caseId)}`),
   generateCase: (input: { prompt?: string; theme?: string; difficulty?: "standard" | "hard" } = {}) =>
@@ -116,7 +118,7 @@ export const gameApi = {
     apiRequest<GameSession>(`/sessions/${encodeURIComponent(sessionId)}`),
   submitTurn: (
     sessionId: string,
-    input: { message: string; tactic: Tactic; evidenceId: string | null; requestId: string },
+    input: { message: string; tactic: Tactic; evidenceId: string | null; requestId: string; suspectId?: string },
   ) =>
     apiRequest<TurnResult>(`/sessions/${encodeURIComponent(sessionId)}/turns`, {
       method: "POST",

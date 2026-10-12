@@ -4,13 +4,13 @@ from typing import Literal
 
 from pydantic import Field, field_validator
 
+from app.domain.case_intent import CaseIntent
 from app.domain.scoring import ReportInput, ScoreResult
 from app.domain.types import DomainModel, GameSessionState, Tactic
-from app.domain.case_intent import CaseIntent
 
 
 class CreateSessionRequest(DomainModel):
-    case_id: str = "001"
+    case_id: str = "refined-001-v2"
 
 
 class LoginRequest(DomainModel):
@@ -40,6 +40,7 @@ class TurnRequest(DomainModel):
     message: str = Field(min_length=1, max_length=200)
     tactic: Tactic
     evidence_id: str | None = None
+    suspect_id: str | None = Field(default=None, min_length=2, max_length=16)
     request_id: str | None = Field(default=None, min_length=8, max_length=64)
 
 
@@ -74,6 +75,17 @@ class PublicSuspectResponse(DomainModel):
     demeanor: str
 
 
+class PublicCaseSuspectResponse(PublicSuspectResponse):
+    initial_statement: str
+
+
+class SessionSuspectResponse(PublicCaseSuspectResponse):
+    defense: int
+    defense_band: str
+    hostility: int
+    invalid_pressure_count: int
+
+
 class PublicCaseResponse(DomainModel):
     case_id: str
     case_code: str
@@ -85,7 +97,9 @@ class PublicCaseResponse(DomainModel):
     content_rating: str
     suspect: PublicSuspectResponse
     initial_statement: str
+    suspects: list[PublicCaseSuspectResponse]
     public_facts: list[str]
+    evidence_count: int
     evidence: list[EvidenceResponse]
     truth_options: list[CaseOptionResponse]
     motive_options: list[CaseOptionResponse]
@@ -96,6 +110,7 @@ class PublicCaseResponse(DomainModel):
 
 class SessionResponse(GameSessionState):
     evidence: list[EvidenceResponse]
+    suspects: list[SessionSuspectResponse]
     report_result: ScoreResult | None = None
 
 

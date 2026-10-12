@@ -41,6 +41,7 @@ class Message(DomainModel):
     tactic: Tactic | None = None
     evidence_id: str | None = None
     evidence_effect: Literal["none", "effective", "used_ineffective"] = "none"
+    suspect_id: str | None = None
     created_at: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
@@ -52,16 +53,30 @@ class Claim(DomainModel):
     source: str
     turn: int
     kind: Literal["statement", "contradiction", "timeline", "empathy"]
+    suspect_id: str | None = None
+
+
+class SuspectSessionState(DomainModel):
+    suspect_id: str
+    defense: int = Field(default=72, ge=0, le=100)
+    hostility: int = Field(default=0, ge=0, le=100)
+    defense_band: DefenseBand = DefenseBand.CALM
+    invalid_pressure_count: int = Field(default=0, ge=0)
 
 
 class GameSessionState(DomainModel):
-    schema_version: int = 1
+    schema_version: int = 2
     session_id: str
     case_id: str = "001"
     stage: Literal[
         "briefing", "interrogation", "report_ready", "report_required", "completed"
     ] = "briefing"
     turn_count: int = 0
+    max_turns: int = Field(default=12, ge=1, le=24)
+    active_suspect_id: str | None = None
+    suspect_states: dict[str, SuspectSessionState] = Field(default_factory=dict)
+    # Legacy mirrors for old clients. Rules keep them synchronized to the active
+    # suspect while v2 clients should read suspect_states.
     defense: int = 72
     hostility: int = 0
     defense_band: DefenseBand = DefenseBand.CALM

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Integer, String, Text
+from sqlalchemy import DateTime, Integer, String, Text, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -63,3 +63,16 @@ class CaseRepository:
             if record is None or record.status != "ready":
                 return None
             return CaseSnapshot.model_validate_json(record.content_json)
+
+    def list_recent(self, *, limit: int = 12) -> list[CaseSnapshot]:
+        with self.database.session() as db_session:
+            records = db_session.scalars(
+                select(CaseRecord)
+                .where(CaseRecord.status == "ready")
+                .order_by(CaseRecord.created_at.desc())
+                .limit(limit)
+            ).all()
+            return [
+                CaseSnapshot.model_validate_json(record.content_json)
+                for record in records
+            ]

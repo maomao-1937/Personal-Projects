@@ -6,7 +6,7 @@ import { EvidenceCard } from "./evidence-card";
 export function CaseSummary({ caseData }: { caseData: PublicCase }) {
   return (
     <section className="material-section" aria-labelledby="case-summary-title">
-      <p className="eyebrow">CASE BRIEF</p>
+      <p className="eyebrow">案件摘要</p>
       <h2 id="case-summary-title">{caseData.title}</h2>
       <div className="material-fact">
         <Clock3 aria-hidden="true" size={15} />
@@ -54,10 +54,10 @@ export function EvidenceList({
     <section className="material-section" aria-labelledby="evidence-list-title">
       <div className="section-heading-row">
         <div>
-          <p className="eyebrow">EVIDENCE FILES</p>
+          <p className="eyebrow">证据文件</p>
           <h2 id="evidence-list-title">证据文件</h2>
         </div>
-        <span className="mono-id">{session.evidence.length}/5</span>
+        <span className="mono-id">{session.evidence.length} 份</span>
       </div>
       <div className="evidence-list">
         {session.evidence.map((evidence) => (

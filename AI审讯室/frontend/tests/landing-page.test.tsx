@@ -8,26 +8,17 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("LandingPage", () => {
-  it("keeps only the product identity, cinematic scene and access control", () => {
+  it("states the product loop and exposes one primary curated-case action", () => {
     render(<LandingPage />);
 
     expect(screen.getByRole("link", { name: "AI 审讯室首页" })).toBeVisible();
-    expect(screen.getByRole("region", { name: "AI 嫌疑人案件生成场景" })).toBeVisible();
-    expect(screen.getByLabelText(
-      "用 8 次提问，审讯一个会撒谎、却无法改写真相的 AI 嫌疑人。",
-    )).toBeVisible();
-    expect(screen.getByRole("button", { name: "生成案件" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "退出" })).toBeVisible();
-    expect(screen.getByRole("textbox", { name: "你想审讯什么样的案件？" })).toBeVisible();
-    expect(screen.getByRole("group", { name: "试试这些案件方向" })).toBeVisible();
-    expect(screen.getAllByRole("button")).toHaveLength(5);
-
-    expect(screen.queryByText("CASE SYSTEM / 12+")).not.toBeInTheDocument();
-    expect(screen.queryByText("INTERROGATION READY")).not.toBeInTheDocument();
-    expect(screen.queryByText("CASE-001")).not.toBeInTheDocument();
-    expect(screen.queryByText("EVIDENCE")).not.toBeInTheDocument();
-    expect(screen.queryByText("三步完成一次审讯")).not.toBeInTheDocument();
-    expect(screen.queryByText(/\d+%/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/SYSTEM|VERSION|CASE-/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "审问每个人。证据只认事实。" })).toBeVisible();
+    expect(screen.getByText("审问嫌疑人，核对证据，在 12 次提问内提交你的结案判断。")).toBeVisible();
+    expect(screen.getByRole("button", { name: /进入精修案件/ })).toBeVisible();
+    expect(screen.getByRole("link", { name: /浏览案件库/ })).toHaveAttribute("href", "/cases");
+    expect(screen.getByRole("article", { name: "当前主案卷" })).toBeVisible();
+    expect(screen.getByText("3 名")).toBeVisible();
+    expect(screen.getByText("12 次")).toBeVisible();
+    expect(screen.queryByText("用 8 次提问")).not.toBeInTheDocument();
   });
 });

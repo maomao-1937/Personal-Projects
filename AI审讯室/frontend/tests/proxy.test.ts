@@ -1,10 +1,18 @@
 import { NextRequest } from "next/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { AUTH_COOKIE_NAME } from "@/features/auth/constants";
 import { proxy } from "@/proxy";
 
 describe("page access proxy", () => {
+  beforeEach(() => {
+    process.env.ACCESS_GATE_ENABLED = "true";
+  });
+
+  afterEach(() => {
+    delete process.env.ACCESS_GATE_ENABLED;
+  });
+
   it("redirects a protected page while preserving its local destination", () => {
     const response = proxy(
       new NextRequest("https://interrogation.example/case/001/briefing?session=ses_001"),
@@ -31,5 +39,13 @@ describe("page access proxy", () => {
     const response = proxy(new NextRequest("https://interrogation.example/access"));
 
     expect(response.status).toBe(200);
+  });
+
+  it("keeps the public product open when the private gate is disabled", () => {
+    process.env.ACCESS_GATE_ENABLED = "false";
+    const response = proxy(new NextRequest("https://interrogation.example/cases"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
   });
 });

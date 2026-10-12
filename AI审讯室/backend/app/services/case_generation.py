@@ -6,8 +6,8 @@ from uuid import uuid4
 
 from pydantic import ValidationError
 
-from app.domain.case_models import CaseSnapshot
 from app.domain.case_intent import CaseIntent
+from app.domain.case_models import CaseSnapshot
 from app.llm.prompts import build_case_prompt
 from app.llm.provider import LLMProvider, LLMProviderError
 from app.repositories.cases import CaseAlreadyExistsError, CaseRepository
@@ -114,7 +114,7 @@ def normalize_case_graph(payload: object) -> dict:
     lie_nodes = payload.get("lieNodes") or payload.get("lie_nodes")
     if not isinstance(evidence, list) or not isinstance(lie_nodes, list):
         return payload
-    if len(evidence) != 5 or len(lie_nodes) != 3:
+    if (len(evidence), len(lie_nodes)) not in {(5, 3), (6, 4)}:
         return payload
     if any(not isinstance(item, dict) for item in [*evidence, *lie_nodes]):
         return payload
@@ -129,8 +129,8 @@ def normalize_case_graph(payload: object) -> dict:
     if (
         any(not isinstance(item, str) for item in evidence_ids)
         or any(not isinstance(item, str) for item in lie_evidence_ids)
-        or len(set(evidence_ids)) != 5
-        or len(set(lie_evidence_ids)) != 3
+        or len(set(evidence_ids)) != len(evidence_ids)
+        or len(set(lie_evidence_ids)) != len(lie_evidence_ids)
         or not set(lie_evidence_ids).issubset(evidence_ids)
     ):
         return payload
@@ -147,11 +147,16 @@ def normalize_case_graph(payload: object) -> dict:
         for item in evidence_ids
         if item not in public_ids and item not in set(lie_evidence_ids[1:])
     ]
-    unlocks = [
-        [lie_evidence_ids[1], *remaining_hidden],
-        [lie_evidence_ids[2]],
-        [],
-    ]
+    unlocks: list[list[str]] = []
+    for index in range(len(lie_nodes)):
+        node_unlocks = (
+            [lie_evidence_ids[index + 1]]
+            if index + 1 < len(lie_evidence_ids)
+            else []
+        )
+        if index == 0:
+            node_unlocks.extend(remaining_hidden)
+        unlocks.append(node_unlocks)
     for node, node_unlocks in zip(lie_nodes, unlocks, strict=True):
         key = "unlockEvidenceIds" if "unlockEvidenceIds" in node else "unlock_evidence_ids"
         node[key] = node_unlocks
@@ -176,6 +181,15 @@ def normalize_case_graph(payload: object) -> dict:
         "replyTemplates" if "replyTemplates" in payload else "reply_templates"
     )
     payload[template_key] = controlled_replies
+
+    suspects = payload.get("suspects")
+    if isinstance(suspects, list) and suspects and isinstance(suspects[0], dict):
+        first = suspects[0]
+        payload.setdefault("suspect", first)
+        payload.setdefault(
+            "initialStatement",
+            first.get("initialStatement", first.get("initial_statement")),
+        )
     return payload
 
 
@@ -223,12 +237,14 @@ class CaseGenerationService:
                     snapshot = CaseSnapshot.model_validate(
                         {
                             **payload,
-                            "schemaVersion": 1,
+                            "schemaVersion": 2,
                             "caseId": f"case_{suffix}",
                             "caseCode": f"CASE-{suffix[:16].upper()}",
                             "source": "llm",
                             "modelName": self.provider.case_model,
-                            "generationIntent": intent.model_dump(by_alias=True) if intent else None,
+                            "generationIntent": (
+                                intent.model_dump(by_alias=True) if intent else None
+                            ),
                         }
                     )
                     if not case_content_is_safe(snapshot):

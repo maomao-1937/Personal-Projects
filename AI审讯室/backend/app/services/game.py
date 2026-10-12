@@ -68,7 +68,7 @@ class TurnRejectedError(GameError):
 class TurnLimitError(GameError):
     code = "TURN_LIMIT_REACHED"
     status_code = 409
-    user_message = "8 次提问已经用完，请提交结案报告。"
+    user_message = "本局提问额度已用完，请提交结案报告。"
 
 
 class SessionConflictError(GameError):
@@ -99,6 +99,9 @@ class GameService:
     def get_public_case(self, case_id: str) -> dict:
         return self.get_case_snapshot(case_id).public_payload()
 
+    def list_public_cases(self) -> list[dict]:
+        return [item.public_payload() for item in self.case_catalog.list()]
+
     def create_session(
         self,
         case_id: str,
@@ -126,6 +129,7 @@ class GameService:
         tactic: str,
         evidence_id: str | None,
         request_id: str | None = None,
+        suspect_id: str | None = None,
         *,
         owner_id: str = "local-development",
     ) -> TurnEvaluation:
@@ -167,6 +171,7 @@ class GameService:
                 message,
                 tactic,
                 evidence_id,
+                suspect_id,
                 case=case,
             )
         except TurnLimitReachedError as exc:

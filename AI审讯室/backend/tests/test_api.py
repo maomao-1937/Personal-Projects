@@ -271,7 +271,8 @@ def test_fallback_case_endpoint_is_explicit(client: TestClient) -> None:
     response = client.post("/api/v1/cases/fallback")
 
     assert response.status_code == 200
-    assert response.json()["caseId"] == "001"
+    assert response.json()["caseId"] == "refined-001-v2"
+    assert len(response.json()["suspects"]) == 3
     assert response.json()["generationSource"] == "manual_fallback"
 
 

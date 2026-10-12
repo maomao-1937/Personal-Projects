@@ -72,6 +72,8 @@ class SuspectResponder:
         before: GameSessionState,
         decision: TurnEvaluation,
     ) -> ReplyDirective:
+        suspect_id = decision.state.active_suspect_id or case.suspect.id
+        suspect = case.suspect_by_id(suspect_id)
         discovered = set(decision.state.discovered_evidence_ids)
         known_evidence = [item for item in case.evidence if item.id in discovered]
         current_acknowledgement = next(
@@ -83,7 +85,10 @@ class SuspectResponder:
             None,
         )
         hit_nodes = set(decision.state.hit_lie_node_ids)
-        forbidden_facts = [case.truth.summary, case.suspect.soft_spot]
+        forbidden_facts = [
+            case.truth.summary,
+            *(item.soft_spot for item in case.suspects),
+        ]
         forbidden_facts.extend(
             text
             for item in case.evidence
@@ -97,9 +102,13 @@ class SuspectResponder:
             for text in (node.claim, node.acknowledgement)
         )
         allowed_facts = [
-            case.initial_statement,
+            suspect.initial_statement or case.initial_statement,
             *case.public_facts,
-            *(claim.text for claim in before.claims),
+            *(
+                claim.text
+                for claim in before.claims
+                if (claim.suspect_id or case.suspect.id) == suspect_id
+            ),
             *(
                 text
                 for item in known_evidence
@@ -113,8 +122,12 @@ class SuspectResponder:
             forbidden_facts=forbidden_facts,
             must_acknowledge=current_acknowledgement,
             may_confess=(
-                len(decision.state.hit_lie_node_ids) == len(case.lie_nodes)
-                and decision.state.defense <= 14
+                all(
+                    node.id in decision.state.hit_lie_node_ids
+                    for node in case.lie_nodes_for(suspect_id)
+                )
+                and bool(case.lie_nodes_for(suspect_id))
+                and decision.state.suspect_states[suspect_id].defense <= 14
             ),
         )
 
@@ -126,6 +139,8 @@ class SuspectResponder:
         question: str,
         directive: ReplyDirective,
     ) -> str:
+        suspect_id = decision.state.active_suspect_id or case.suspect.id
+        suspect = case.suspect_by_id(suspect_id)
         discovered = set(decision.state.discovered_evidence_ids)
         known_evidence = [
             {"id": item.id, "name": item.name, "fact": item.description}
@@ -134,14 +149,18 @@ class SuspectResponder:
         ]
         payload = {
             "suspect": {
-                "name": case.suspect.name,
-                "role": case.suspect.role,
-                "demeanor": case.suspect.demeanor,
+                "name": suspect.name,
+                "role": suspect.role,
+                "demeanor": suspect.demeanor,
             },
-            "initialStatement": case.initial_statement,
+            "initialStatement": suspect.initial_statement or case.initial_statement,
             "publicFacts": case.public_facts,
             "knownEvidence": known_evidence,
-            "previousClaims": [claim.text for claim in before.claims],
+            "previousClaims": [
+                claim.text
+                for claim in before.claims
+                if (claim.suspect_id or case.suspect.id) == suspect_id
+            ],
             "question": question,
             "ruleDecision": {
                 "evidenceEffect": decision.evidence_effect,

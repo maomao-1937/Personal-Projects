@@ -29,6 +29,13 @@ const BREAKDOWN_LABELS = {
   efficiency: ["效率", 5],
 } as const;
 
+const CONCLUSION_LABELS: Record<string, string> = {
+  verdict: "真相",
+  motive: "动机",
+  method: "手法",
+  evidence: "证据",
+};
+
 export function ResultScreen({ caseId }: { caseId: string }) {
   const router = useRouter();
   const routes = caseRoutes(caseId);
@@ -78,12 +85,12 @@ export function ResultScreen({ caseId }: { caseId: string }) {
     <main className="result-page">
       <header className="page-bar result-page__bar">
         <Link href="/" className="wordmark"><span>AI</span> 审讯室</Link>
-        <span className="mono-meta">{caseData.caseCode} / CASE CLOSED</span>
+        <span className="mono-meta">{caseData.caseCode} / 已结案</span>
       </header>
 
       <article className="result-report">
         <header className="result-score-header">
-          <div><p className="eyebrow eyebrow--ink">FINAL ASSESSMENT</p><h1>{caseData.title} · 结案复盘</h1><p>固定答案校验完成，完整真相已解封。</p></div>
+          <div><p className="eyebrow eyebrow--ink">结案评估</p><h1>{caseData.title} · 结案复盘</h1><p>固定答案校验完成，完整真相已解封。</p></div>
           <div className="score-lockup"><span>{result.grade}</span><strong>{result.totalScore}</strong><small>/ 100 · {GRADE_COPY[result.grade]}</small></div>
         </header>
 
@@ -95,24 +102,24 @@ export function ResultScreen({ caseId }: { caseId: string }) {
         </section>
 
         <div className="conclusion-compare">
-          <section><p className="section-number">YOUR CONCLUSION / 玩家结论</p><dl>{Object.entries(result.playerConclusion).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl></section>
-          <section><p className="section-number">SEALED TRUTH / 真实结论</p><dl><div><dt>真相</dt><dd>{result.trueConclusion.verdict}</dd></div><div><dt>动机</dt><dd>{result.trueConclusion.motive}</dd></div><div><dt>手法</dt><dd>{result.trueConclusion.method}</dd></div></dl></section>
+          <section><p className="section-number">玩家结论</p><dl>{Object.entries(result.playerConclusion).map(([key, value]) => <div key={key}><dt>{CONCLUSION_LABELS[key] ?? key}</dt><dd>{value}</dd></div>)}</dl></section>
+          <section><p className="section-number">封存真相</p><dl><div><dt>真相</dt><dd>{result.trueConclusion.verdict}</dd></div><div><dt>动机</dt><dd>{result.trueConclusion.motive}</dd></div><div><dt>手法</dt><dd>{result.trueConclusion.method}</dd></div></dl></section>
         </div>
 
         <section className="truth-section">
-          <p className="section-number">FULL TRUTH / 完整真相</p>
+          <p className="section-number">完整真相</p>
           <h2>真相时间线</h2>
           <p className="truth-summary">{result.truthSummary}</p>
           <ol className="truth-timeline">{result.truthTimeline.map((item, index) => <li key={item}><span>{String(index + 1).padStart(2, "0")}</span><p>{item}</p></li>)}</ol>
         </section>
 
         <div className="contradiction-grid">
-          <section><p className="section-number">HIT / 已命中矛盾</p>{result.hitContradictions.length ? <ul>{result.hitContradictions.map((item) => <li key={item.id}><Check aria-hidden="true" size={16} /><span><b>{item.id}</b>{item.claim}</span></li>)}</ul> : <p>本局没有有效击中矛盾。</p>}</section>
-          <section><p className="section-number">MISSED / 漏掉的矛盾</p>{result.missedContradictions.length ? <ul>{result.missedContradictions.map((item) => <li key={item.id}><X aria-hidden="true" size={16} /><span><b>{item.id}</b>{item.claim}</span></li>)}</ul> : <p>完整谎言链已经击穿。</p>}</section>
+          <section className="contradiction-grid__hit"><p className="section-number">已命中矛盾</p>{result.hitContradictions.length ? <ul>{result.hitContradictions.map((item) => <li key={item.id}><Check aria-hidden="true" size={16} /><span><b>{item.id} · {item.evidenceId}</b>{item.claim}</span></li>)}</ul> : <p>本局没有有效击中矛盾。</p>}</section>
+          <section className="contradiction-grid__missed"><p className="section-number">漏掉的矛盾</p>{result.missedContradictions.length ? <ul>{result.missedContradictions.map((item) => <li key={item.id}><X aria-hidden="true" size={16} /><span><b>{item.id} · {item.evidenceId}</b>{item.claim}</span></li>)}</ul> : <p>完整谎言链已经击穿。</p>}</section>
         </div>
 
         <section className="result-stats" aria-label="本局统计">
-          <div><span>回合数</span><strong>{result.stats.turnCount}</strong><small>/ 8</small></div>
+          <div><span>提问次数</span><strong>{result.stats.turnCount}</strong><small>/ {session.maxTurns ?? 12}</small></div>
           <div><span>有效证据</span><strong>{result.stats.effectiveEvidenceCount}</strong><small>次</small></div>
           <div><span>无效施压</span><strong>{result.stats.invalidPressureCount}</strong><small>次</small></div>
         </section>
@@ -121,7 +128,7 @@ export function ResultScreen({ caseId }: { caseId: string }) {
           <div>
             <Button variant="dark" onClick={() => void copyShare()}><Clipboard aria-hidden="true" size={16} />{copyState === "copied" ? "已复制无剧透文案" : "复制无剧透分享文案"}</Button>
             <Button variant="ghost" onClick={() => void restart()} disabled={restarting}><RotateCcw aria-hidden="true" size={16} />{restarting ? "正在重建档案…" : "重新审讯"}</Button>
-            <StartCaseButton label="生成下一案" variant="dark" />
+            <StartCaseButton label="生成下一案" variant="dark" mode="generated" />
           </div>
           {copyState === "manual" ? <label className="manual-copy"><span>浏览器未授权剪贴板，请手动复制：</span><textarea readOnly value={shareText} /></label> : null}
           {restartError ? <p className="field-error" role="alert">{restartError}</p> : null}

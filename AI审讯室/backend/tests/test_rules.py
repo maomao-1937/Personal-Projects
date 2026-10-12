@@ -2,6 +2,7 @@ import pytest
 from copy import deepcopy
 
 from app.domain.case_001 import CASE_001
+from app.domain.case_refined_v2 import REFINED_CASE_V2
 from app.domain.case_models import snapshot_from_legacy
 from app.domain.rules import (
     InvalidTurnError,
@@ -9,7 +10,13 @@ from app.domain.rules import (
     can_submit_report,
     evaluate_turn,
     initial_session,
+    detect_topics,
 )
+
+
+def test_detect_topics_recognizes_general_clock_times() -> None:
+    assert "时间" in detect_topics("为什么 22:34 还在打印文件？", REFINED_CASE_V2)
+    assert "时间" in detect_topics("你说晚上十点半已经离开？", REFINED_CASE_V2)
 
 
 def test_correct_evidence_and_topic_hits_lie_node() -> None:
@@ -113,9 +120,9 @@ def test_report_gate_requires_turns_evidence_and_effective_hit() -> None:
     assert can_submit_report(state) is True
 
 
-def test_eighth_turn_forces_report() -> None:
+def test_twelfth_turn_forces_report() -> None:
     state = initial_session("ses_test")
-    state.turn_count = 7
+    state.turn_count = 11
 
     outcome = evaluate_turn(
         state,
@@ -124,12 +131,12 @@ def test_eighth_turn_forces_report() -> None:
         evidence_id=None,
     )
 
-    assert outcome.state.turn_count == 8
+    assert outcome.state.turn_count == 12
     assert outcome.force_report is True
     assert outcome.state.stage == "report_required"
 
     with pytest.raises(TurnLimitReachedError):
-        evaluate_turn(outcome.state, "第九个问题", "calm", None)
+        evaluate_turn(outcome.state, "第十三个问题", "calm", None)
 
 
 def test_question_length_accepts_200_and_rejects_blank_or_201() -> None:

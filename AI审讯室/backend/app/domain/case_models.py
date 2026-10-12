@@ -6,8 +6,8 @@ from typing import Literal
 
 from pydantic import Field, field_validator, model_validator
 
-from app.domain.types import DomainModel
 from app.domain.case_intent import CaseIntent
+from app.domain.types import DomainModel
 
 
 ALLOWED_LIE_TOPICS = {
@@ -52,6 +52,9 @@ class SuspectDefinition(DomainModel):
     soft_spot: str = Field(min_length=4, max_length=120)
     soft_spot_keywords: list[str] = Field(min_length=1, max_length=5)
     soft_spot_acknowledgement: str = Field(min_length=6, max_length=160)
+    # V2 cases keep the opening testimony with the person it belongs to.  The
+    # top-level CaseSnapshot.initial_statement remains available for v1 clients.
+    initial_statement: str | None = Field(default=None, min_length=10, max_length=300)
 
     @field_validator("soft_spot_keywords")
     @classmethod
@@ -89,6 +92,8 @@ class LieNodeDefinition(DomainModel):
     defense_delta: int = Field(ge=-30, le=-1)
     unlock_evidence_ids: list[str] = Field(max_length=3)
     acknowledgement: str = Field(min_length=6, max_length=180)
+    # Missing on v1 snapshots means the legacy primary suspect.
+    suspect_id: str | None = Field(default=None, min_length=2, max_length=16)
 
     @field_validator("topics")
     @classmethod
@@ -129,9 +134,10 @@ class CaseSnapshot(DomainModel):
     content_rating: Literal["12+ 推理"] = "12+ 推理"
     suspect: SuspectDefinition
     initial_statement: str = Field(min_length=10, max_length=300)
+    suspects: list[SuspectDefinition] = Field(default_factory=list, max_length=5)
     public_facts: list[str] = Field(min_length=2, max_length=5)
-    evidence: list[EvidenceDefinition] = Field(min_length=5, max_length=5)
-    lie_nodes: list[LieNodeDefinition] = Field(min_length=3, max_length=3)
+    evidence: list[EvidenceDefinition] = Field(min_length=5, max_length=8)
+    lie_nodes: list[LieNodeDefinition] = Field(min_length=3, max_length=6)
     truth_options: list[CaseOption] = Field(min_length=3, max_length=3)
     motive_options: list[CaseOption] = Field(min_length=3, max_length=3)
     method_options: list[CaseOption] = Field(min_length=3, max_length=3)
@@ -140,6 +146,30 @@ class CaseSnapshot(DomainModel):
 
     @model_validator(mode="after")
     def validate_graph(self) -> "CaseSnapshot":
+        if not self.suspects:
+            self.suspects = [
+                self.suspect.model_copy(
+                    update={"initial_statement": self.initial_statement}
+                )
+            ]
+        else:
+            suspect_ids = [item.id for item in self.suspects]
+            if len(suspect_ids) != len(set(suspect_ids)):
+                raise ValueError("suspect ids must be unique")
+            if self.suspect.id not in suspect_ids:
+                raise ValueError("legacy primary suspect must exist in suspects")
+            for item in self.suspects:
+                if not item.initial_statement:
+                    if item.id == self.suspect.id:
+                        item.initial_statement = self.initial_statement
+                    else:
+                        raise ValueError("every v2 suspect requires an initial statement")
+
+        known_suspect_ids = {item.id for item in self.suspects}
+        for node in self.lie_nodes:
+            if node.suspect_id is not None and node.suspect_id not in known_suspect_ids:
+                raise ValueError(f"lie node {node.id} references unknown suspect")
+
         evidence_ids = [item.id for item in self.evidence]
         if len(evidence_ids) != len(set(evidence_ids)):
             raise ValueError("evidence ids must be unique")
@@ -211,7 +241,8 @@ class CaseSnapshot(DomainModel):
             if not 6 <= len(value.strip()) <= 360:
                 raise ValueError(f"reply template length is invalid for {key}")
             if key != "confession" and (
-                self.truth.summary in value or self.suspect.soft_spot in value
+                self.truth.summary in value
+                or any(item.soft_spot in value for item in self.suspects)
             ):
                 raise ValueError(f"reply template {key} reveals private truth")
 
@@ -243,13 +274,19 @@ class CaseSnapshot(DomainModel):
         return self
 
     def public_payload(self) -> dict:
+        private_fields = {
+            "soft_spot",
+            "soft_spot_keywords",
+            "soft_spot_acknowledgement",
+        }
         return {
             "caseId": self.case_id,
             "caseCode": self.case_code,
             "generationSource": self.source,
             "generationIntent": (
-                self.generation_intent.model_dump(by_alias=True)
-                if self.generation_intent is not None else None
+                self.generation_intent.model_dump(by_alias=True, mode="json")
+                if self.generation_intent
+                else None
             ),
             "title": self.title,
             "subtitle": self.subtitle,
@@ -260,14 +297,19 @@ class CaseSnapshot(DomainModel):
             "suspect": self.suspect.model_dump(
                 by_alias=True,
                 mode="json",
-                exclude={
-                    "soft_spot",
-                    "soft_spot_keywords",
-                    "soft_spot_acknowledgement",
-                },
+                exclude=private_fields | {"initial_statement"},
             ),
             "initialStatement": self.initial_statement,
+            "suspects": [
+                item.model_dump(
+                    by_alias=True,
+                    mode="json",
+                    exclude=private_fields,
+                )
+                for item in self.suspects
+            ],
             "publicFacts": self.public_facts,
+            "evidenceCount": len(self.evidence),
             "evidence": [
                 item.model_dump(by_alias=True, mode="json")
                 for item in self.evidence
@@ -286,6 +328,20 @@ class CaseSnapshot(DomainModel):
                 for item in self.method_options
             ],
         }
+
+    def suspect_by_id(self, suspect_id: str | None) -> SuspectDefinition:
+        resolved_id = suspect_id or self.suspect.id
+        for item in self.suspects:
+            if item.id == resolved_id:
+                return item
+        raise ValueError(f"unknown suspect: {resolved_id}")
+
+    def lie_nodes_for(self, suspect_id: str) -> list[LieNodeDefinition]:
+        return [
+            node
+            for node in self.lie_nodes
+            if (node.suspect_id or self.suspect.id) == suspect_id
+        ]
 
 
 def snapshot_from_legacy(

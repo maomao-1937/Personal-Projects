@@ -69,10 +69,12 @@ describe("session helpers", () => {
 
   it("builds encoded routes for a generated case", () => {
     expect(caseRoutes("case_20260825_demo")).toEqual({
-      briefing: "/case/case_20260825_demo/briefing",
-      interrogate: "/case/case_20260825_demo/interrogate",
-      report: "/case/case_20260825_demo/report",
-      result: "/case/case_20260825_demo/result",
+      dossier: "/cases/case_20260825_demo",
+      briefing: "/cases/case_20260825_demo",
+      investigate: "/cases/case_20260825_demo/investigate",
+      interrogate: "/cases/case_20260825_demo/investigate",
+      report: "/cases/case_20260825_demo/report",
+      result: "/cases/case_20260825_demo/result",
     });
   });
 });

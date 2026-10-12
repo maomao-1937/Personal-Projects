@@ -72,7 +72,7 @@ export function ConfirmDialog({
         role="dialog"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <p className="eyebrow">FINAL REPORT / 最终确认</p>
+        <p className="eyebrow">结案报告 · 最终确认</p>
         <h2 id="confirm-dialog-title">{title}</h2>
         <p id="confirm-dialog-description" className="dialog-description">
           {description}

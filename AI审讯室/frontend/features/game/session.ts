@@ -42,10 +42,12 @@ export function withSession(path: string, sessionId: string): string {
 }
 
 export function caseRoutes(caseId: string) {
-  const root = `/case/${encodeURIComponent(caseId)}`;
+  const root = `/cases/${encodeURIComponent(caseId)}`;
   return {
-    briefing: `${root}/briefing`,
-    interrogate: `${root}/interrogate`,
+    dossier: root,
+    briefing: root,
+    investigate: `${root}/investigate`,
+    interrogate: `${root}/investigate`,
     report: `${root}/report`,
     result: `${root}/result`,
   };

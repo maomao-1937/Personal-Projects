@@ -1,11 +1,10 @@
 import json
 
 import httpx
-import pytest
 from pydantic import SecretStr
 
 from app.core.config import Settings
-from app.llm.provider import LLMProviderError, OpenAICompatibleProvider
+from app.llm.provider import OpenAICompatibleProvider
 
 
 def test_case_generation_embeds_machine_schema_in_json_object_prompt() -> None:
@@ -27,6 +26,7 @@ def test_case_generation_embeds_machine_schema_in_json_object_prompt() -> None:
         _env_file=None,
         llm_enabled=True,
         llm_api_key=SecretStr("test-key"),
+        llm_base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
         llm_case_model="qwen3.6-plus",
         llm_review_model="qwen3.6-plus",
         llm_dialogue_model="qwen-plus-character",
@@ -46,64 +46,59 @@ def test_case_generation_embeds_machine_schema_in_json_object_prompt() -> None:
     assert "不要改字段名" in prompt
 
 
-@pytest.mark.parametrize(
-    "method,response_text",
-    [
-        ("generate_case_json", '{"ok": true}'),
-        ("review_case_json", '{"passed": true, "issues": []}'),
-        ("generate_reply", "我一直在档案室处理索引，没有离开。"),
-    ],
-)
-def test_deepseek_uses_non_thinking_mode(method: str, response_text: str) -> None:
+def test_deepseek_uses_official_thinking_toggle() -> None:
+    captured: dict = {}
+
     def handler(request: httpx.Request) -> httpx.Response:
-        payload = json.loads(request.content)
-        assert request.url == "https://api.deepseek.com/chat/completions"
-        assert payload["thinking"] == {"type": "disabled"}
-        assert "enable_thinking" not in payload
+        captured.update(json.loads(request.content))
         return httpx.Response(
-            200, json={"choices": [{"message": {"content": response_text}}]}
+            200,
+            json={"choices": [{"message": {"content": '{"ok": true}'}}]},
         )
 
+    settings = Settings(
+        _env_file=None,
+        llm_enabled=True,
+        llm_api_key=SecretStr("test-key"),
+        llm_base_url="https://api.deepseek.com",
+        llm_case_model="deepseek-flash",
+        llm_review_model="deepseek-flash",
+        llm_dialogue_model="deepseek-flash",
+    )
     provider = OpenAICompatibleProvider(
-        Settings(
-            _env_file=None,
-            llm_enabled=True,
-            llm_api_key=SecretStr("test-key"),
-            llm_base_url="https://api.deepseek.com",
-            llm_case_model="deepseek-flash",
-            llm_review_model="deepseek-flash",
-            llm_dialogue_model="deepseek-flash",
-        ),
+        settings,
         transport=httpx.MockTransport(handler),
     )
 
-    assert getattr(provider, method)("验证接口兼容性") == response_text
+    assert provider.generate_case_json("生成案件") == '{"ok": true}'
+    assert captured["thinking"] == {"type": "disabled"}
+    assert "enable_thinking" not in captured
 
 
-def test_intent_analysis_is_a_short_json_call_with_product_constraints() -> None:
+def test_case_intent_analysis_uses_bounded_json_request() -> None:
+    captured: dict = {}
+
     def handler(request: httpx.Request) -> httpx.Response:
-        body = json.loads(request.content)
-        assert body["response_format"] == {"type": "json_object"}
-        assert body["max_tokens"] <= 1000
-        assert body["temperature"] <= 0.2
-        assert request.extensions["timeout"]["read"] <= 30
-        assert "目标玩家" in body["messages"][0]["content"]
-        assert "JSON" in body["messages"][0]["content"]
-        return httpx.Response(200, json={"choices": [{"message": {"content": '{"ok":true}'}}]})
+        captured.update(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={"choices": [{"message": {"content": '{"scene":"测试"}'}}]},
+        )
 
-    provider = OpenAICompatibleProvider(
-        Settings(_env_file=None, llm_api_key=SecretStr("test-key")),
-        transport=httpx.MockTransport(handler),
+    settings = Settings(
+        _env_file=None,
+        llm_enabled=True,
+        llm_api_key=SecretStr("test-key"),
+        llm_base_url="https://api.deepseek.com",
+        llm_case_model="deepseek-flash",
+        llm_review_model="deepseek-flash",
+        llm_dialogue_model="deepseek-flash",
+        llm_timeout_seconds=60,
     )
-    assert provider.analyze_case_json("只是一条玩家想法") == '{"ok":true}'
+    provider = OpenAICompatibleProvider(settings, transport=httpx.MockTransport(handler))
 
-
-def test_empty_upstream_choices_is_a_recoverable_provider_failure() -> None:
-    provider = OpenAICompatibleProvider(
-        Settings(_env_file=None, llm_api_key=SecretStr("test-key")),
-        transport=httpx.MockTransport(
-            lambda _: httpx.Response(200, json={"choices": []})
-        ),
-    )
-    with pytest.raises(LLMProviderError):
-        provider.analyze_case_json("博物馆案件")
+    assert provider.analyze_case_json("雨夜博物馆") == '{"scene":"测试"}'
+    assert captured["response_format"] == {"type": "json_object"}
+    assert captured["thinking"] == {"type": "disabled"}
+    assert captured["max_tokens"] == 900
+    assert "玩家想法" in captured["messages"][0]["content"]

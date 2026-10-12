@@ -79,12 +79,22 @@ def score_report(
     total = sum(breakdown.values())
     hit_ids = set(state.hit_lie_node_ids)
     hit = [
-        {"id": node.id, "claim": node.claim, "evidenceId": node.evidence_id}
+        {
+            "id": node.id,
+            "claim": node.claim,
+            "evidenceId": node.evidence_id,
+            "suspectId": node.suspect_id or resolved_case.suspect.id,
+        }
         for node in resolved_case.lie_nodes
         if node.id in hit_ids
     ]
     missed = [
-        {"id": node.id, "claim": node.claim, "evidenceId": node.evidence_id}
+        {
+            "id": node.id,
+            "claim": node.claim,
+            "evidenceId": node.evidence_id,
+            "suspectId": node.suspect_id or resolved_case.suspect.id,
+        }
         for node in resolved_case.lie_nodes
         if node.id not in hit_ids
     ]

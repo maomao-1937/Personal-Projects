@@ -82,6 +82,12 @@ def create_v1_router(
         payload = service.get_public_case(case_id)
         return _camelize(payload)
 
+    @router.get("/cases", response_model=list[PublicCaseResponse])
+    def list_cases(
+        _: AuthIdentity = Depends(require_identity),
+    ) -> list[dict]:
+        return service.list_public_cases()
+
     @router.post("/cases/generate", response_model=PublicCaseResponse)
     def generate_case(
         request: GenerateCaseRequest,
@@ -98,7 +104,7 @@ def create_v1_router(
     def fallback_case(
         _: AuthIdentity = Depends(require_identity),
     ) -> dict:
-        return service.get_public_case("001")
+        return service.get_public_case("refined-001-v2")
 
     @router.post(
         "/sessions",
@@ -132,6 +138,7 @@ def create_v1_router(
             request.tactic.value,
             request.evidence_id,
             request.request_id,
+            request.suspect_id,
             owner_id=identity.subject,
         )
         payload = _session_payload(outcome.state, service)
@@ -173,6 +180,23 @@ def _session_payload(state, service: GameService) -> dict:
         for item in case.evidence
         if item.id in discovered
     ]
+    public_suspects = case.public_payload()["suspects"]
+    payload["suspects"] = []
+    for suspect in public_suspects:
+        suspect_state = state.suspect_states.get(suspect["id"])
+        payload["suspects"].append(
+            {
+                **suspect,
+                "defense": suspect_state.defense if suspect_state else 72,
+                "defenseBand": (
+                    suspect_state.defense_band.value if suspect_state else "calm"
+                ),
+                "hostility": suspect_state.hostility if suspect_state else 0,
+                "invalidPressureCount": (
+                    suspect_state.invalid_pressure_count if suspect_state else 0
+                ),
+            }
+        )
     return payload
 
 

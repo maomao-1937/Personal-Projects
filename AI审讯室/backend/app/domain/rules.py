@@ -10,11 +10,12 @@ from app.domain.types import (
     DefenseBand,
     GameSessionState,
     Message,
+    SuspectSessionState,
     Tactic,
     TurnEvaluation,
 )
 
-MAX_TURNS = 8
+MAX_TURNS = 12
 
 TOPIC_KEYWORDS = {
     "时间": ("时间", "几点", "21:", "21：", "案发", "当晚", "那晚"),
@@ -58,6 +59,11 @@ def detect_topics(message: str, case: CaseSnapshot) -> set[str]:
         for topic, keywords in TOPIC_KEYWORDS.items()
         if any(keyword in message for keyword in keywords)
     }
+    if re.search(r"(?<!\d)(?:[01]?\d|2[0-3])[:：][0-5]\d(?!\d)", message) or re.search(
+        r"(?:凌晨|早上|上午|中午|下午|晚上)?[一二三四五六七八九十两\d]{1,3}点(?:半|[一二三四五六七八九十\d]{1,3}分)?",
+        message,
+    ):
+        topics.add("时间")
     # Generated cases may introduce their own concise topic labels. A literal
     # mention is deterministic and complements the common Chinese keywords.
     for node in case.lie_nodes:
@@ -79,24 +85,38 @@ def initial_session(
     case: CaseSnapshot | None = None,
 ) -> GameSessionState:
     resolved_case = case or MANUAL_CASE
+    primary_suspect_id = resolved_case.suspect.id
     state = GameSessionState(
         session_id=session_id,
         case_id=resolved_case.case_id,
+        max_turns=MAX_TURNS,
+        active_suspect_id=primary_suspect_id,
+        suspect_states={
+            item.id: SuspectSessionState(suspect_id=item.id)
+            for item in resolved_case.suspects
+        },
         discovered_evidence_ids=[item.id for item in resolved_case.evidence if item.public],
     )
-    state.messages.append(
-        Message(
-            id=f"msg_{uuid4().hex}",
-            role="suspect",
-            text=resolved_case.initial_statement,
-            turn=0,
+    for item in resolved_case.suspects:
+        state.messages.append(
+            Message(
+                id=f"msg_{uuid4().hex}",
+                role="suspect",
+                text=item.initial_statement or resolved_case.initial_statement,
+                turn=0,
+                suspect_id=item.id,
+            )
         )
-    )
     return state
 
 
-def _recent_questions(state: GameSessionState) -> list[str]:
-    questions = [message.text for message in state.messages if message.role == "detective"]
+def _recent_questions(state: GameSessionState, suspect_id: str) -> list[str]:
+    questions = [
+        message.text
+        for message in state.messages
+        if message.role == "detective"
+        and (message.suspect_id or state.active_suspect_id) == suspect_id
+    ]
     return questions[-2:]
 
 
@@ -104,11 +124,17 @@ def _matching_lie_node(
     case: CaseSnapshot,
     topics: set[str],
     evidence_id: str | None,
+    suspect_id: str,
 ) -> LieNodeDefinition | None:
     if not evidence_id:
         return None
     for node in case.lie_nodes:
-        if node.evidence_id == evidence_id and set(node.topics).issubset(topics):
+        node_suspect_id = node.suspect_id or case.suspect.id
+        if (
+            node_suspect_id == suspect_id
+            and node.evidence_id == evidence_id
+            and set(node.topics).issubset(topics)
+        ):
             return node
     return None
 
@@ -117,18 +143,25 @@ def _topic_lie_node(
     case: CaseSnapshot,
     topics: set[str],
     hit_ids: list[str],
+    suspect_id: str,
 ) -> LieNodeDefinition | None:
     for node in case.lie_nodes:
-        if node.id not in hit_ids and set(node.topics).issubset(topics):
+        node_suspect_id = node.suspect_id or case.suspect.id
+        if (
+            node_suspect_id == suspect_id
+            and node.id not in hit_ids
+            and set(node.topics).issubset(topics)
+        ):
             return node
     return None
 
 
-def _hits_soft_spot(message: str, case: CaseSnapshot) -> bool:
+def _hits_soft_spot(message: str, case: CaseSnapshot, suspect_id: str) -> bool:
     normalized_message = normalize_question(message)
+    suspect = case.suspect_by_id(suspect_id)
     return any(
         normalize_question(keyword) in normalized_message
-        for keyword in case.suspect.soft_spot_keywords
+        for keyword in suspect.soft_spot_keywords
     )
 
 
@@ -140,6 +173,7 @@ def _append_message(
     tactic: Tactic | None = None,
     evidence_id: str | None = None,
     evidence_effect: str = "none",
+    suspect_id: str | None = None,
 ) -> None:
     state.messages.append(
         Message(
@@ -150,6 +184,7 @@ def _append_message(
             tactic=tactic,
             evidence_id=evidence_id,
             evidence_effect=evidence_effect,
+            suspect_id=suspect_id,
         )
     )
 
@@ -159,6 +194,7 @@ def evaluate_turn(
     message: str,
     tactic: str | Tactic,
     evidence_id: str | None,
+    suspect_id: str | None = None,
     *,
     case: CaseSnapshot | None = None,
 ) -> TurnEvaluation:
@@ -166,8 +202,14 @@ def evaluate_turn(
     clean_message = message.strip()
     if not 1 <= len(clean_message) <= 200:
         raise InvalidTurnError("问题长度必须为 1–200 个字符。")
-    if state.turn_count >= MAX_TURNS or state.stage in {"report_required", "completed"}:
+    if state.turn_count >= state.max_turns or state.stage in {"report_required", "completed"}:
         raise TurnLimitReachedError("本局审讯回合已用完。")
+
+    resolved_suspect_id = suspect_id or state.active_suspect_id or resolved_case.suspect.id
+    try:
+        resolved_suspect = resolved_case.suspect_by_id(resolved_suspect_id)
+    except ValueError as exc:
+        raise InvalidTurnError("没有找到这名嫌疑人。") from exc
 
     try:
         tactic_value = tactic if isinstance(tactic, Tactic) else Tactic(tactic)
@@ -176,11 +218,22 @@ def evaluate_turn(
 
     next_state = state.model_copy(deep=True)
     next_state.stage = "interrogation"
+    next_state.active_suspect_id = resolved_suspect_id
+    suspect_state = next_state.suspect_states.setdefault(
+        resolved_suspect_id,
+        SuspectSessionState(suspect_id=resolved_suspect_id),
+    )
+    # Keep the legacy fields usable for clients that have not adopted
+    # suspectStates yet.
+    next_state.defense = suspect_state.defense
+    next_state.hostility = suspect_state.hostility
+    next_state.defense_band = suspect_state.defense_band
     next_state.turn_count += 1
     next_state.selected_evidence_id = evidence_id
     normalized = normalize_question(clean_message)
     repeated = normalized in {
-        normalize_question(item) for item in _recent_questions(state)
+        normalize_question(item)
+        for item in _recent_questions(state, resolved_suspect_id)
     }
     topics = detect_topics(clean_message, resolved_case)
     evidence_effect = "none"
@@ -198,15 +251,20 @@ def evaluate_turn(
     if repeated:
         response_key = "repeated"
     else:
-        matching_node = _matching_lie_node(resolved_case, topics, evidence_id)
+        matching_node = _matching_lie_node(
+            resolved_case,
+            topics,
+            evidence_id,
+            resolved_suspect_id,
+        )
         if matching_node and matching_node.id not in next_state.hit_lie_node_ids:
             evidence_effect = "effective"
             node_id = matching_node.id
             next_state.hit_lie_node_ids.append(node_id)
             if evidence_id not in next_state.effective_evidence_ids:
                 next_state.effective_evidence_ids.append(evidence_id)
-            next_state.defense = max(
-                0, next_state.defense + matching_node.defense_delta
+            suspect_state.defense = max(
+                0, suspect_state.defense + matching_node.defense_delta
             )
             for unlocked in matching_node.unlock_evidence_ids:
                 if unlocked not in next_state.discovered_evidence_ids:
@@ -218,6 +276,7 @@ def evaluate_turn(
                 source=f"第 {next_state.turn_count} 回合回答 / 证据 {evidence_id}",
                 turn=next_state.turn_count,
                 kind="contradiction",
+                suspect_id=resolved_suspect_id,
             )
             next_state.claims.append(claim)
             new_claim_ids.append(claim.id)
@@ -226,27 +285,35 @@ def evaluate_turn(
             evidence_effect = "used_ineffective"
             response_key = "irrelevant"
         elif tactic_value == Tactic.PRESSURE:
-            next_state.hostility = min(100, next_state.hostility + 3)
+            suspect_state.hostility = min(100, suspect_state.hostility + 3)
+            suspect_state.invalid_pressure_count += 1
             next_state.invalid_pressure_count += 1
             invalid_pressure = True
             response_key = "pressure"
         elif tactic_value == Tactic.EMPATHY and _hits_soft_spot(
-            clean_message, resolved_case
+            clean_message, resolved_case, resolved_suspect_id
         ):
-            if not any(claim.id == "C_SOFT" for claim in next_state.claims):
-                next_state.defense = max(0, next_state.defense - 5)
+            soft_claim_id = f"C_SOFT_{resolved_suspect_id}"
+            if not any(claim.id == soft_claim_id for claim in next_state.claims):
+                suspect_state.defense = max(0, suspect_state.defense - 5)
                 claim = Claim(
-                    id="C_SOFT",
-                    text=resolved_case.suspect.soft_spot_acknowledgement,
+                    id=soft_claim_id,
+                    text=resolved_suspect.soft_spot_acknowledgement,
                     source=f"第 {next_state.turn_count} 回合回答",
                     turn=next_state.turn_count,
                     kind="empathy",
+                    suspect_id=resolved_suspect_id,
                 )
                 next_state.claims.append(claim)
                 new_claim_ids.append(claim.id)
             response_key = "empathy"
-        elif _topic_lie_node(resolved_case, topics, next_state.hit_lie_node_ids):
-            next_state.defense = max(0, next_state.defense - 2)
+        elif _topic_lie_node(
+            resolved_case,
+            topics,
+            next_state.hit_lie_node_ids,
+            resolved_suspect_id,
+        ):
+            suspect_state.defense = max(0, suspect_state.defense - 2)
             response_key = "probing"
 
         if (
@@ -257,15 +324,20 @@ def evaluate_turn(
             next_state.discovered_evidence_ids.append("E03")
             new_evidence_ids.append("E03")
 
-    next_state.defense_band = defense_band(next_state.defense)
+    suspect_state.defense_band = defense_band(suspect_state.defense)
+    next_state.defense = suspect_state.defense
+    next_state.hostility = suspect_state.hostility
+    next_state.defense_band = suspect_state.defense_band
+    suspect_nodes = resolved_case.lie_nodes_for(resolved_suspect_id)
     if (
-        next_state.defense <= 14
-        and len(next_state.hit_lie_node_ids) == len(resolved_case.lie_nodes)
+        suspect_state.defense <= 14
+        and suspect_nodes
+        and all(node.id in next_state.hit_lie_node_ids for node in suspect_nodes)
     ):
         response_key = "confession"
 
     next_state.can_submit_report = can_submit_report(next_state)
-    if next_state.turn_count >= MAX_TURNS:
+    if next_state.turn_count >= next_state.max_turns:
         next_state.stage = "report_required"
     elif next_state.can_submit_report:
         next_state.stage = "report_ready"
@@ -278,8 +350,14 @@ def evaluate_turn(
         tactic=tactic_value,
         evidence_id=evidence_id,
         evidence_effect=evidence_effect,
+        suspect_id=resolved_suspect_id,
     )
-    _append_message(next_state, role="suspect", text=reply)
+    _append_message(
+        next_state,
+        role="suspect",
+        text=reply,
+        suspect_id=resolved_suspect_id,
+    )
 
     return TurnEvaluation(
         state=next_state,
@@ -289,5 +367,5 @@ def evaluate_turn(
         new_claim_ids=new_claim_ids,
         is_repeated=repeated,
         invalid_pressure=invalid_pressure,
-        force_report=next_state.turn_count >= MAX_TURNS,
+        force_report=next_state.turn_count >= next_state.max_turns,
     )

@@ -4,22 +4,24 @@ import { BookOpen, FileStack, NotebookPen, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 
-type DrawerTab = "case" | "evidence" | "notes";
+type DrawerTab = "case" | "evidence" | "timeline";
 
 const TABS: Array<{ id: DrawerTab; label: string; icon: typeof BookOpen }> = [
   { id: "case", label: "档案", icon: BookOpen },
   { id: "evidence", label: "证据", icon: FileStack },
-  { id: "notes", label: "笔记", icon: NotebookPen },
+  { id: "timeline", label: "时间线", icon: NotebookPen },
 ];
 
 export function MobileDrawer({
   caseContent,
   evidenceContent,
   notesContent,
+  timelineContent,
 }: {
   caseContent: ReactNode;
   evidenceContent: ReactNode;
   notesContent: ReactNode;
+  timelineContent?: ReactNode;
 }) {
   const [tab, setTab] = useState<DrawerTab | null>(null);
   const drawerRef = useRef<HTMLElement>(null);
@@ -55,7 +57,7 @@ export function MobileDrawer({
     };
   }, [tab]);
 
-  const content = tab === "case" ? caseContent : tab === "evidence" ? evidenceContent : notesContent;
+  const content = tab === "case" ? caseContent : tab === "evidence" ? evidenceContent : (timelineContent ?? notesContent);
 
   return (
     <>
@@ -86,7 +88,7 @@ export function MobileDrawer({
             onMouseDown={(event) => event.stopPropagation()}
           >
             <header>
-              <p className="eyebrow">CASE MATERIAL</p>
+              <p className="eyebrow">调查资料</p>
               <button ref={closeRef} type="button" aria-label="关闭资料抽屉" onClick={() => setTab(null)}>
                 <X aria-hidden="true" size={20} />
               </button>

@@ -24,14 +24,34 @@ class DuplicateTurnRequestError(RuntimeError):
     pass
 
 
-CURRENT_SESSION_SCHEMA_VERSION = 1
+CURRENT_SESSION_SCHEMA_VERSION = 2
 
 
 def _migrate_v0_to_v1(payload: dict) -> dict:
     return {**payload, "schemaVersion": 1}
 
 
-SESSION_MIGRATIONS = {0: _migrate_v0_to_v1}
+def _migrate_v1_to_v2(payload: dict) -> dict:
+    active_suspect_id = payload.get("activeSuspectId") or "S01"
+    suspect_states = payload.get("suspectStates") or {
+        active_suspect_id: {
+            "suspectId": active_suspect_id,
+            "defense": payload.get("defense", 72),
+            "hostility": payload.get("hostility", 0),
+            "defenseBand": payload.get("defenseBand", "calm"),
+            "invalidPressureCount": payload.get("invalidPressureCount", 0),
+        }
+    }
+    return {
+        **payload,
+        "schemaVersion": 2,
+        "maxTurns": payload.get("maxTurns", 8),
+        "activeSuspectId": active_suspect_id,
+        "suspectStates": suspect_states,
+    }
+
+
+SESSION_MIGRATIONS = {0: _migrate_v0_to_v1, 1: _migrate_v1_to_v2}
 
 
 def decode_session_state(raw_payload: str) -> GameSessionState:

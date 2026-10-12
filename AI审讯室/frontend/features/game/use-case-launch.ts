@@ -92,7 +92,6 @@ export function useCaseLaunch({
   const openCase = useCallback(
     async (caseId: string) => {
       const session = await gameApi.createSession(caseId);
-      if (!mountedRef.current) return;
       clearSessionId();
       storeSessionId(session.sessionId);
       if (mountedRef.current) setLifecycleState("LOCKING");
@@ -118,7 +117,7 @@ export function useCaseLaunch({
     setLifecycleState("ERROR");
   }, []);
 
-  const startGenerated = useCallback(async (prompt?: string) => {
+  const startGenerated = useCallback(async () => {
     if (busyRef.current) return;
     busyRef.current = true;
     setBusy(true);
@@ -127,9 +126,7 @@ export function useCaseLaunch({
     setLifecycleState("CEREMONY");
     const phaseTimers = startPhaseTimers();
     let generationSettled = false;
-    const generation = (prompt === undefined
-      ? gameApi.generateCase()
-      : gameApi.generateCase({ prompt: prompt.trim() })).then(
+    const generation = gameApi.generateCase().then(
       (value) => ({ ok: true as const, value }),
       (reason: unknown) => ({ ok: false as const, reason }),
     ).finally(() => {
@@ -140,7 +137,6 @@ export function useCaseLaunch({
       await wait(introDurationMs);
       if (!generationSettled && mountedRef.current) setLifecycleState("GENERATING");
       const outcome = await generation;
-      if (!mountedRef.current) return;
       if (!outcome.ok) throw outcome.reason;
       await openCase(outcome.value.caseId);
     } catch (reason) {
@@ -160,7 +156,6 @@ export function useCaseLaunch({
     const phaseTimers = startPhaseTimers();
     try {
       const fallback = await gameApi.getFallbackCase();
-      if (!mountedRef.current) return;
       await openCase(fallback.caseId);
     } catch (reason) {
       fail(reason, "固定案件暂时无法调取，请重试。");

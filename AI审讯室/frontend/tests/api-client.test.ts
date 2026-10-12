@@ -9,18 +9,6 @@ import {
 } from "@/features/game/api";
 
 describe("apiRequest", () => {
-  it("posts the case prompt with enough time for analysis and generation", async () => {
-    const timer = vi.spyOn(window, "setTimeout");
-    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ caseId: "case_idea" }), { status: 200 }));
-    vi.stubGlobal("fetch", fetcher);
-    try {
-      await gameApi.generateCase({ prompt: "博物馆失窃" });
-      expect(fetcher).toHaveBeenCalledWith("/api/v1/cases/generate", expect.objectContaining({
-        method: "POST", body: JSON.stringify({ prompt: "博物馆失窃" }),
-      }));
-      expect(timer).toHaveBeenCalledWith(expect.any(Function), 150_000);
-    } finally { timer.mockRestore(); vi.unstubAllGlobals(); }
-  });
   it("returns parsed JSON on success", async () => {
     const fetcher = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ status: "ok" }), {
@@ -90,6 +78,25 @@ describe("apiRequest", () => {
 
     await expect(apiRequest("/health", {}, fetcher as typeof fetch, 1)).rejects.toEqual(
       new AppError("TIMEOUT_ERROR", "案件服务响应超时，请重试。", 0),
+    );
+  });
+
+  it("sends a player-authored case direction to the generation API", async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ caseId: "case_test" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+
+    await gameApi.generateCase({ prompt: "雨夜博物馆的设计稿失踪", difficulty: "hard" });
+
+    expect(fetcher).toHaveBeenCalledWith(
+      "/api/v1/cases/generate",
+      expect.objectContaining({
+        body: JSON.stringify({ prompt: "雨夜博物馆的设计稿失踪", difficulty: "hard" }),
+      }),
     );
   });
 });

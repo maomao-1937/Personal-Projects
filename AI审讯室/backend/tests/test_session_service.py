@@ -117,7 +117,9 @@ def test_v0_session_payload_is_migrated_and_future_version_is_rejected(
         payload.pop("schemaVersion")
         record.state_json = json.dumps(payload, ensure_ascii=False)
 
-    assert service.get_session(session.session_id).schema_version == 1
+    migrated = service.get_session(session.session_id)
+    assert migrated.schema_version == 2
+    assert migrated.active_suspect_id == "S01"
 
     with service.repository.database.session() as db_session:
         record = db_session.get(SessionRecord, session.session_id)
