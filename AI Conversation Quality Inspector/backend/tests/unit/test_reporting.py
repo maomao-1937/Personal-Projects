@@ -20,10 +20,9 @@ from app.services.reporting import SAFE_STOP_REPLY, build_report
 DIMENSION_NAMES = tuple(DimensionName)
 
 
-def parsed_transcript(*, explicit_stop: bool = False) -> ParsedTranscript:
-    customer_text = (
-        "这个价格有些贵，不要再联系我。" if explicit_stop else "这个价格有些贵，我还需要比较一下。"
-    )
+def parsed_transcript(
+    *, customer_text: str = "这个价格有些贵，我还需要比较一下。"
+) -> ParsedTranscript:
     return ParsedTranscript(
         qa_type=QAType.SALES,
         turns=(
@@ -169,10 +168,19 @@ def test_major_issue_must_reference_known_turn() -> None:
         build_report(result, parsed_transcript())
 
 
-def test_explicit_stop_request_overrides_model_reply() -> None:
+@pytest.mark.parametrize(
+    "customer_text",
+    [
+        "这个价格有些贵，不要再联系我。",
+        "不用了，别再联系。",
+        "不要给我打电话，我不考虑了。",
+        "请不要再发消息，谢谢。",
+    ],
+)
+def test_explicit_stop_request_overrides_model_reply(customer_text: str) -> None:
     result = build_report(
         model_result(scores=[80, 70, 60, 50]),
-        parsed_transcript(explicit_stop=True),
+        parsed_transcript(customer_text=customer_text),
     )
 
     assert result.suggested_reply == SAFE_STOP_REPLY
