@@ -56,7 +56,7 @@ def client(db_session_factory, monkeypatch: pytest.MonkeyPatch) -> Iterator[Test
     monkeypatch.setattr(
         portraits.ai_service,
         "generate_portrait_sync",
-        lambda selfie_path, prompt: b"\x89PNG\r\n\x1a\nmock-image",
+        lambda selfie_path, prompt, negative_prompt="", reference_path=None, identity_paths=None: b"\x89PNG\r\n\x1a\nmock-image",
     )
 
     test_client = TestClient(app)

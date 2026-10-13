@@ -26,8 +26,10 @@ class Settings(BaseSettings):
 
     AI_API_KEY: str = ""
     AI_API_BASE_URL: str = "https://ark.cn-beijing.volces.com"
-    AI_MODEL: str = "doubao-seedream-4.5"
+    AI_MODEL: str = "doubao-seedream-4-5-251128"
     AI_IMAGE_SIZE: str = "2K"
+    AI_RESPONSE_FORMAT: str = "url"
+    AI_WATERMARK: bool = True
 
     DEEPSEEK_API_KEY: str = ""
     DEEPSEEK_API_BASE_URL: str = "https://api.deepseek.com"

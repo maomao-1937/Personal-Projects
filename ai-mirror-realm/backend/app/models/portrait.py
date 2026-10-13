@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey
+from sqlalchemy import Column, String, DateTime, Text, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -15,6 +15,9 @@ class PortraitTask(Base):
     user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
     style_id = Column(String, ForeignKey("styles.id"), nullable=False, index=True)
     selfie_url = Column(Text, nullable=False)
+    selfie_urls = Column(JSON, nullable=True)
+    profile_name = Column(String(30), nullable=True)
+    user_prompt = Column(Text, nullable=True)
     result_url = Column(Text, nullable=True)
     status = Column(String(20), default="pending", nullable=False, index=True)
     error_message = Column(Text, nullable=True)

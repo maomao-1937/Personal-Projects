@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 import { Pause, Play } from 'lucide-react';
+import { StylePreview } from './StylePreview';
 import styles from './AccessShowcase.module.css';
 
 const frames = [
-  { src: '/style-previews/zhichang.jpg', label: '职场写真' },
-  { src: '/style-previews/rixi.jpg', label: '日系写真' },
-  { src: '/style-previews/hunsha.jpg', label: '轻婚纱像' },
+  { src: 'catalog:career:0', label: '经典证件照' },
+  { src: 'catalog:women:3', label: '昭和樱花梦' },
+  { src: 'catalog:women:0', label: '白纱婚礼' },
 ] as const;
 
 const FRAME_DURATION = 5600;
@@ -60,14 +60,11 @@ export function AccessShowcase() {
   return (
     <section ref={sectionRef} className={`relative h-56 shrink-0 overflow-hidden bg-stage text-white sm:h-72 lg:h-auto lg:min-h-[calc(100vh-64px)] ${!playing ? styles.stopped : ''}`} aria-label="动态写真效果示例">
       {frames.map((frame, index) => (
-        <Image
+        <StylePreview
           key={frame.src}
           src={frame.src}
           alt=""
           aria-hidden="true"
-          fill
-          priority={index === 0}
-          loading={index === 0 ? undefined : 'eager'}
           sizes="(max-width: 1023px) 100vw, 50vw"
           className={`${styles.image} ${index === activeIndex ? styles.activeImage : ''}`}
         />

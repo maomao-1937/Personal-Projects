@@ -8,23 +8,14 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-# 通用负向提示词，适用于所有写真风格
-DEFAULT_NEGATIVE_PROMPT = (
-    "extra limbs, extra fingers, extra arms, extra legs, deformed hands, mutated hands, "
-    "bad anatomy, bad proportions, long neck, blurry, lowres, low quality, worst quality, "
-    "jpeg artifacts, watermark, text, logo, signature, cropped, out of frame, "
-    "duplicate, clone, distorted face, asymmetric face, cross-eyed, "
-    "ugly, deformed, disfigured, poorly drawn face, poorly drawn hands, "
-    "malformed limbs, missing fingers, missing limbs, fused fingers, too many fingers"
-)
-
-
 class AIService:
     def __init__(self):
         self.api_key = settings.AI_API_KEY
         self.base_url = settings.AI_API_BASE_URL.rstrip("/")
         self.model = settings.AI_MODEL
         self.image_size = getattr(settings, "AI_IMAGE_SIZE", "2K")
+        self.response_format = settings.AI_RESPONSE_FORMAT
+        self.watermark = settings.AI_WATERMARK
 
     @property
     def is_configured(self) -> bool:
@@ -34,7 +25,18 @@ class AIService:
     def is_tokenhub_hunyuan(self) -> bool:
         return "tokenhub.tencentmaas.com" in self.base_url or self.model == "hy-image-v3"
 
-    def _build_request(self, selfie_path: Path, prompt: str, negative_prompt: str):
+    @property
+    def supports_template_reference(self) -> bool:
+        return not self.is_tokenhub_hunyuan and self.model.startswith("doubao-seedream-")
+
+    def _build_request(
+        self,
+        selfie_path: Path,
+        prompt: str,
+        negative_prompt: str,
+        reference_path: Path | None = None,
+        identity_paths: list[Path] | None = None,
+    ):
         if self.is_tokenhub_hunyuan:
             image_base64 = base64.b64encode(selfie_path.read_bytes()).decode()
             size = self.image_size if "x" in self.image_size.lower() else "768x1280"
@@ -49,18 +51,31 @@ class AIService:
                 },
             )
 
+        image = self._encode_image(selfie_path)
+        if self.supports_template_reference:
+            identities = identity_paths or [selfie_path]
+            if len(identities) > 9:
+                raise ValueError("最多支持9张身份照片")
+            references = [self._encode_image(Path(path)) for path in identities]
+            if reference_path is not None:
+                references.append(self._encode_image(Path(reference_path)))
+            image = references if len(references) > 1 else references[0]
+
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "image": image,
+            "size": self.image_size,
+            "response_format": self.response_format,
+            "sequential_image_generation": "disabled",
+            "stream": False,
+            "watermark": self.watermark,
+        }
+        if negative_prompt:
+            payload["negative_prompt"] = negative_prompt
         return (
             f"{self.base_url}/api/v3/images/generations",
-            {
-                "model": self.model,
-                "prompt": prompt,
-                "image": self._encode_image(selfie_path),
-                "size": self.image_size,
-                "n": 1,
-                "response_format": "b64_json",
-                "negative_prompt": negative_prompt or DEFAULT_NEGATIVE_PROMPT,
-                "sequential_image_generation": "disabled",
-            },
+            payload,
         )
 
     async def generate_portrait(
@@ -68,6 +83,8 @@ class AIService:
         selfie_path: Path,
         prompt: str,
         negative_prompt: str = "",
+        reference_path: Path | None = None,
+        identity_paths: list[Path] | None = None,
     ) -> bytes:
         """异步生成写真（图生图）
 
@@ -76,7 +93,7 @@ class AIService:
         if not self.is_configured:
             raise RuntimeError("AI API Key 未配置")
 
-        endpoint, payload = self._build_request(selfie_path, prompt, negative_prompt)
+        endpoint, payload = self._build_request(selfie_path, prompt, negative_prompt, reference_path, identity_paths)
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -128,6 +145,8 @@ class AIService:
         selfie_path,
         prompt: str,
         negative_prompt: str = "",
+        reference_path: Path | None = None,
+        identity_paths: list[Path] | None = None,
     ) -> bytes:
         """同步生成写真（图生图）—— 供 BackgroundTasks 使用
 
@@ -138,7 +157,7 @@ class AIService:
         if not self.is_configured:
             raise RuntimeError("AI API Key 未配置")
 
-        endpoint, payload = self._build_request(path, prompt, negative_prompt)
+        endpoint, payload = self._build_request(path, prompt, negative_prompt, reference_path, identity_paths)
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",

@@ -1,14 +1,14 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import type { MergedStyle } from '@/hooks/useStyles';
+import { StylePreview } from './StylePreview';
 
 interface StyleCardProps {
   style: MergedStyle;
   priority?: boolean;
 }
 
-export default function StyleCard({ style, priority = false }: StyleCardProps) {
+export default function StyleCard({ style }: StyleCardProps) {
   return (
     <Link
       href={`/styles/${encodeURIComponent(style.id)}`}
@@ -17,11 +17,10 @@ export default function StyleCard({ style, priority = false }: StyleCardProps) {
     >
       <div className="photo-frame aspect-[3/4]">
         {style.previewImage ? (
-          <Image
+          <StylePreview
             src={style.previewImage}
             alt={`${style.name}写真模板预览`}
             fill
-            priority={priority}
             sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw"
             className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.025]"
           />

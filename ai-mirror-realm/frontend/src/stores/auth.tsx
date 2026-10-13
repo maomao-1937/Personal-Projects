@@ -21,7 +21,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const PUBLIC_PATHS = ['/', '/access', '/login', '/register', '/styles'];
+const PUBLIC_PATHS = ['/', '/studio', '/access', '/login', '/register', '/styles'];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.includes(pathname) || pathname.startsWith('/styles/');

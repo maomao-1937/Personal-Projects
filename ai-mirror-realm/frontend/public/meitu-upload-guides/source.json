@@ -1,0 +1,37 @@
+{
+  "provenance": {
+    "evidence_id": "ev_647fc37b16872bc048c0fed200786e6e295812bcb412cdc273261649f949a115",
+    "source_url": "https://aiportrait.meitu.com/home",
+    "tool": "REA login-browser-scenario",
+    "captured_date": "2026-10-12"
+  },
+  "items": [
+    {
+      "filename": "full-face.png",
+      "preview_url": "/meitu-upload-guides/full-face.png",
+      "source_url": "https://aiportrait.meitu.com/_next/static/media/fullFacePhoto.8a5942f5.png",
+      "sha256": "01d2bad11e641077a0ad267b1dd7de98d57de944ca0079c85c1bcae41c557bd4",
+      "width": 318,
+      "height": 384,
+      "bytes": 121641
+    },
+    {
+      "filename": "expressions.png",
+      "preview_url": "/meitu-upload-guides/expressions.png",
+      "source_url": "https://aiportrait.meitu.com/_next/static/media/multiExpression.73e8bd60.png",
+      "sha256": "dbefe76a4130c67a268e18358bc919df016a556928d9b9f86cc38e038ef56ebb",
+      "width": 318,
+      "height": 387,
+      "bytes": 194257
+    },
+    {
+      "filename": "backgrounds.png",
+      "preview_url": "/meitu-upload-guides/backgrounds.png",
+      "source_url": "https://aiportrait.meitu.com/_next/static/media/multiBackground.51a626e8.png",
+      "sha256": "8681c11340f3064338cf7d117d0208779f1616fa99c35a8260c7b096ef58be87",
+      "width": 318,
+      "height": 387,
+      "bytes": 202337
+    }
+  ]
+}

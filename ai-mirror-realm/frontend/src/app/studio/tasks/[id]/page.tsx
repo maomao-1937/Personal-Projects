@@ -1,128 +1,222 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { AlertCircle, Check, Download, Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Check, Download, Loader2, Maximize2, RefreshCw, Trash2, X } from 'lucide-react';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { Button } from '@/components/ui/Button';
+import { PortraitShell } from '@/components/PortraitShell';
 import { useToast } from '@/contexts/ToastContext';
-import { CUSTOM_STYLE_ID, deletePortrait, downloadProtectedImage, getErrorMessage, getPortrait, getPortraitStatus, isNotFoundError, type PortraitRecord } from '@/lib/api';
 import { useStyles } from '@/hooks/useStyles';
-import { useAuth } from '@/stores/auth';
+import { CUSTOM_STYLE_ID, deletePortrait, downloadProtectedImage, getErrorMessage, getPortrait, getPortraitStatus, getProfiles, getSelfiePreview, isNotFoundError, selfiePreviewUrl, type FaceProfileRecord, type PortraitRecord } from '@/lib/api';
 
-const styleStorageKey = (userId: string) => `ai-mirror:studio:${userId}:style-id`;
 type LoadError = 'not-found' | 'network' | null;
+const buttonClass = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-45';
+const primaryClass = `${buttonClass} bg-[#171717] text-[#f9dbca] hover:bg-[#333333]`;
+const secondaryClass = `${buttonClass} border border-[#e5e5e5] bg-white text-[#333333] hover:bg-[#f7f7f7]`;
+const runningStatus = (status: PortraitRecord['status']) => status === 'pending' || status === 'processing';
+const sourcePhotos = (task: PortraitRecord) => task.selfie_urls?.length ? task.selfie_urls : task.selfie_url ? [task.selfie_url] : [];
+
+function formatDate(value: string) {
+  const timestamp = value.trim();
+  const date = new Date(/(?:z|[+-]\d{2}:?\d{2})$/i.test(timestamp) ? timestamp : `${timestamp}Z`);
+  if (Number.isNaN(date.getTime())) return '时间暂不可用';
+  return date.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
+}
 
 function TaskContent() {
-  const params = useParams<{ id: string }>();
-  const taskId = params.id;
+  const { id: taskId } = useParams<{ id: string }>();
   const router = useRouter();
   const { showToast } = useToast();
-  const { user } = useAuth();
   const { styles } = useStyles();
   const [task, setTask] = useState<PortraitRecord | null>(null);
+  const [profiles, setProfiles] = useState<FaceProfileRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<LoadError>(null);
+  const [pollError, setPollError] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [downloading, setDownloading] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [preview, setPreview] = useState<'result' | 'original' | null>(null);
+  const [previewPhotoIndex, setPreviewPhotoIndex] = useState(0);
 
   useEffect(() => {
     let active = true;
+    getProfiles().then((data) => { if (active) setProfiles(data); }).catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    let latestStatus: PortraitRecord['status'] | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let busy = false;
     const controller = new AbortController();
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const fail = (reason: unknown) => { if (!active || controller.signal.aborted) return; setLoadError(isNotFoundError(reason) ? 'not-found' : 'network'); setLoading(false); };
+    setRefreshing(true); setLoadError(null); setPollError('');
+    const schedule = () => {
+      if (active && !document.hidden && latestStatus && runningStatus(latestStatus)) timer = setTimeout(() => void poll(), 2500);
+    };
     const poll = async () => {
+      if (!active || busy || document.hidden || !latestStatus || !runningStatus(latestStatus)) return;
+      busy = true;
       try {
         const status = await getPortraitStatus(taskId, controller.signal);
         if (!active) return;
-        setTask((current) => current ? { ...current, ...status } : status);
-        if (status.status === 'pending' || status.status === 'processing') timer = setTimeout(() => void poll(), 2500);
-      } catch (reason) { fail(reason); }
+        latestStatus = status.status;
+        setTask((current) => current ? { ...current, ...status } : current);
+        setPollError('');
+      } catch (reason) {
+        if (!active || controller.signal.aborted) return;
+        if (isNotFoundError(reason)) { setLoadError('not-found'); latestStatus = undefined; }
+        else setPollError('状态更新暂时中断，正在重新连接。任务仍在继续。');
+      } finally { busy = false; schedule(); }
     };
-    setLoading(true); setLoadError(null);
-    getPortrait(taskId).then((portrait) => { if (!active) return; setTask(portrait); setLoading(false); if (portrait.status === 'pending' || portrait.status === 'processing') void poll(); }).catch(fail);
-    return () => { active = false; controller.abort(); if (timer) clearTimeout(timer); };
+    const visibility = () => {
+      if (timer) clearTimeout(timer);
+      if (!document.hidden) void poll();
+    };
+    getPortrait(taskId).then((data) => {
+      if (!active) return;
+      setTask(data); latestStatus = data.status; setLoading(false); setRefreshing(false); schedule();
+    }).catch((reason) => {
+      if (active) { setLoadError(isNotFoundError(reason) ? 'not-found' : 'network'); setLoading(false); setRefreshing(false); }
+    });
+    document.addEventListener('visibilitychange', visibility);
+    return () => { active = false; controller.abort(); if (timer) clearTimeout(timer); document.removeEventListener('visibilitychange', visibility); };
   }, [refreshKey, taskId]);
 
-  const style = useMemo(() => styles.find((item) => item.id === task?.style_id), [styles, task?.style_id]);
-  const styleName = task?.style_id === CUSTOM_STYLE_ID ? '自定义创作' : style?.name || '所选主题';
-  const download = async () => {
-    if (!task?.result_url) return;
+  const theme = useMemo(() => styles.find((style) => style.id === task?.style_id), [styles, task?.style_id]);
+  const name = task?.style_id === CUSTOM_STYLE_ID ? '自由创作' : theme?.name || task?.style_name || '写真创作';
+  const save = async () => {
+    if (!task?.result_url || downloading) return;
     setDownloading(true);
-    try { await downloadProtectedImage(task.result_url, `AI镜界-${task.id.slice(0, 8)}`); }
-    catch (reason) { showToast('error', getErrorMessage(reason, '下载失败，请稍后重试')); }
+    try { await downloadProtectedImage(task.result_url, `${name}-${task.id.slice(0, 8)}`); showToast('success', '已开始下载写真'); }
+    catch (reason) { showToast('error', getErrorMessage(reason, '保存失败，请再试一次。')); }
     finally { setDownloading(false); }
   };
-  const again = () => { if (task && user && task.style_id !== CUSTOM_STYLE_ID) localStorage.setItem(styleStorageKey(user.id), task.style_id); router.push('/studio'); };
+  const recreate = () => { if (task) router.push(`/studio?create=1&sourceTask=${encodeURIComponent(task.id)}`); };
   const remove = async () => {
-    if (!task || !window.confirm('删除后无法恢复，确定删除这张写真吗？')) return;
+    if (!task || deleting) return;
     setDeleting(true);
-    try { await deletePortrait(task.id); showToast('success', '写真已删除'); router.replace('/works'); }
-    catch (reason) { showToast('error', getErrorMessage(reason, '删除失败，请稍后重试')); setDeleting(false); }
+    try { await deletePortrait(task.id); showToast('success', '任务已删除'); router.replace('/works'); }
+    catch (reason) { showToast('error', getErrorMessage(reason, '删除失败，请再试一次。')); setDeleting(false); }
   };
 
-  if (loading) return <FullState icon={<Loader2 className="animate-spin" />} title="正在读取写真任务" copy="正在同步最新状态…" />;
-  if (loadError === 'not-found') return <FullState icon={<AlertCircle />} title="没有找到这个任务" copy="任务可能已删除，或不属于当前账户。" action={<Link href="/works" className="inline-flex min-h-12 items-center rounded-xl bg-brand px-6 font-medium text-white">返回我的写真</Link>} />;
-  if (loadError === 'network') return <FullState icon={<AlertCircle />} title="暂时无法读取任务" copy="网络连接失败，任务本身不会丢失。" action={<Button onClick={() => setRefreshKey((key) => key + 1)}>重新连接</Button>} />;
-  if (!task) return <FullState icon={<AlertCircle />} title="任务信息不完整" copy="请从我的写真重新进入。" action={<Link href="/works">返回我的写真</Link>} />;
+  if (loading || (refreshing && !task)) return <FullState icon={<Loader2 className="motion-safe:animate-spin" />} title="正在读取任务" copy="正在同步写真状态…" />;
+  if (loadError === 'not-found') return <FullState icon={<AlertCircle />} title="没有找到这条任务" copy="任务可能已删除，请返回列表查看其他写真。" action={<Link href="/works" className={primaryClass}>返回任务列表</Link>} />;
+  if (loadError === 'network') return <FullState icon={<AlertCircle />} title="暂时无法读取任务" copy="请检查网络连接后重新加载，已提交的任务不会丢失。" action={<button type="button" onClick={() => setRefreshKey((value) => value + 1)} className={primaryClass} disabled={refreshing}><RefreshCw size={16} aria-hidden="true" />重新加载</button>} />;
+  if (!task) return <FullState icon={<AlertCircle />} title="任务信息不完整" copy="请从任务列表重新进入。" action={<Link href="/works" className={primaryClass}>返回任务列表</Link>} />;
 
-  const running = task.status === 'pending' || task.status === 'processing';
-  const completed = task.status === 'completed' && task.result_url;
+  const running = runningStatus(task.status);
+  const completed = task.status === 'completed' && Boolean(task.result_url);
+  const photos = sourcePhotos(task);
+  const profileName = task.profile_name || profiles.find((profile) => profile.selfie_url === task.selfie_url)?.name || '本次上传照片';
   return (
-    <main className="min-h-screen bg-[#f6f6f4] pb-24 pt-16 lg:pb-7">
-      <div className="mx-auto w-[calc(100%-32px)] max-w-[1480px] py-5 sm:w-[calc(100%-48px)]">
-        <div className="flex items-end justify-between gap-4 pb-5">
-          <div><p className="text-[11px] font-semibold tracking-[0.18em] text-muted">AI 镜界 / 写真任务</p><h1 className="display-title mt-2 text-[28px] sm:text-[34px]">{completed ? '你的写真已经完成' : running ? '正在生成写真' : '这次生成未完成'}</h1></div>
-          <Link href="/works" className="hidden min-h-11 items-center text-sm font-medium text-muted hover:text-ink sm:inline-flex">返回我的写真</Link>
-        </div>
-        <div className="overflow-hidden rounded-[18px] border border-[#e8e7e4] bg-white shadow-[0_14px_45px_rgba(18,18,18,0.055)] lg:grid lg:h-[min(760px,calc(100dvh-174px))] lg:min-h-[610px] lg:grid-cols-[minmax(0,1.52fr)_minmax(370px,0.78fr)]">
-          <section className="flex min-h-[440px] flex-col bg-[#eae9e6] p-4 text-ink sm:min-h-[610px] sm:p-6 lg:min-h-0" aria-label="写真结果">
-            <div className="flex items-center justify-between text-xs font-medium text-[#575753]">
-              <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-brand" />写真画布</span>
-              <span>{completed ? '本次生成结果' : running ? '正在生成 · 非结果图' : '没有生成结果'}</span>
-            </div>
-            <div className="flex min-h-0 flex-1 items-center justify-center py-4">
-              {completed ? (
-                <figure className="relative h-[340px] w-[255px] overflow-hidden rounded-[14px] bg-[#242426] shadow-[0_24px_60px_rgba(20,20,20,0.18)] sm:h-[490px] sm:w-[368px] lg:aspect-[3/4] lg:h-full lg:max-h-[570px] lg:w-auto"><img src={task.result_url!} alt="生成完成的 AI 写真" className="h-full w-full object-contain" /><figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-4 pt-12 text-sm font-semibold text-white">你的写真 · 生成结果</figcaption></figure>
-              ) : running ? (
-                <div className="relative flex h-[340px] w-[255px] flex-col items-center justify-center overflow-hidden rounded-[14px] bg-[#242426] px-6 text-center shadow-[0_24px_60px_rgba(20,20,20,0.18)] sm:h-[490px] sm:w-[368px] lg:aspect-[3/4] lg:h-full lg:max-h-[570px] lg:w-auto">
-                  {style?.previewImage && <Image src={style.previewImage} alt="" fill sizes="(max-width:1023px) 255px, 440px" className="object-cover opacity-25" />}
-                  <div className="relative z-10 text-white"><Loader2 size={30} className="mx-auto animate-spin" aria-hidden="true" /><p className="mt-5 text-lg font-semibold">正在制作你的写真</p><p className="mt-2 text-sm text-white/80">背景是主题效果示例，结果尚未生成。</p></div>
-                </div>
-              ) : (
-                <div className="flex h-[340px] w-[255px] flex-col items-center justify-center rounded-[14px] bg-[#242426] px-6 text-center text-white sm:h-[490px] sm:w-[368px] lg:aspect-[3/4] lg:h-full lg:max-h-[570px] lg:w-auto"><AlertCircle size={32} className="text-[#f2b0aa]" aria-hidden="true" /><p className="mt-5 text-lg font-semibold">没有生成结果</p><p className="mt-2 max-w-xs text-sm leading-6 text-white/70">可以重新上传照片，再试一次。</p></div>
-              )}
-            </div>
-            <p className="border-t border-[#d6d5d1] pt-3 text-xs leading-5 text-muted">{completed ? '这是本次任务的实际生成结果。' : running ? '页面会自动更新状态；你也可以稍后从「我的写真」返回。' : '这次没有生成图片，你可以返回工作台重新尝试。'}</p>
+    <PortraitShell active="tasks">
+      <div className="mx-auto min-w-0 max-w-[1400px] px-4 py-6 text-[#222222] sm:px-8 sm:py-8 lg:px-10">
+        <Link href="/works" className="inline-flex min-h-11 items-center gap-2 text-sm text-[#707070] transition-colors hover:text-[#222222]"><ArrowLeft size={17} aria-hidden="true" />任务列表</Link>
+        <header className="mt-3 flex flex-wrap items-center justify-between gap-4">
+          <h1 className="break-words text-[24px] font-semibold tracking-tight sm:text-[28px]">{name}</h1>
+          <div className={`flex flex-wrap items-center gap-3 ${completed ? 'w-full justify-between sm:w-auto sm:justify-end' : ''}`}>
+            <p role="status" className={`inline-flex items-center gap-2 text-sm ${running ? 'text-[#755447]' : completed ? 'text-[#477257]' : 'text-[#ad3636]'}`}>{running ? <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden="true" /> : completed ? <Check size={16} aria-hidden="true" /> : <AlertCircle size={16} aria-hidden="true" />}{running ? task.status === 'pending' ? '等待生成' : '生成中' : completed ? '已完成' : '生成失败'}</p>
+            {completed && <button type="button" onClick={() => void save()} disabled={downloading} className={`${primaryClass} min-h-12`}>{downloading ? <Loader2 size={17} className="motion-safe:animate-spin" aria-hidden="true" /> : <Download size={17} aria-hidden="true" />}保存写真</button>}
+          </div>
+        </header>
+        {pollError && <div role="alert" className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-white px-4 py-3 text-sm text-[#895443]"><p>{pollError}</p><button type="button" onClick={() => setRefreshKey((value) => value + 1)} disabled={refreshing} className="min-h-11 font-medium underline underline-offset-4 disabled:opacity-45">立即重连</button></div>}
+        <div className="mt-6 overflow-hidden rounded-xl bg-white lg:grid lg:items-start lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
+          <section aria-label="写真结果" className={completed ? 'self-start p-4 sm:p-6' : 'flex min-h-[430px] flex-col p-4 sm:min-h-[580px] sm:p-6'}>
+            {completed ? (
+              <button type="button" onClick={() => setPreview('result')} className="group relative flex h-[min(48dvh,440px)] w-full items-center justify-center overflow-hidden rounded-xl bg-[#f5f5f5] p-3 sm:h-[min(60dvh,560px)]" aria-label="查看生成结果大图">
+                <img src={task.result_url!} alt={`${name}生成结果`} className="h-full w-full object-contain" />
+                <span className="absolute bottom-4 right-4 flex min-h-11 items-center gap-2 rounded-lg bg-white/95 px-4 text-sm text-[#333333] transition-colors group-hover:bg-white"><Maximize2 size={16} aria-hidden="true" />查看大图</span>
+              </button>
+            ) : (
+              <div className="flex min-h-[350px] flex-1 flex-col items-center justify-center rounded-xl bg-[#f5f5f5] px-5 text-center sm:min-h-[500px]">
+                {running ? <Loader2 size={30} className="motion-safe:animate-spin text-[#858585]" aria-hidden="true" /> : <AlertCircle size={30} className="text-[#a6a6a6]" aria-hidden="true" />}
+                <h2 className="mt-5 text-lg font-semibold">{running ? '正在制作你的写真' : '本次没有生成图片'}</h2><p className="mt-3 max-w-[35ch] text-sm leading-7 text-[#707070]">{running ? '结果完成后会自动显示。可以离开此页，稍后从任务列表回来查看。' : task.error_message || '制作未完成。重新制作会保留本次照片和创作方向。'}</p>
+                {running && <button type="button" onClick={() => setRefreshKey((value) => value + 1)} disabled={refreshing} className={`${secondaryClass} mt-5`}>{refreshing ? <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden="true" /> : <RefreshCw size={16} aria-hidden="true" />}刷新状态</button>}
+                {!running && <button type="button" onClick={recreate} className={`${primaryClass} mt-5`}><RefreshCw size={16} aria-hidden="true" />重新制作</button>}
+              </div>
+            )}
+            <p className="mt-3 text-center text-xs text-[#707070]">{completed ? '本次任务的实际生成结果' : running ? '结果尚未生成' : '生成失败，未产生结果图'}</p>
           </section>
-          <aside className="flex min-h-0 flex-col justify-between border-t border-[#e8e7e4] p-5 sm:p-7 lg:h-full lg:border-l lg:border-t-0">
-            <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-              <p className={`inline-flex items-center gap-2 text-sm font-medium ${completed ? 'text-success' : running ? 'text-brand' : 'text-signal'}`}>{completed ? <Check size={17} aria-hidden="true" /> : running ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <AlertCircle size={17} aria-hidden="true" />}{completed ? '生成完成' : running ? '正在生成' : '生成失败'}</p>
-              <h2 className="display-title mt-5 text-3xl">{completed ? '可以下载了' : running ? '结果还在路上' : '重新制作一张'}</h2>
-              <p className="mt-4 text-sm leading-7 text-muted">{completed ? '写真已经保存在你的作品中，可以直接下载。' : running ? '无需停留在此页。完成后，这条任务会在我的写真中更新。' : '本次任务没有完成。返回工作台重新上传自拍并选择创作方向。'}</p>
-              <dl className="mt-8 divide-y divide-line border-y border-line text-sm"><div className="flex justify-between gap-4 py-4"><dt className="text-muted">创作方向</dt><dd className="text-right font-medium">{styleName}</dd></div><div className="flex justify-between gap-4 py-4"><dt className="text-muted">创建时间</dt><dd className="text-right">{new Date(task.created_at).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</dd></div></dl>
-            </div>
-            <div className="mt-10 grid shrink-0 gap-3 lg:mt-0 lg:pt-4">
-              {completed && <Button size="lg" fullWidth loading={downloading} leftIcon={<Download size={18} />} onClick={download}>下载写真</Button>}
-              {running && <Button variant="outline" size="lg" fullWidth leftIcon={<RefreshCw size={18} />} onClick={() => setRefreshKey((key) => key + 1)}>刷新状态</Button>}
-              {!running && <Button variant={completed ? 'outline' : 'primary'} size="lg" fullWidth leftIcon={<RefreshCw size={18} />} onClick={again}>{completed ? '再做一张' : '重新制作'}</Button>}
-              <Link href="/works" className="inline-flex min-h-11 items-center justify-center text-sm font-medium text-muted hover:text-ink">返回我的写真</Link>
-              {!running && <Button variant="ghost" size="sm" fullWidth loading={deleting} leftIcon={<Trash2 size={16} />} className="text-muted" onClick={remove}>删除这条记录</Button>}
+          <aside className="flex min-w-0 flex-col border-t border-[#f0f0f0] p-5 sm:p-6 lg:border-l lg:border-t-0">
+            <h2 className="text-base font-semibold">任务信息</h2>
+            <dl className="mt-5 space-y-4 text-sm leading-6"><div><dt className="text-xs text-[#707070]">档案名称</dt><dd className="mt-1 break-words">{profileName}</dd></div><div><dt className="text-xs text-[#707070]">上传照片</dt><dd className="mt-1">{photos.length} 张</dd></div><div><dt className="text-xs text-[#707070]">主题名称</dt><dd className="mt-1 break-words">{name}</dd></div><div><dt className="text-xs text-[#707070]">创建时间</dt><dd className="mt-1 tabular-nums">{formatDate(task.created_at)}</dd></div>{task.completed_at && <div><dt className="text-xs text-[#707070]">完成时间</dt><dd className="mt-1 tabular-nums">{formatDate(task.completed_at)}</dd></div>}{task.user_prompt && <div><dt className="text-xs text-[#707070]">创作描述</dt><dd className="mt-1 whitespace-pre-wrap break-words leading-7">{task.user_prompt}</dd></div>}</dl>
+            {photos.length > 0 && <div className="mt-6 border-t border-[#f0f0f0] pt-5"><h3 className="text-xs text-[#707070]">原图（{photos.length} 张）</h3><div className="mt-3 grid grid-cols-4 gap-2" aria-label="本次上传的全部原图">{photos.map((url, index) => <OriginalPhotoButton key={`${url}-${index}`} url={url} index={index} onOpen={() => { setPreviewPhotoIndex(index); setPreview('original'); }} />)}</div></div>}
+            <div className="mt-8 flex flex-col gap-3 lg:mt-auto lg:pt-8">
+              {!running && <button type="button" onClick={recreate} className={`${completed ? secondaryClass : primaryClass} min-h-12`}><RefreshCw size={17} aria-hidden="true" />{completed ? '重新制作' : '重试'}</button>}
+              <Link href="/works" className={`${buttonClass} text-[#707070] hover:bg-[#f5f5f5]`}>返回任务列表</Link>
+              {!running && <button type="button" onClick={() => setDeleteOpen(true)} className={`${buttonClass} text-[#888888] hover:bg-[#fff3f3] hover:text-[#ad3636]`}><Trash2 size={16} aria-hidden="true" />删除任务</button>}
             </div>
           </aside>
         </div>
       </div>
-      {completed && <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper p-4 pb-[max(16px,env(safe-area-inset-bottom))] lg:hidden"><Button size="lg" fullWidth loading={downloading} leftIcon={<Download size={18} />} onClick={download}>下载写真</Button></div>}
-    </main>
+      {preview && <PictureDialog task={task} title={name} originalOnly={preview === 'original'} initialPhotoIndex={previewPhotoIndex} saving={downloading} onSave={() => void save()} onClose={() => setPreview(null)} />}
+      {deleteOpen && <DeleteDialog title={name} busy={deleting} onCancel={() => setDeleteOpen(false)} onConfirm={() => void remove()} />}
+    </PortraitShell>
   );
 }
 
-function FullState({ icon, title, copy, action }: { icon: React.ReactNode; title: string; copy: string; action?: React.ReactNode }) {
-  return <main className="page-shell flex min-h-screen items-center justify-center pt-16"><div className="w-full max-w-xl border-y border-line py-12 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center text-muted">{icon}</div><h1 className="display-title mt-5 text-3xl">{title}</h1><p className="mt-4 text-muted">{copy}</p>{action && <div className="mt-7">{action}</div>}</div></main>;
+function FullState({ icon, title, copy, action }: { icon: ReactNode; title: string; copy: string; action?: ReactNode }) {
+  return <PortraitShell active="tasks"><div className="flex min-h-[calc(100dvh-64px)] flex-col items-center justify-center px-5 text-center text-[#222222]"><div className="text-[#999999]">{icon}</div><h1 className="mt-5 text-xl font-semibold">{title}</h1><p className="mt-3 max-w-[42ch] text-sm leading-7 text-[#707070]">{copy}</p>{action && <div className="mt-6">{action}</div>}</div></PortraitShell>;
+}
+
+function OriginalPhotoButton({ url, index, onOpen }: { url: string; index: number; onOpen: () => void }) {
+  const [failed, setFailed] = useState(false);
+  return <button type="button" onClick={onOpen} className="group min-w-0 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black" aria-label={`查看第 ${index + 1} 张上传原图`}>
+    <span className="flex aspect-[3/4] items-center justify-center overflow-hidden rounded-lg bg-[#f5f5f5]">{failed ? <span className="px-1 text-[10px] leading-4 text-[#707070]">点击查看原图</span> : <img src={selfiePreviewUrl(url)} alt="" loading="lazy" onError={() => setFailed(true)} className="max-h-full max-w-full object-contain" />}</span>
+    <span className="mt-1 block text-xs text-[#707070] group-hover:text-black">第 {index + 1} 张</span>
+  </button>;
+}
+
+function useOriginalPhoto(url: string | undefined, enabled: boolean) {
+  const [source, setSource] = useState('');
+  const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    if (!enabled || !url) return;
+    let active = true;
+    let objectUrl = '';
+    setSource(''); setError('');
+    getSelfiePreview(url).then((blob) => {
+      if (!active) return;
+      objectUrl = URL.createObjectURL(blob); setSource(objectUrl);
+    }).catch((reason) => { if (active) setError(getErrorMessage(reason, '原图暂时无法读取。')); });
+    return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [enabled, retry, url]);
+  return { source, error, reload: () => setRetry((value) => value + 1) };
+}
+
+function PictureDialog({ task, title, originalOnly, initialPhotoIndex, saving, onSave, onClose }: { task: PortraitRecord; title: string; originalOnly: boolean; initialPhotoIndex: number; saving: boolean; onSave: () => void; onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [compare, setCompare] = useState(originalOnly);
+  const [photoIndex, setPhotoIndex] = useState(initialPhotoIndex);
+  const photos = sourcePhotos(task);
+  const original = useOriginalPhoto(photos[photoIndex], compare);
+  useEffect(() => {
+    const dialog = ref.current;
+    const overflow = document.body.style.overflow;
+    dialog?.showModal(); document.body.style.overflow = 'hidden';
+    return () => { dialog?.close(); document.body.style.overflow = overflow; };
+  }, []);
+  return <dialog ref={ref} aria-labelledby="picture-dialog-title" onClose={onClose} onClick={(event) => { if (event.target === event.currentTarget) onClose(); }} className="m-auto max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-[1040px] overflow-y-auto rounded-xl bg-white p-0 text-[#222222] backdrop:bg-black/55">
+    <div className="flex min-h-16 items-center justify-between gap-4 px-4 sm:px-6"><h2 id="picture-dialog-title" className="min-w-0 truncate text-base font-semibold">{title}{originalOnly ? ' · 原图' : ''}</h2><button type="button" onClick={onClose} autoFocus className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[#666666] hover:bg-[#f5f5f5]" aria-label="关闭大图"><X size={21} aria-hidden="true" /></button></div>
+    <div className={`grid gap-4 bg-[#f5f5f5] p-4 sm:p-6 ${compare && !originalOnly && task.result_url ? 'sm:grid-cols-2' : ''}`}>
+      {compare && <figure className="min-w-0"><div className="flex min-h-[260px] items-center justify-center sm:h-[min(60dvh,600px)]">{original.source ? <img src={original.source} alt="本次上传的原图" className="max-h-[55dvh] w-full object-contain sm:max-h-full" /> : original.error ? <div role="alert" className="px-4 text-center text-sm text-[#707070]"><p>{original.error}</p><button type="button" onClick={original.reload} className="mt-3 min-h-11 underline">重新加载原图</button></div> : <Loader2 className="motion-safe:animate-spin text-[#888888]" aria-label="正在加载原图" />}</div><figcaption className="mt-3 text-center text-sm text-[#666666]">原图</figcaption></figure>}
+      {!originalOnly && task.result_url && <figure className="min-w-0"><div className="flex min-h-[260px] items-center justify-center sm:h-[min(60dvh,600px)]"><img src={task.result_url} alt={`${title}生成结果大图`} className="max-h-[55dvh] w-full object-contain sm:max-h-full" /></div><figcaption className="mt-3 text-center text-sm text-[#666666]">生成结果</figcaption></figure>}
+    </div>
+    <div className="flex flex-wrap justify-end gap-2 px-4 py-4 sm:px-6">{compare && photos.length > 1 && <div className="mr-auto flex flex-wrap gap-1" aria-label="选择上传照片">{photos.map((_, index) => <button key={index} type="button" aria-pressed={photoIndex === index} onClick={() => setPhotoIndex(index)} className={`${buttonClass} ${photoIndex === index ? 'bg-[#eeeeee] text-[#222222]' : 'text-[#707070] hover:bg-[#f5f5f5]'}`}>第 {index + 1} 张</button>)}</div>}{!originalOnly && photos.length > 0 && <button type="button" aria-pressed={compare} onClick={() => setCompare((value) => !value)} className={secondaryClass}>{compare ? '收起原图' : '原图对照'}</button>}{!originalOnly && task.result_url && <button type="button" onClick={onSave} disabled={saving} className={primaryClass}>{saving ? <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden="true" /> : <Download size={16} aria-hidden="true" />}保存</button>}</div>
+  </dialog>;
+}
+
+function DeleteDialog({ title, busy, onCancel, onConfirm }: { title: string; busy: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => { const dialog = ref.current; dialog?.showModal(); return () => dialog?.close(); }, []);
+  return <dialog ref={ref} aria-labelledby="delete-task-title" onCancel={(event) => { if (busy) event.preventDefault(); }} onClose={onCancel} className="m-auto w-[calc(100%-32px)] max-w-[420px] rounded-xl bg-white p-6 text-[#222222] backdrop:bg-black/45"><h2 id="delete-task-title" className="text-lg font-semibold">删除这条任务？</h2><p className="mt-3 break-words text-sm leading-6 text-[#707070]">“{title}”的任务和生成结果将从列表移除，删除后无法恢复。</p><div className="mt-6 flex justify-end gap-3"><button type="button" autoFocus onClick={onCancel} disabled={busy} className={secondaryClass}>取消</button><button type="button" onClick={onConfirm} disabled={busy} className={`${buttonClass} bg-[#ad3636] text-white hover:bg-[#912a2a]`}>{busy && <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden="true" />}确认删除</button></div></dialog>;
 }
 
 export default function TaskPage() { return <ProtectedRoute><TaskContent /></ProtectedRoute>; }

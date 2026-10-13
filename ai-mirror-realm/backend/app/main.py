@@ -9,10 +9,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import settings
 from app.database import Base, engine, SessionLocal
-from app.routers import auth, uploads, styles, portraits, media
+from app.routers import auth, uploads, styles, portraits, media, profiles
 from app.seed import seed_styles
 from app.services.billing_schema_cleanup import remove_legacy_billing_schema
 from app.services.invitation_service import ensure_invitation_schema
+from app.services.portrait_schema import ensure_portrait_schema, ensure_profile_schema
 from app.utils.rate_limiter import limiter, rate_limit_exceeded_handler
 
 logging.basicConfig(level=logging.INFO)
@@ -137,6 +138,8 @@ async def uncaught_exception_handler(request: Request, exc: Exception) -> JSONRe
 def on_startup():
     remove_legacy_billing_schema(engine)
     Base.metadata.create_all(bind=engine)
+    ensure_portrait_schema(engine)
+    ensure_profile_schema(engine)
     ensure_invitation_schema(engine)
     db = SessionLocal()
     try:
@@ -165,3 +168,4 @@ app.include_router(uploads.router)
 app.include_router(styles.router)
 app.include_router(portraits.router)
 app.include_router(media.router)
+app.include_router(profiles.router)

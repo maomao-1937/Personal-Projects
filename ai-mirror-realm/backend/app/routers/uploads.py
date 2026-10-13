@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Query, status
+from fastapi.responses import FileResponse
 
 from app.config import settings
-from app.database import get_db
 from app.models.user import User
 from app.services.auth_service import get_current_invited_user
 from app.services.file_service import save_upload
+from app.utils.file_utils import resolve_media_path
 
 router = APIRouter(prefix="/api/uploads", tags=["文件上传"])
 
@@ -16,6 +16,35 @@ ALLOWED_MIME_TYPES = {
     "image/png",
     "image/webp",
 }
+
+
+@router.get("/selfie")
+def read_selfie(
+    url: str = Query(..., min_length=1, max_length=500),
+    current_user: User = Depends(get_current_invited_user),
+):
+    """读取当前账户已上传的自拍，供私有编辑草稿恢复预览。"""
+    not_found = HTTPException(status_code=404, detail="自拍照不存在")
+    if not url.startswith("/uploads/selfies/"):
+        raise not_found
+    selfie_path = resolve_media_path(url, must_exist=True)
+    expected_dir = (settings.UPLOAD_DIR / "selfies" / current_user.id).resolve()
+    if selfie_path is None:
+        raise not_found
+    try:
+        selfie_path.relative_to(expected_dir)
+    except ValueError:
+        raise not_found
+
+    media_types = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
+    media_type = media_types.get(selfie_path.suffix.lower())
+    if media_type is None:
+        raise not_found
+    return FileResponse(
+        path=selfie_path,
+        media_type=media_type,
+        headers={"Cache-Control": "private, no-store"},
+    )
 
 
 @router.post("/selfie", status_code=status.HTTP_201_CREATED)

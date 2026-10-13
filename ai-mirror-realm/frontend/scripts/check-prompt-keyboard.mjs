@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import ts from 'typescript';
+const source = await readFile(new URL('../src/lib/promptKeyboard.ts', import.meta.url), 'utf8');
+const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ES2022 } });
+const { shouldSubmitPrompt } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
+assert.equal(shouldSubmitPrompt({ key: 'Enter', shiftKey: false }), true);
+assert.equal(shouldSubmitPrompt({ key: 'Enter', shiftKey: true }), false);
+assert.equal(shouldSubmitPrompt({ key: 'Enter', shiftKey: false, isComposing: true }), false);
+assert.equal(shouldSubmitPrompt({ key: 'Enter', shiftKey: false, keyCode: 229 }), false);
+assert.equal(shouldSubmitPrompt({ key: 'Enter', shiftKey: false, repeat: true }), false);
+assert.equal(shouldSubmitPrompt({ key: 'a', shiftKey: false }), false);
+console.log('Prompt keyboard: 6 checks passed (submit, newline, IME, repeat).');

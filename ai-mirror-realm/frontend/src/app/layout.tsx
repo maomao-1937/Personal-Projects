@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Providers from './providers';
 import Navbar from '@/components/Navbar';
 import PageTransition from '@/components/PageTransition';
@@ -15,7 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Providers>
           <div className="portal-bg" />
-          <Navbar />
+          <Suspense fallback={null}><Navbar /></Suspense>
           <ErrorBoundary>
             <PageTransition>{children}</PageTransition>
           </ErrorBoundary>

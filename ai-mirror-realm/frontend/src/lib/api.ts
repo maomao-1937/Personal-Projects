@@ -25,7 +25,11 @@ export type PortraitStatus = 'pending' | 'processing' | 'completed' | 'failed';
 export interface PortraitRecord {
   id: string;
   style_id: string;
+  style_name?: string | null;
+  profile_name?: string | null;
   selfie_url?: string;
+  selfie_urls?: string[];
+  user_prompt?: string | null;
   result_url?: string | null;
   status: PortraitStatus;
   error_message?: string | null;
@@ -90,15 +94,17 @@ export function uploadSelfie(file: File): Promise<UploadResponse> {
 
 export interface CreatePortraitInput {
   selfieUrl: string;
+  selfieUrls?: string[];
   styleId?: string;
   userPrompt?: string;
 }
 
-export function createPortrait({ styleId, selfieUrl, userPrompt }: CreatePortraitInput): Promise<PortraitRecord> {
+export function createPortrait({ styleId, selfieUrl, selfieUrls, userPrompt }: CreatePortraitInput): Promise<PortraitRecord> {
   return api
     .post<PortraitRecord>('/portraits', {
       style_id: styleId || null,
       selfie_url: selfieUrl,
+      selfie_urls: selfieUrls,
       user_prompt: userPrompt?.trim() || null,
     })
     .then((response) => response.data);
@@ -108,9 +114,10 @@ export function getPortrait(id: string): Promise<PortraitRecord> {
   return api.get<PortraitRecord>(`/portraits/${encodeURIComponent(id)}`).then((response) => response.data);
 }
 
-export function getPortraitStatus(id: string, signal?: AbortSignal): Promise<PortraitRecord> {
+export type PortraitStatusRecord = Pick<PortraitRecord, 'id' | 'status' | 'result_url' | 'error_message'>;
+export function getPortraitStatus(id: string, signal?: AbortSignal): Promise<PortraitStatusRecord> {
   return api
-    .get<PortraitRecord>(`/portraits/${encodeURIComponent(id)}/status`, { signal })
+    .get<PortraitStatusRecord>(`/portraits/${encodeURIComponent(id)}/status`, { signal })
     .then((response) => response.data);
 }
 
@@ -121,6 +128,16 @@ export function getPortraits(): Promise<PortraitRecord[]> {
 export function deletePortrait(id: string): Promise<void> {
   return api.delete(`/portraits/${encodeURIComponent(id)}`).then(() => undefined);
 }
+
+export interface FaceProfileRecord { id: string; name: string; selfie_url: string; selfie_urls?: string[]; created_at: string }
+export const selfiePreviewUrl = (url: string) => `/api/uploads/selfie?url=${encodeURIComponent(url)}`;
+export function getSelfiePreview(url: string): Promise<Blob> {
+  return api.get<Blob>('/uploads/selfie', { params: { url }, responseType: 'blob' }).then((r) => r.data);
+}
+export function getProfiles(): Promise<FaceProfileRecord[]> { return api.get<FaceProfileRecord[]>('/profiles').then((r) => r.data); }
+export function createProfile(name: string, selfieUrl: string | string[]): Promise<FaceProfileRecord> { const urls = Array.isArray(selfieUrl) ? selfieUrl : [selfieUrl]; return api.post<FaceProfileRecord>('/profiles', { name, selfie_url: urls[0], selfie_urls: urls }).then((r) => r.data); }
+export function updateProfile(id: string, name: string): Promise<FaceProfileRecord> { return api.patch<FaceProfileRecord>(`/profiles/${encodeURIComponent(id)}`, { name }).then((r) => r.data); }
+export function deleteProfile(id: string): Promise<void> { return api.delete(`/profiles/${encodeURIComponent(id)}`).then(() => undefined); }
 
 export async function downloadProtectedImage(url: string, filename: string): Promise<void> {
   const path = url.startsWith('/api') ? url.slice(4) : url;

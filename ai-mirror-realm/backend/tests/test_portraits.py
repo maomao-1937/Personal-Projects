@@ -18,6 +18,25 @@ def upload_selfie(client) -> str:
     return upload.json()["url"]
 
 
+def test_inactive_style_keeps_its_name_in_existing_portraits(client, db_session_factory):
+    user = register_user(client, db_session_factory, email="legacy-portrait@example.com")["user"]
+    with db_session_factory() as db:
+        style = db.query(Style).order_by(Style.sort_order).first()
+        style.is_active = False
+        task = PortraitTask(user_id=user["id"], style_id=style.id, selfie_url="/uploads/old.jpg", status="completed")
+        db.add(task)
+        db.commit()
+        style_name = style.name
+        task_id = task.id
+
+    listed = client.get("/api/portraits")
+    detail = client.get(f"/api/portraits/{task_id}")
+    assert listed.status_code == 200
+    assert detail.status_code == 200
+    assert listed.json()[0]["style_name"] == style_name
+    assert detail.json()["style_name"] == style_name
+
+
 def test_portrait_requires_prompt_or_style(client, db_session_factory):
     register_user(client, db_session_factory, email="direction-required@example.com")
 
@@ -49,6 +68,32 @@ def test_custom_prompt_only_uses_server_system_prompt(client, db_session_factory
         task = db.query(PortraitTask).filter(PortraitTask.id == task_id).one()
         assert portraits.SYSTEM_PORTRAIT_PROMPT in task.prompt_used
         assert "雨夜街头，黑色风衣，电影感侧光" in task.prompt_used
+
+
+def test_original_prompt_is_available_to_restore_creation(client, db_session_factory, monkeypatch):
+    from app.routers import portraits
+
+    register_user(client, db_session_factory, email="restore-prompt@example.com")
+    original_prompt = "保留眼镜\n\nDeepSeek visual interpretation: 这行也是用户原文"
+    monkeypatch.setattr(portraits.prompt_analysis_service, "analyze", lambda *_: "A refined portrait prompt")
+
+    created = client.post(
+        "/api/portraits",
+        json={"selfie_url": upload_selfie(client), "user_prompt": original_prompt},
+    )
+    assert created.status_code == 201, created.text
+    task_id = created.json()["id"]
+
+    assert created.json()["user_prompt"] == original_prompt
+    detail = client.get(f"/api/portraits/{task_id}")
+    listed = client.get("/api/portraits")
+    assert detail.json()["user_prompt"] == original_prompt
+    assert listed.json()[0]["user_prompt"] == original_prompt
+    assert "prompt_used" not in detail.json()
+    with db_session_factory() as db:
+        task = db.query(PortraitTask).filter(PortraitTask.id == task_id).one()
+        assert task.user_prompt == original_prompt
+        assert "A refined portrait prompt" in task.prompt_used
 
 
 def test_style_and_custom_prompt_are_combined_with_system_prompt(client, db_session_factory):

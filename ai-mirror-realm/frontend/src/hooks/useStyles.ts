@@ -2,9 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getErrorMessage, getStyles, type StyleRecord } from '@/lib/api';
-import { resolvePreviewUrl, styleConfigs, type StyleConfig } from '@/config/styles';
 
-export interface MergedStyle extends StyleConfig {
+export interface MergedStyle {
+  id: string;
+  name: string;
+  category: string;
+  previewImage: string;
+  description: string;
   sortOrder: number;
   isServerBacked: boolean;
   serverData?: StyleRecord;
@@ -15,7 +19,6 @@ export interface UseStylesReturn {
   categories: string[];
   loading: boolean;
   error: string | null;
-  usingFallback: boolean;
   retry: () => void;
   getStyleById: (id: string) => MergedStyle | undefined;
   getStylesByCategory: (category: string) => MergedStyle[];
@@ -46,26 +49,17 @@ export function useStyles(): UseStylesReturn {
     };
   }, [requestKey]);
 
-  const usingFallback = Boolean(error);
-  const styles = useMemo<MergedStyle[]>(() => {
-    if (usingFallback) {
-      return styleConfigs.map((style, index) => ({
-        ...style,
-        sortOrder: index + 1,
-        isServerBacked: false,
-      }));
-    }
-    return serverStyles.map((style) => ({
+  const styles = useMemo<MergedStyle[]>(() =>
+    serverStyles.map((style) => ({
       id: style.id,
       name: style.name,
       category: style.category,
       description: style.description || '写真模板',
-      previewImage: resolvePreviewUrl(style.preview_url, style.category),
+      previewImage: style.preview_url || '',
       sortOrder: style.sort_order,
       isServerBacked: true,
       serverData: style,
-    }));
-  }, [serverStyles, usingFallback]);
+    })), [serverStyles]);
 
   const categories = useMemo(
     () => Array.from(new Set(styles.map((style) => style.category))),
@@ -79,7 +73,7 @@ export function useStyles(): UseStylesReturn {
     [styles]
   );
 
-  return { styles, categories, loading, error, usingFallback, retry, getStyleById, getStylesByCategory };
+  return { styles, categories, loading, error, retry, getStyleById, getStylesByCategory };
 }
 
 export default useStyles;
