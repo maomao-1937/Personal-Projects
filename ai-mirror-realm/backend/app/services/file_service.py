@@ -44,7 +44,7 @@ async def save_upload(file: UploadFile, subdir: str = "") -> str:
     return f"/uploads/{subdir}/{filename}" if subdir else f"/uploads/{filename}"
 
 
-def save_generated_image(data: bytes, ext: str = None) -> str:
+def save_generated_image(data: bytes, ext: str | None = None) -> str:
     """保存生成的图片，自动检测格式
 
     Args:
@@ -54,20 +54,22 @@ def save_generated_image(data: bytes, ext: str = None) -> str:
     Returns:
         图片访问 URL 路径
     """
-    if ext is None:
-        # 自动检测图片格式
-        if data[:3] == b'\xff\xd8\xff':
-            ext = "jpg"
-        elif data[:4] == b'\x89PNG':
-            ext = "png"
-        elif data[:4] == b'RIFF' and data[8:12] == b'WEBP':
-            ext = "webp"
-        elif data.startswith(b'<svg') or data.startswith(b'<?xml'):
-            ext = "svg"
-        else:
-            ext = "png"  # 默认 png
+    if data.startswith(b'\xff\xd8\xff'):
+        detected_ext = "jpg"
+    elif data.startswith(b'\x89PNG\r\n\x1a\n'):
+        detected_ext = "png"
+    elif data.startswith(b'RIFF') and data[8:12] == b'WEBP':
+        detected_ext = "webp"
+    else:
+        raise ValueError("生图服务未返回受支持的图片内容")
 
-    filename = f"{uuid.uuid4().hex}.{ext}"
+    requested_ext = ext.lower().lstrip(".") if ext is not None else detected_ext
+    if requested_ext == "jpeg":
+        requested_ext = "jpg"
+    if requested_ext != detected_ext:
+        raise ValueError("生图结果格式与指定扩展名不一致")
+
+    filename = f"{uuid.uuid4().hex}.{detected_ext}"
     file_path = settings.GENERATED_DIR / filename
     file_path.write_bytes(data)
     return f"/generated/{filename}"
