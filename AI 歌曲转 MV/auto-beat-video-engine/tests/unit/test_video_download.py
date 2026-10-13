@@ -37,3 +37,23 @@ def test_video_download_keeps_direct_mp4_response() -> None:
         result = download_mp4(client, "https://media.example/result.mp4", max_bytes=1024, timeout_seconds=1)
 
     assert result == b"mp4-data"
+
+
+def test_malformed_content_length_uses_stream_limit_instead_of_crashing() -> None:
+    def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            headers={"content-type": "video/mp4", "content-length": "unknown"},
+            content=b"mp4-data",
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        assert download_mp4(
+            client, "https://media.example/result.mp4", max_bytes=16, timeout_seconds=1
+        ) == b"mp4-data"
+        with pytest.raises(DomainError) as caught:
+            download_mp4(
+                client, "https://media.example/result.mp4", max_bytes=4, timeout_seconds=1
+            )
+
+    assert caught.value.code == "video_download_too_large"

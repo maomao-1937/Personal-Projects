@@ -54,7 +54,12 @@ def download_mp4(
                     retryable=False,
                 )
             content_length = response.headers.get("content-length")
-            if content_length and int(content_length) > max_bytes:
+            try:
+                declared_bytes = int(content_length) if content_length else None
+            except ValueError:
+                # The streamed byte count remains the authoritative size limit.
+                declared_bytes = None
+            if declared_bytes is not None and declared_bytes > max_bytes:
                 raise _too_large(max_bytes)
             chunks: list[bytes] = []
             received = 0
