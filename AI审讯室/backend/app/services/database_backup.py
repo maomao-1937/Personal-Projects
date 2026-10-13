@@ -159,10 +159,23 @@ class DatabaseBackupService:
         try:
             with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as connection:
                 result = connection.execute("PRAGMA quick_check").fetchone()
+                tables = {
+                    row[0]
+                    for row in connection.execute(
+                        "SELECT name FROM sqlite_master WHERE type = 'table'"
+                    )
+                }
+                if not {"alembic_version", "sessions"}.issubset(tables):
+                    raise DatabaseBackupError("database snapshot is not an app database")
+                version = connection.execute(
+                    "SELECT version_num FROM alembic_version LIMIT 1"
+                ).fetchone()
         except sqlite3.DatabaseError as exc:
             raise DatabaseBackupError("database snapshot is invalid") from exc
         if result != ("ok",):
             raise DatabaseBackupError("database snapshot failed integrity check")
+        if version is None or not version[0]:
+            raise DatabaseBackupError("database snapshot has no migration version")
 
 
 def _sqlite_path(database_url: str) -> Path:

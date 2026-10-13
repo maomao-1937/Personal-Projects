@@ -41,6 +41,9 @@ def test_from_settings_uses_explicit_database_url(tmp_path: Path) -> None:
 
 def create_sqlite(path: Path, value: str = "sealed truth") -> bytes:
     with sqlite3.connect(path) as connection:
+        connection.execute("CREATE TABLE alembic_version (version_num TEXT NOT NULL)")
+        connection.execute("INSERT INTO alembic_version VALUES ('20260825_0001')")
+        connection.execute("CREATE TABLE sessions (id TEXT PRIMARY KEY)")
         connection.execute("CREATE TABLE case_state (value TEXT NOT NULL)")
         connection.execute("INSERT INTO case_state (value) VALUES (?)", (value,))
     return path.read_bytes()
@@ -129,6 +132,24 @@ def test_corrupt_remote_backup_is_rejected_without_replacing_target(
     )
 
     with pytest.raises(DatabaseBackupError):
+        service.restore_if_missing()
+
+    assert database_path.exists() is False
+
+
+def test_valid_but_unrelated_sqlite_backup_cannot_replace_app_database(tmp_path: Path) -> None:
+    unrelated_path = tmp_path / "unrelated.db"
+    with sqlite3.connect(unrelated_path) as connection:
+        connection.execute("CREATE TABLE unrelated (value TEXT)")
+    database_path = tmp_path / "app.db"
+    service = DatabaseBackupService(
+        database_path=database_path,
+        object_store=FakeObjectStore(unrelated_path.read_bytes()),
+        bucket="ai-interrogation-backup",
+        object_key="db-backup/ai-interrogation.db",
+    )
+
+    with pytest.raises(DatabaseBackupError, match="not an app database"):
         service.restore_if_missing()
 
     assert database_path.exists() is False
