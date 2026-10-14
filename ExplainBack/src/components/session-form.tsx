@@ -33,8 +33,8 @@ export function SessionForm() {
     const cleanSource = sourceText.trim();
     if (cleanTitle.length < 2) errors.title = "主题至少需要 2 个字符";
     else if (cleanTitle.length > 80) errors.title = "主题不能超过 80 个字符";
-    if (cleanSource.length > 0 && cleanSource.length < 100)
-      errors.sourceText = "学习资料请留空，或至少输入 100 个字符";
+    if (cleanSource.length > 0 && cleanSource.replace(/\s/gu, "").length < 100)
+      errors.sourceText = "学习资料请留空，或至少输入 100 个非空白字符";
     else if (cleanSource.length > 60_000)
       errors.sourceText = "学习资料不能超过 60,000 个字符";
     return errors;
@@ -141,7 +141,7 @@ export function SessionForm() {
           </p>
         ) : (
           <p className="field-help" id="source-help">
-            留空：依据通用知识；填写：至少 100 字，并严格依据资料。
+            留空：依据通用知识；填写：至少 100 个非空白字符，并严格依据资料。
           </p>
         )}
       </div>

@@ -31,7 +31,7 @@ describe("SessionForm", () => {
 
     expect(screen.getByText("主题至少需要 2 个字符")).toBeInTheDocument();
     expect(
-      screen.getByText("学习资料请留空，或至少输入 100 个字符"),
+      screen.getByText("学习资料请留空，或至少输入 100 个非空白字符"),
     ).toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
@@ -62,8 +62,22 @@ describe("SessionForm", () => {
     await userEvent.click(screen.getByRole("button", { name: "生成学习地图" }));
 
     expect(
-      screen.getByText("学习资料请留空，或至少输入 100 个字符"),
+      screen.getByText("学习资料请留空，或至少输入 100 个非空白字符"),
     ).toBeInTheDocument();
+  });
+
+  it("空白填充的资料停留在表单，不发送创建请求", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    render(<SessionForm />);
+    await userEvent.type(screen.getByLabelText("学习主题"), "RAG 入门");
+    await userEvent.type(
+      screen.getByLabelText("学习资料（可选）"),
+      `RAG${" ".repeat(100)}入门`,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "生成学习地图" }));
+
+    expect(screen.getByText("学习资料请留空，或至少输入 100 个非空白字符")).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("请求期间禁用按钮并展示生成状态", async () => {

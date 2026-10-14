@@ -193,4 +193,19 @@ describe("HTTP input schemas", () => {
       }).success,
     ).toBe(false);
   });
+
+  it("不允许用空白字符凑足资料长度", () => {
+    const request = {
+      clientRequestId: "6a9b6f94-bfcf-45ea-8ca8-f215b8477c1f",
+      title: "RAG 基础",
+      sourceText: `RAG${" ".repeat(100)}入门`,
+    };
+    expect(createSessionInputSchema.safeParse(request).success).toBe(false);
+    expect(
+      createSessionInputSchema.safeParse({
+        ...request,
+        sourceText: `${"有效资料".repeat(25)} ${" ".repeat(100)}补充说明`,
+      }).success,
+    ).toBe(true);
+  });
 });
