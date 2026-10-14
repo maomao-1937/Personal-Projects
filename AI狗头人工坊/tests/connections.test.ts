@@ -29,6 +29,8 @@ test('management rejects cross-site and unauthenticated writes; public config ex
     const post = (headers: Record<string, string>) => fetch(base + '/api/connections', { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(fixture) });
     assert.equal((await post({})).status, 403);
     assert.equal((await post({ Origin: 'https://evil.example' })).status, 403);
+    const otherLocalPort = new URL(base); otherLocalPort.port = String(addr.port + 1);
+    assert.equal((await post({ Origin: otherLocalPort.origin })).status, 403);
     assert.equal((await post({ Origin: base, 'Sec-Fetch-Site': 'cross-site' })).status, 403);
     const ok = await post({ Origin: base }); assert.equal(ok.status, 200); assert.ok(!(await ok.text()).includes('test-only'));
     assert.ok(!(await (await fetch(base + '/api/connections')).text()).includes('test-only'));

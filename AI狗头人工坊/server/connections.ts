@@ -117,7 +117,15 @@ export const requireConnectionAdmin: express.RequestHandler = (req, res, next) =
     const equal = !!token && Buffer.byteLength(token) === Buffer.byteLength(supplied) && timingSafeEqual(Buffer.from(token), Buffer.from(supplied));
     const loopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress || '');
     let originAllowed = false;
-    try { const origin = new URL(req.get('origin') || ''); originAllowed = ['127.0.0.1', 'localhost', '[::1]'].includes(origin.hostname); } catch { /* origin required for local administration */ }
+    try {
+      const origin = new URL(req.get('origin') || '');
+      const localOrigin = ['127.0.0.1', 'localhost', '[::1]'].includes(origin.hostname);
+      const originPort = Number(origin.port || (origin.protocol === 'https:' ? 443 : 80));
+      const serverPort = req.socket.localPort;
+      // Vite proxies /api from 5173 to the local API on 8787 during development.
+      originAllowed = localOrigin && origin.protocol === 'http:' &&
+        (originPort === serverPort || (serverPort === 8787 && originPort === 5173));
+    } catch { /* origin required for local administration */ }
     const local = !token && process.env.NODE_ENV !== 'production' && loopback && originAllowed && ['localhost', '127.0.0.1', '[::1]'].includes(req.hostname);
     if (req.get('sec-fetch-site') === 'cross-site' || (!equal && !local)) { res.status(403).json({ error: '需要站点管理口令；本机管理仅允许本机页面访问。' }); return; }
   next();
