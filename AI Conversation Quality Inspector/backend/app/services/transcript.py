@@ -122,6 +122,7 @@ def _classify_role(
 
 def _matches_label(speaker_label: str, base_labels: tuple[str, ...]) -> bool:
     return any(
-        speaker_label == base or (speaker_label.startswith(base) and len(speaker_label) > len(base))
+        speaker_label == base
+        or re.fullmatch(rf"{re.escape(base)}[A-Za-z0-9甲乙丙丁]", speaker_label) is not None
         for base in base_labels
     )

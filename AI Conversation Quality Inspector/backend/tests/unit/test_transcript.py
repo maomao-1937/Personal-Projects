@@ -59,6 +59,28 @@ def test_does_not_swap_employee_roles_between_scenarios() -> None:
 
 
 @pytest.mark.parametrize(
+    ("speaker", "other"),
+    [("客户经理", "销售"), ("销售主管", "客户"), ("用户服务部", "销售")],
+)
+def test_rejects_job_titles_as_speaker_labels(speaker: str, other: str) -> None:
+    text = f"{speaker}：我想咨询价格与服务。\n{other}：您好，可以介绍具体方案。"
+
+    with pytest.raises(TranscriptInvalid) as captured:
+        parse_transcript(text, QAType.SALES, limits())
+
+    assert captured.value.code == "TRANSCRIPT_ROLE_INVALID"
+
+
+def test_accepts_short_speaker_identifiers() -> None:
+    parsed = parse_transcript(
+        "客户A：我想咨询价格与服务。\n销售1：您好，可以介绍具体方案。",
+        QAType.SALES,
+        limits(),
+    )
+    assert [turn.role for turn in parsed.turns] == ["customer", "employee"]
+
+
+@pytest.mark.parametrize(
     ("text", "custom_limits", "expected_code"),
     [
         ("客户：你好\n销售：您好", limits(min_chars=30), "TRANSCRIPT_TOO_SHORT"),
