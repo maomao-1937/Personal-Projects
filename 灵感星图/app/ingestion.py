@@ -59,7 +59,7 @@ class IngestionService:
         analysis = self.analyzer.analyze_material(data.content)
         updated = existing.model_copy(
             update={
-                "title": data.title,
+                "title": data.title if "title" in data.model_fields_set else existing.title,
                 "raw_text": data.content,
                 **analysis.model_dump(),
                 "processing_status": "ready",
