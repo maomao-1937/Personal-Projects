@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.database import utc_now
@@ -20,29 +21,49 @@ class FeedbackService:
         reason_code: FeedbackReason | None,
     ) -> FeedbackResponse:
         now = utc_now()
-        with self._session_factory.begin() as session:
-            attempt = session.scalar(
-                select(AnalysisAttempt).where(
-                    AnalysisAttempt.id == analysis_id,
-                    AnalysisAttempt.invite_code_id == invite_id,
-                    AnalysisAttempt.quota_status == QuotaStatus.CONSUMED,
+        try:
+            with self._session_factory.begin() as session:
+                attempt = session.scalar(
+                    select(AnalysisAttempt).where(
+                        AnalysisAttempt.id == analysis_id,
+                        AnalysisAttempt.invite_code_id == invite_id,
+                        AnalysisAttempt.quota_status == QuotaStatus.CONSUMED,
+                    )
                 )
-            )
-            if attempt is None:
-                raise AnalysisNotFound()
+                if attempt is None:
+                    raise AnalysisNotFound()
 
-            feedback = session.get(Feedback, analysis_id)
-            if feedback is None:
-                feedback = Feedback(
-                    analysis_id=analysis_id,
-                    invite_code_id=invite_id,
-                    helpful=helpful,
-                    reason_code=reason_code,
-                    created_at=now,
-                    updated_at=now,
+                feedback = session.get(Feedback, analysis_id)
+                if feedback is None:
+                    feedback = Feedback(
+                        analysis_id=analysis_id,
+                        invite_code_id=invite_id,
+                        helpful=helpful,
+                        reason_code=reason_code,
+                        created_at=now,
+                        updated_at=now,
+                    )
+                    session.add(feedback)
+                else:
+                    feedback.helpful = helpful
+                    feedback.reason_code = reason_code
+                    feedback.updated_at = now
+        except IntegrityError:
+            # Another request may have inserted the first feedback after our read.
+            # Retry only as an update of an existing, still-authorized result.
+            with self._session_factory.begin() as session:
+                feedback = session.scalar(
+                    select(Feedback)
+                    .join(AnalysisAttempt, AnalysisAttempt.id == Feedback.analysis_id)
+                    .where(
+                        Feedback.analysis_id == analysis_id,
+                        Feedback.invite_code_id == invite_id,
+                        AnalysisAttempt.invite_code_id == invite_id,
+                        AnalysisAttempt.quota_status == QuotaStatus.CONSUMED,
+                    )
                 )
-                session.add(feedback)
-            else:
+                if feedback is None:
+                    raise
                 feedback.helpful = helpful
                 feedback.reason_code = reason_code
                 feedback.updated_at = now
