@@ -25,6 +25,36 @@ def test_recover_running_job(client):
         assert "interrupted" in (j.error_message or "")
 
 
+def test_recover_pending_job(client):
+    """A restart before the background task starts must not leave a job pending forever."""
+    jid = str(uuid.uuid4())
+    with session_scope() as s:
+        s.add(Job(id=jid, type="review", prd_text="test prd text", status="pending"))
+
+    recover_jobs()
+
+    with session_scope() as s:
+        job = s.get(Job, jid)
+        assert job.status == "failed"
+        assert "interrupted" in (job.error_message or "")
+        assert job.finished_at is not None
+
+
+def test_recovery_preserves_completed_job(client):
+    jid = str(uuid.uuid4())
+    result = {"summary": {"total_findings": 0}, "findings": []}
+    with session_scope() as s:
+        s.add(Job(id=jid, type="review", prd_text="test prd text", status="done", result_json=result))
+
+    recover_jobs()
+
+    with session_scope() as s:
+        job = s.get(Job, jid)
+        assert job.status == "done"
+        assert job.result_json == result
+        assert job.error_message is None
+
+
 def test_recover_running_item(client):
     """running 的 ChecklistItem 也被标记 failed。"""
     jid = str(uuid.uuid4())
