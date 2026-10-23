@@ -49,6 +49,37 @@ def create_sqlite(path: Path, value: str = "sealed truth") -> bytes:
     return path.read_bytes()
 
 
+@pytest.mark.parametrize("valid", [True, False])
+def test_snapshot_validation_closes_connections(tmp_path: Path, monkeypatch, valid: bool) -> None:
+    path = tmp_path / "snapshot.db"
+    if valid:
+        create_sqlite(path)
+    else:
+        path.write_bytes(b"not a database")
+    original_connect = sqlite3.connect
+    connections = []
+
+    def connect(*args, **kwargs):
+        connection = original_connect(*args, **kwargs)
+        connections.append(connection)
+        return connection
+
+    monkeypatch.setattr(sqlite3, "connect", connect)
+    try:
+        if valid:
+            DatabaseBackupService._validate_snapshot(path)
+        else:
+            with pytest.raises(DatabaseBackupError):
+                DatabaseBackupService._validate_snapshot(path)
+        assert connections
+        for connection in connections:
+            with pytest.raises(sqlite3.ProgrammingError, match="closed"):
+                connection.execute("SELECT 1")
+    finally:
+        for connection in connections:
+            connection.close()
+
+
 def test_backup_uploads_a_consistent_sqlite_snapshot(tmp_path: Path) -> None:
     database_path = tmp_path / "app.db"
     create_sqlite(database_path)
