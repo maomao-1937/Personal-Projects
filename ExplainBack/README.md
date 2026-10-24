@@ -36,6 +36,8 @@ npm run dev
 
 浏览器访问 [http://localhost:3000](http://localhost:3000)。示例环境默认启用 Mock AI，无需密钥即可体验完整流程。
 
+锁定的 better-sqlite3 13.0.3 已包含预编译绑定，因此在 npm 11 的 `allowScripts` 中禁用它的安装脚本，避免 `npm ci` 不必要地调用 `node-gyp`。Windows x64 已验证可直接使用包内绑定，无需为该依赖安装 C++ 工具链；其他平台需单独验证。
+
 学习资料留空时，系统使用通用知识进入主题直练模式；填写资料时，AI 只依据该资料生成知识点、判断回答和提供提示。
 
 接入真实模型时修改 `.env.local`：
