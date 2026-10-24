@@ -343,7 +343,10 @@
   function saveToGallery(item) {
     const list = Store.get('huanwo_history', []);
     list.unshift({ dataUrl: item.dataUrl, styleName: item.styleName || '', ts: Date.now() });
-    Store.set('huanwo_history', list.slice(0, 50));
+    if (!Store.set('huanwo_history', list.slice(0, 50))) {
+      toast('收藏失败：本地存储空间不足或不可用，请先下载保存图片');
+      return;
+    }
     toast('已收藏到「我的作品」');
     closeModal();
   }
@@ -351,7 +354,10 @@
   function deleteFromGallery(item) {
     let list = Store.get('huanwo_history', []);
     list = list.filter((x) => x.ts !== item.ts);
-    Store.set('huanwo_history', list);
+    if (!Store.set('huanwo_history', list)) {
+      toast('删除失败：本地存储不可用，请稍后重试');
+      return;
+    }
     closeModal();
     renderGallery();
     toast('已删除');

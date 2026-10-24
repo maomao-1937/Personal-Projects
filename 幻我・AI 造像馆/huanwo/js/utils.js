@@ -15,8 +15,10 @@ const Store = {
   set(key, val) {
     try {
       localStorage.setItem(key, JSON.stringify(val));
+      return true;
     } catch (e) {
       console.warn('localStorage 写入失败', e);
+      return false;
     }
   },
   remove(key) {
