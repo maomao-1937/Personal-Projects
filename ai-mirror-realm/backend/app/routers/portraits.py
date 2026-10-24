@@ -246,6 +246,8 @@ def _run_generation(
 
     except Exception:
         logger.exception("Portrait %s failed", task_id)
+        # A failed flush leaves the session unusable until its transaction is rolled back.
+        db.rollback()
         task = db.query(PortraitTask).filter(PortraitTask.id == task_id).first()
         if task:
             task.status = "failed"
