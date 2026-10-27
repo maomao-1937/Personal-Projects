@@ -19,7 +19,7 @@ from app.domain import (
     MaterialUpdate,
     ProjectHypothesis,
 )
-from app.ingestion import IngestionService
+from app.ingestion import EmptyMaterialContentError, IngestionService
 from app.model_gateway import (
     AnthropicModelGateway,
     HeuristicModelGateway,
@@ -102,6 +102,8 @@ def create_app(
     ) -> Material:
         try:
             return IngestionService(repository, gateway).ingest(user_id, data)
+        except EmptyMaterialContentError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         except (
             ModelGatewayAuthenticationError,
             ModelGatewayInvalidResponse,

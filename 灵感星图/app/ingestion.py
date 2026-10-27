@@ -7,6 +7,10 @@ from app.repository import Repository
 from app.security import HttpUrlFetcher
 
 
+class EmptyMaterialContentError(ValueError):
+    """The fetched material contains no usable text."""
+
+
 class MaterialAnalyzer(Protocol):
     model_name: str
 
@@ -37,6 +41,8 @@ class IngestionService:
         else:
             raw_text = data.content or ""
 
+        if not raw_text.strip():
+            raise EmptyMaterialContentError("网页内容为空，请粘贴原文后保存")
         analysis = self.analyzer.analyze_material(raw_text)
         material = Material(
             user_id=user_id,
