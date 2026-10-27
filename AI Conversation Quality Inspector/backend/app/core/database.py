@@ -50,7 +50,7 @@ def create_database_engine(database_url: str) -> Engine:
 
 def run_database_migrations(database_url: str) -> None:
     config = _migration_config()
-    config.set_main_option("sqlalchemy.url", database_url)
+    config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
     config.attributes["database_url"] = database_url
     command.upgrade(config, "head")
 
