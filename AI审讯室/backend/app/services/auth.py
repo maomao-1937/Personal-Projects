@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import time
-from collections import defaultdict, deque
+from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
 from hashlib import sha256
@@ -69,8 +69,9 @@ class AccessAuthService:
         self._max_failures = max_failures
         self._failure_window_seconds = failure_window_seconds
         self._clock = clock
-        self._failures: defaultdict[str, deque[float]] = defaultdict(deque)
+        self._failures: dict[str, deque[float]] = {}
         self._failure_lock = Lock()
+        self._last_failure_cleanup = self._clock()
 
     @classmethod
     def from_settings(cls, settings: Settings) -> AccessAuthService:
@@ -149,13 +150,24 @@ class AccessAuthService:
 
     def _is_rate_limited(self, source: str, now: float) -> bool:
         with self._failure_lock:
-            failures = self._failures[source]
+            if now - self._last_failure_cleanup >= self._failure_window_seconds:
+                for key, failures in list(self._failures.items()):
+                    self._prune(failures, now)
+                    if not failures:
+                        self._failures.pop(key)
+                self._last_failure_cleanup = now
+            failures = self._failures.get(source)
+            if failures is None:
+                return False
             self._prune(failures, now)
+            if not failures:
+                self._failures.pop(source)
+                return False
             return len(failures) >= self._max_failures
 
     def _record_failure(self, source: str, now: float) -> None:
         with self._failure_lock:
-            failures = self._failures[source]
+            failures = self._failures.setdefault(source, deque())
             self._prune(failures, now)
             failures.append(now)
 
