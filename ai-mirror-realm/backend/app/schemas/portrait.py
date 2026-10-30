@@ -36,6 +36,8 @@ class PortraitCreate(BaseModel):
             raise ValueError("请输入写真描述或选择一个主题")
         if self.selfie_urls and self.selfie_urls[0] != self.selfie_url:
             raise ValueError("主自拍必须与照片组的第一张一致")
+        if self.selfie_urls and len(self.selfie_urls) != len(set(self.selfie_urls)):
+            raise ValueError("照片组不能包含重复自拍")
         return self
 
 

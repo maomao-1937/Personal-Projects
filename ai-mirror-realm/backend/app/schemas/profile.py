@@ -36,6 +36,8 @@ class ProfileCreate(ProfileName):
         if self.selfie_urls and self.selfie_url and self.selfie_urls[0] != self.selfie_url:
             raise ValueError("主自拍必须与照片组的第一张一致")
         self.selfie_urls = self.selfie_urls or [self.selfie_url]
+        if len(self.selfie_urls) != len(set(self.selfie_urls)):
+            raise ValueError("照片组不能包含重复自拍")
         self.selfie_url = self.selfie_urls[0]
         return self
 

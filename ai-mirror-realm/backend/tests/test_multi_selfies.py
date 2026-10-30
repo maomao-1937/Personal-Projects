@@ -40,6 +40,23 @@ def test_profile_rejects_foreign_photo_in_group_and_over_nine(client, db_session
     assert client.get("/api/profiles").json() == []
 
 
+def test_profile_and_portrait_reject_repeated_selfie_urls(client, db_session_factory):
+    register_user(client, db_session_factory, email="repeated-photo@example.com")
+    urls = upload_many(client, 4)
+    repeated = [urls[0], urls[1], urls[0], urls[2]]
+
+    profile = client.post("/api/profiles", json={"name": "重复照片", "selfie_urls": repeated})
+    portrait = client.post(
+        "/api/portraits",
+        json={"selfie_url": repeated[0], "selfie_urls": repeated, "user_prompt": "自然写真"},
+    )
+
+    assert profile.status_code == 400
+    assert portrait.status_code == 400
+    assert client.get("/api/profiles").json() == []
+    assert client.get("/api/portraits").json() == []
+
+
 def test_portrait_restores_entire_photo_group_and_passes_all_paths(client, db_session_factory, monkeypatch):
     from app.routers import portraits
 
