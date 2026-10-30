@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { PROFILE_STORAGE_KEY, clearLocalProfile, readLocalGuideDraft, readLocalProfile, writeLocalGuideDraft, writeLocalProfile } from './profileStorage.ts';
+import { PROFILE_STORAGE_KEY, clearLocalProfile, readLocalGuideDraft, readLocalProfile, validIsoDate, writeLocalGuideDraft, writeLocalProfile } from './profileStorage.ts';
+import { createLifeCalendarToDate } from './lifeCalendar.ts';
 import { createGoal } from './taskPlan.ts';
 
 function memoryStore(initial: Record<string, string> = {}) {
@@ -12,6 +13,24 @@ function memoryStore(initial: Record<string, string> = {}) {
     removeItem: (key: string) => { values.delete(key); },
   };
 }
+
+test('date input never accepts a year that crashes the calendar', () => {
+  assert.equal(validIsoDate('0000-01-01'), false);
+  for (const date of ['0001-01-01', '0099-01-01', '2000-02-29']) {
+    assert.equal(validIsoDate(date), true);
+    assert.doesNotThrow(() => createLifeCalendarToDate(date, date.slice(0, 4) + '-12-31'));
+  }
+});
+
+test('a stored year-zero profile falls back to a readable previous profile', () => {
+  const previous = { birthDate: '2001-01-01', endDate: '2091-01-01', notes: { week: '保留记录' } };
+  const store = memoryStore({
+    [PROFILE_STORAGE_KEY]: JSON.stringify({ birthDate: '0000-01-01', endDate: '0090-01-01' }),
+    'life-in-weeks-profile-v2': JSON.stringify(previous),
+  });
+  assert.equal(readLocalProfile('2026-10-23', store)?.birthDate, previous.birthDate);
+  assert.equal(readLocalProfile('2026-10-23', store)?.notes.week, '保留记录');
+});
 
 test('a complete profile is saved and restored as one versioned record', () => {
   const store = memoryStore();
