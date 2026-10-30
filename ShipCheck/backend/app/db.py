@@ -72,12 +72,12 @@ def get_db() -> Iterator[Session]:
 
 
 def recover_jobs() -> None:
-    """重启恢复:把卡在 running 的 Job 标记为 failed(interrupted)。
+    """重启恢复:把未完成的 pending/running Job 标记为 failed(interrupted)。
     ChecklistItem 已 passed 的不重跑(下次跑同 Job 跳过)。"""
     from datetime import datetime
     from app.models.models import Job, ChecklistItem
     with session_scope() as s:
-        stale = s.query(Job).filter(Job.status == "running").all()
+        stale = s.query(Job).filter(Job.status.in_(("pending", "running"))).all()
         for j in stale:
             j.status = "failed"
             j.error_message = (j.error_message or "") + " [interrupted by restart]"
