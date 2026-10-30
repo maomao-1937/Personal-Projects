@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 
 from backend.persistence.database import Database
@@ -42,4 +43,50 @@ def test_retention_expires_only_assets_for_projects_inactive_over_30_days(tmp_pa
         ).fetchone()[0] == "expired"
         assert connection.execute(
             "SELECT status FROM artifacts WHERE id = 'art_active'"
+        ).fetchone()[0] == "ready"
+
+
+def test_retention_keeps_file_when_project_becomes_active_after_candidate_read(tmp_path, monkeypatch) -> None:
+    database = Database(tmp_path / "app.db")
+    database.initialize()
+    repositories = Repositories(database)
+    user = repositories.users.create()
+    project = repositories.projects.create(user.id, "Reactivated")
+    artifacts = LocalArtifactStore(tmp_path / "artifacts")
+    stored = artifacts.put_bytes(f"{project.id}/video.mp4", b"keep")
+    now = datetime.now(timezone.utc)
+    with database.transaction() as connection:
+        connection.execute(
+            "UPDATE projects SET updated_at = ? WHERE id = ?",
+            ((now - timedelta(days=31)).isoformat(), project.id),
+        )
+        connection.execute(
+            "INSERT INTO artifacts VALUES (?, ?, 'video', ?, '{}', 'ready', NULL, ?)",
+            ("art_reactivated", project.id, stored.key, now.isoformat()),
+        )
+
+    original_connect = database.connect
+    first_read = True
+
+    @contextmanager
+    def connect_then_reactivate():
+        nonlocal first_read
+        with original_connect() as connection:
+            yield connection
+        if first_read:
+            first_read = False
+            with database.transaction() as connection:
+                connection.execute(
+                    "UPDATE projects SET updated_at = ? WHERE id = ?",
+                    (now.isoformat(), project.id),
+                )
+
+    monkeypatch.setattr(database, "connect", connect_then_reactivate)
+    expired = RetentionService(database, artifacts, retention_days=30).purge_inactive(now=now)
+
+    assert expired == 0
+    assert stored.path.read_bytes() == b"keep"
+    with original_connect() as connection:
+        assert connection.execute(
+            "SELECT status FROM artifacts WHERE id = 'art_reactivated'"
         ).fetchone()[0] == "ready"

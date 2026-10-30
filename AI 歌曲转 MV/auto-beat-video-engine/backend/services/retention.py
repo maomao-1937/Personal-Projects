@@ -34,15 +34,22 @@ class RetentionService:
 
         expired = 0
         for row in rows:
-            self.artifacts.resolve(row["storage_key"]).unlink(missing_ok=True)
+            artifact_path = self.artifacts.resolve(row["storage_key"])
             with self.database.transaction() as connection:
                 updated = connection.execute(
                     """
                     UPDATE artifacts
                     SET status = 'expired', expires_at = ?
                     WHERE id = ? AND status = 'ready'
+                      AND EXISTS (
+                          SELECT 1 FROM projects
+                          WHERE projects.id = artifacts.project_id
+                            AND projects.updated_at < ?
+                      )
                     """,
-                    (current.isoformat(), row["id"]),
+                    (current.isoformat(), row["id"], cutoff),
                 ).rowcount
+            if updated:
+                artifact_path.unlink(missing_ok=True)
             expired += updated
         return expired
