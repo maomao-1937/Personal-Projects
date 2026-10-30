@@ -1,8 +1,12 @@
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
+from sqlalchemy import event, func, select
 
 from app.main import create_app
+from app.models import AnalysisAttempt, Feedback
 from tests.conftest import TEST_INVITE
 from tests.support import VALID_TRANSCRIPT, StaticModel
 
@@ -41,6 +45,42 @@ def test_feedback_can_be_created_then_updated(access_client) -> None:
     assert first.json() == {"helpful": True, "reason_code": None}
     assert second.status_code == 200
     assert second.json() == {"helpful": False, "reason_code": "score_unfair"}
+
+
+def test_concurrent_first_feedback_submissions_both_succeed(access_client) -> None:
+    client, csrf_token = access_client
+    analysis_id = create_completed_analysis(client, csrf_token)
+    runtime = client.app.state.runtime
+    with runtime.session_factory() as session:
+        invite_id = session.get(AnalysisAttempt, analysis_id).invite_code_id
+
+    inserts_ready = Barrier(2)
+
+    def synchronize_inserts(connection, cursor, statement, parameters, context, executemany):
+        if statement.lstrip().upper().startswith("INSERT INTO FEEDBACK"):
+            inserts_ready.wait(timeout=10)
+
+    event.listen(runtime.engine, "before_cursor_execute", synchronize_inserts)
+    try:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [
+                pool.submit(
+                    runtime.feedback_service.upsert,
+                    invite_id,
+                    analysis_id,
+                    helpful=True,
+                    reason_code=None,
+                )
+                for _ in range(2)
+            ]
+            results = [future.result(timeout=15) for future in futures]
+    finally:
+        event.remove(runtime.engine, "before_cursor_execute", synchronize_inserts)
+
+    assert [result.helpful for result in results] == [True, True]
+    with runtime.session_factory() as session:
+        assert session.scalar(select(func.count()).select_from(Feedback)) == 1
+        assert session.get(Feedback, analysis_id).helpful is True
 
 
 def test_other_invite_cannot_modify_feedback(test_settings) -> None:
