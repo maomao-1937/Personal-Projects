@@ -55,6 +55,8 @@ def _to_milliseconds(value: str) -> int:
     else:
         hours, minutes, seconds_with_millis = parts
     seconds, millis = seconds_with_millis.split(".")
+    if int(minutes) >= 60 or int(seconds) >= 60:
+        raise DomainError("TRANSCRIPT_FORMAT_INVALID", "转录时间码格式无效", 422)
     return int(hours) * 3_600_000 + int(minutes) * 60_000 + int(seconds) * 1_000 + int(millis)
 
 
@@ -102,6 +104,10 @@ def _parse_timed_blocks(value: str, *, webvtt: bool) -> list[ParsedSegment]:
         match = TIME_PATTERN.search(lines[time_index])
         if match is None:
             raise DomainError("TRANSCRIPT_FORMAT_INVALID", "转录时间码格式无效", 422)
+        start_ms = _to_milliseconds(match.group("start"))
+        end_ms = _to_milliseconds(match.group("end"))
+        if end_ms < start_ms:
+            raise DomainError("TRANSCRIPT_FORMAT_INVALID", "转录结束时间不能早于开始时间", 422)
         raw_text = "\n".join(lines[time_index + 1 :]).strip()
         if not raw_text:
             continue
@@ -110,8 +116,8 @@ def _parse_timed_blocks(value: str, *, webvtt: bool) -> list[ParsedSegment]:
             segments.append(
                 ParsedSegment(
                     sequence=len(segments),
-                    start_ms=_to_milliseconds(match.group("start")),
-                    end_ms=_to_milliseconds(match.group("end")),
+                    start_ms=start_ms,
+                    end_ms=end_ms,
                     speaker=speaker,
                     text=chunk,
                 )

@@ -43,6 +43,21 @@ def test_srt_parser_preserves_multiline_text():
     assert segments[0].text == "First line\nsecond line"
 
 
+@pytest.mark.parametrize("parser", [parse_vtt, parse_srt])
+@pytest.mark.parametrize(
+    "timing",
+    [
+        "00:00:03.000 --> 00:00:01.000",
+        "00:60:00.000 --> 01:01:00.000",
+        "00:00:60.000 --> 00:02:00.000",
+    ],
+)
+def test_timed_transcript_rejects_invalid_timestamps(parser, timing):
+    with pytest.raises(DomainError) as error:
+        parser(f"{timing}\nAlice: Release on Friday.\n")
+    assert error.value.code == "TRANSCRIPT_FORMAT_INVALID"
+
+
 @pytest.mark.parametrize(
     ("filename", "content_type"),
     [

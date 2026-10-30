@@ -83,6 +83,33 @@ def test_vtt_upload_is_parsed(auth_client):
     assert detail["segments"][0]["start_ms"] == 1000
 
 
+def test_invalid_timestamp_upload_preserves_existing_transcript(auth_client, settings):
+    meeting_id = create_meeting(auth_client)
+    original = b"WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nAlice: Original\n"
+    path = f"/api/v1/meetings/{meeting_id}/transcript-file"
+    assert (
+        auth_client.post(path, files={"file": ("meeting.vtt", original, "text/vtt")}).status_code
+        == 200
+    )
+    before = auth_client.get(f"/api/v1/meetings/{meeting_id}").json()["segments"]
+
+    response = auth_client.post(
+        path,
+        files={
+            "file": (
+                "meeting.vtt",
+                b"WEBVTT\n\n00:00:03.000 --> 00:00:01.000\nBob: Invalid\n",
+                "text/vtt",
+            )
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "TRANSCRIPT_FORMAT_INVALID"
+    assert auth_client.get(f"/api/v1/meetings/{meeting_id}").json()["segments"] == before
+    assert (settings.upload_dir / meeting_id / "source.vtt").read_bytes() == original
+
+
 def test_transcript_upload_is_saved_to_controlled_asset_path(auth_client, settings, tmp_path: Path):
     meeting_id = create_meeting(auth_client)
     content = b"WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nAlice: Ship it\n"
