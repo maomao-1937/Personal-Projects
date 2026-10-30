@@ -49,7 +49,7 @@ class RetentionService:
                     """,
                     (current.isoformat(), row["id"], cutoff),
                 ).rowcount
-            if updated:
-                artifact_path.unlink(missing_ok=True)
+                if updated:
+                    artifact_path.unlink(missing_ok=True)
             expired += updated
         return expired
