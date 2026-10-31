@@ -165,6 +165,26 @@ def test_missing_snapshot_fails_closed_without_explicit_bootstrap(tmp_path: Path
     assert service.restore_if_needed(allow_bootstrap=True) is False
 
 
+@pytest.mark.parametrize("directory", ["runtime#saved", "runtime%20saved", "中文 备份#1"])
+def test_backup_restore_preserve_data_in_uri_sensitive_paths(
+    tmp_path: Path, directory: str
+) -> None:
+    database_path = tmp_path / directory / "app.db"
+    connection = _create_app_database(database_path)
+    connection.close()
+    store = MemoryObjectStore()
+    service = _service(database_path, store)
+    assert service.restore_if_needed(allow_bootstrap=False) is False
+    service.backup()
+    database_path.unlink()
+    assert service.restore_if_needed(allow_bootstrap=False) is True
+    restored = sqlite3.connect(database_path)
+    try:
+        assert restored.execute("SELECT value FROM backup_probe").fetchone() == (41,)
+    finally:
+        restored.close()
+
+
 def test_restore_rejects_empty_sqlite_even_with_matching_checksum(tmp_path: Path) -> None:
     database_path = tmp_path / "runtime" / "app.db"
     store = MemoryObjectStore()
