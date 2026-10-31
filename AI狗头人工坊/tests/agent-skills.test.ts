@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { loadAgentSkill, parseAgentSkill, type AgentSkillId } from "../server/agent-skills";
 
 test("runtime skill identity matches the exact loaded file and rejects ambiguous metadata", async () => {
@@ -20,5 +22,18 @@ test("runtime skill identity matches the exact loaded file and rejects ambiguous
 test("unreviewed or path-traversal skill names cannot select runtime files", async () => {
   for (const name of ["../../README", "testing-reality-checker", "toString"]) {
     await assert.rejects(loadAgentSkill(name as AgentSkillId), /Unknown runtime skill/);
+  }
+});
+
+test("runtime skills load from the project when the process starts elsewhere", async () => {
+  const originalCwd = process.cwd();
+  const otherCwd = await mkdtemp(path.join(tmpdir(), "goutou-skill-cwd-"));
+  try {
+    process.chdir(otherCwd);
+    const skill = await loadAgentSkill("portrait-director");
+    assert.equal(skill.name, "portrait-director");
+  } finally {
+    process.chdir(originalCwd);
+    await rm(otherCwd, { recursive: true, force: true });
   }
 });

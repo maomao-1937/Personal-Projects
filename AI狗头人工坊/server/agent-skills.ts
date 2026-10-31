@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
-import path from "node:path";
 
 const skillIds = ["creation-workflow", "portrait-director", "portrait-review"] as const;
 export type AgentSkillId = (typeof skillIds)[number];
@@ -35,7 +34,7 @@ export function loadAgentSkill(name: AgentSkillId): Promise<AgentSkill> {
   if (!skillIds.includes(name)) return Promise.reject(new Error("Unknown runtime skill"));
   let loading = cache.get(name);
   if (!loading) {
-    loading = readFile(path.resolve("agent-skills", name, "SKILL.md"), "utf8")
+    loading = readFile(new URL(`../agent-skills/${name}/SKILL.md`, import.meta.url), "utf8")
       .then(source => parseAgentSkill(name, source))
       .catch(error => { cache.delete(name); throw error; });
     cache.set(name, loading);
