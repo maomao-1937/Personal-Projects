@@ -29,16 +29,10 @@ class RetentionService:
     def cleanup(self) -> CleanupResult:
         cutoff = utc_now() - timedelta(days=self._retention_days)
         with self._session_factory.begin() as session:
-            old_attempt_ids = tuple(
-                session.scalars(
-                    select(AnalysisAttempt.id).where(
-                        AnalysisAttempt.created_at < cutoff,
-                        AnalysisAttempt.quota_status != QuotaStatus.RESERVED,
-                    )
-                )
+            old_attempt_ids = select(AnalysisAttempt.id).where(
+                AnalysisAttempt.created_at < cutoff,
+                AnalysisAttempt.quota_status != QuotaStatus.RESERVED,
             )
-            if not old_attempt_ids:
-                return CleanupResult(deleted_attempts=0, deleted_feedback=0)
             feedback_result = cast(
                 CursorResult[Any],
                 session.execute(delete(Feedback).where(Feedback.analysis_id.in_(old_attempt_ids))),
@@ -46,7 +40,10 @@ class RetentionService:
             attempt_result = cast(
                 CursorResult[Any],
                 session.execute(
-                    delete(AnalysisAttempt).where(AnalysisAttempt.id.in_(old_attempt_ids))
+                    delete(AnalysisAttempt).where(
+                        AnalysisAttempt.created_at < cutoff,
+                        AnalysisAttempt.quota_status != QuotaStatus.RESERVED,
+                    )
                 ),
             )
             return CleanupResult(

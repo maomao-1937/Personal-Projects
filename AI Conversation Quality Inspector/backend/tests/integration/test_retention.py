@@ -1,8 +1,9 @@
 from datetime import timedelta
 from pathlib import Path
+import sqlite3
 from uuid import uuid4
 
-from sqlalchemy import func, select
+from sqlalchemy import event, func, select
 
 from app.core.database import Base, create_database_engine, create_session_factory, utc_now
 from app.models import (
@@ -80,4 +81,44 @@ def test_cleanup_removes_old_metadata_without_restoring_quota(tmp_path: Path) ->
         assert invite.used_count == 2
         assert session.scalar(select(func.count()).select_from(AnalysisAttempt)) == 1
         assert session.scalar(select(func.count()).select_from(Feedback)) == 0
+    engine.dispose()
+
+
+def test_cleanup_handles_more_attempts_than_sqlite_bind_limit(tmp_path: Path) -> None:
+    engine = create_database_engine(f"sqlite:///{tmp_path / 'many-attempts.db'}")
+    event.listen(
+        engine,
+        "connect",
+        lambda connection, _: connection.setlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER, 50),
+    )
+    Base.metadata.create_all(engine)
+    factory = create_session_factory(engine)
+    old_time = utc_now() - timedelta(days=91)
+    with factory.begin() as session:
+        invite = InviteCode(code_digest="s" * 64, label="large-retention", usage_limit=100)
+        session.add(invite)
+        session.flush()
+        for _ in range(60):
+            session.add(
+                AnalysisAttempt(
+                    invite_code_id=invite.id,
+                    idempotency_key=str(uuid4()),
+                    qa_type=QAType.SALES,
+                    quota_status=QuotaStatus.CONSUMED,
+                    analysis_status=AnalysisStatus.SCORED,
+                    char_count=100,
+                    turn_count=2,
+                    model_version="fake-model-v1",
+                    rubric_version="qa-rubric-v1",
+                    prompt_version="qa-analysis-v1",
+                    created_at=old_time,
+                )
+            )
+            session.flush()
+
+    result = RetentionService(factory, retention_days=90).cleanup()
+
+    assert result.deleted_attempts == 60
+    with factory() as session:
+        assert session.scalar(select(func.count()).select_from(AnalysisAttempt)) == 0
     engine.dispose()
