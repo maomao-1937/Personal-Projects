@@ -42,4 +42,12 @@ describe("optional source validation", () => {
       }).success,
     ).toBe(false);
   });
+
+  it("零宽格式字符不能凑够 100 字学习资料", () => {
+    expect(createSessionInputSchema.safeParse({
+      clientRequestId: "123e4567-e89b-42d3-a456-426614174000",
+      title: "RAG 入门",
+      sourceText: "RAG" + "\u200b".repeat(100),
+    }).success).toBe(false);
+  });
 });

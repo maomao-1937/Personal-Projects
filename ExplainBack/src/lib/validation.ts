@@ -8,7 +8,7 @@ export const createSessionInputSchema = z.object({
     .trim()
     .max(60_000)
     .refine(
-      (value) => value.length === 0 || value.replace(/\s/gu, "").length >= 100,
+      (value) => value.length === 0 || value.replace(/[\s\p{Cf}]/gu, "").length >= 100,
       "学习资料请留空，或至少输入 100 个非空白字符",
     )
     .default(""),
