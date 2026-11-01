@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -184,3 +185,31 @@ def test_valid_but_unrelated_sqlite_backup_cannot_replace_app_database(tmp_path:
         service.restore_if_missing()
 
     assert database_path.exists() is False
+
+
+@pytest.mark.parametrize("directory_name", ["runtime#saved", "runtime%20saved", "中文 备份 #1"])
+def test_backup_restore_preserves_special_character_paths(tmp_path: Path, directory_name: str) -> None:
+    directory = tmp_path / directory_name
+    directory.mkdir()
+    source = directory / "source.db"
+    create_sqlite(source, value="original truth")
+    object_store = FakeObjectStore()
+
+    def service(path: Path) -> DatabaseBackupService:
+        return DatabaseBackupService(
+            database_path=path,
+            object_store=object_store,
+            bucket="test-backup",
+            object_key="test.db",
+        )
+
+    assert service(source).backup_now() is True
+    restored = directory / "restored.db"
+    assert service(restored).restore_if_missing() is True
+    assert object_store.download_count == 1
+    for path in [source, restored]:
+        with closing(sqlite3.connect(path)) as connection:
+            assert connection.execute("SELECT value FROM case_state").fetchone() == (
+                "original truth",
+            )
+    assert not list(directory.glob("*.tmp"))

@@ -158,7 +158,7 @@ class DatabaseBackupService:
     @staticmethod
     def _validate_snapshot(path: Path) -> None:
         try:
-            with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as connection:
+            with closing(sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True)) as connection:
                 result = connection.execute("PRAGMA quick_check").fetchone()
                 tables = {
                     row[0]
