@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "concurrently -k \"tsx watch server/index.ts\" \"vite --host 127.0.0.1\"",
     "build": "tsc --noEmit && vite build && esbuild server/index.ts --platform=node --packages=external --format=esm --bundle --outfile=dist-server/index.js",
-    "start": "NODE_ENV=production node dist-server/index.js",
+    "start": "node -e \"process.env.NODE_ENV='production'; import('./dist-server/index.js')\"",
     "check": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts"
   },
