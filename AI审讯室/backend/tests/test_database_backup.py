@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -47,6 +48,37 @@ def create_sqlite(path: Path, value: str = "sealed truth") -> bytes:
         connection.execute("CREATE TABLE case_state (value TEXT NOT NULL)")
         connection.execute("INSERT INTO case_state (value) VALUES (?)", (value,))
     return path.read_bytes()
+
+
+@pytest.mark.parametrize("valid", [True, False])
+def test_snapshot_validation_closes_connections(tmp_path: Path, monkeypatch, valid: bool) -> None:
+    path = tmp_path / "snapshot.db"
+    if valid:
+        create_sqlite(path)
+    else:
+        path.write_bytes(b"not a database")
+    original_connect = sqlite3.connect
+    connections = []
+
+    def connect(*args, **kwargs):
+        connection = original_connect(*args, **kwargs)
+        connections.append(connection)
+        return connection
+
+    monkeypatch.setattr(sqlite3, "connect", connect)
+    try:
+        if valid:
+            DatabaseBackupService._validate_snapshot(path)
+        else:
+            with pytest.raises(DatabaseBackupError):
+                DatabaseBackupService._validate_snapshot(path)
+        assert connections
+        for connection in connections:
+            with pytest.raises(sqlite3.ProgrammingError, match="closed"):
+                connection.execute("SELECT 1")
+    finally:
+        for connection in connections:
+            connection.close()
 
 
 def test_backup_uploads_a_consistent_sqlite_snapshot(tmp_path: Path) -> None:
@@ -153,3 +185,31 @@ def test_valid_but_unrelated_sqlite_backup_cannot_replace_app_database(tmp_path:
         service.restore_if_missing()
 
     assert database_path.exists() is False
+
+
+@pytest.mark.parametrize("directory_name", ["runtime#saved", "runtime%20saved", "中文 备份 #1"])
+def test_backup_restore_preserves_special_character_paths(tmp_path: Path, directory_name: str) -> None:
+    directory = tmp_path / directory_name
+    directory.mkdir()
+    source = directory / "source.db"
+    create_sqlite(source, value="original truth")
+    object_store = FakeObjectStore()
+
+    def service(path: Path) -> DatabaseBackupService:
+        return DatabaseBackupService(
+            database_path=path,
+            object_store=object_store,
+            bucket="test-backup",
+            object_key="test.db",
+        )
+
+    assert service(source).backup_now() is True
+    restored = directory / "restored.db"
+    assert service(restored).restore_if_missing() is True
+    assert object_store.download_count == 1
+    for path in [source, restored]:
+        with closing(sqlite3.connect(path)) as connection:
+            assert connection.execute("SELECT value FROM case_state").fetchone() == (
+                "original truth",
+            )
+    assert not list(directory.glob("*.tmp"))
