@@ -2,10 +2,59 @@ import asyncio
 from uuid import uuid4
 
 import httpx
+import pytest
 
 from app.domain import Material
 from app.main import create_app
 from app.model_gateway import HeuristicModelGateway, ModelGatewayInvalidResponse
+
+
+@pytest.mark.parametrize("method", ["PATCH", "POST"])
+@pytest.mark.parametrize(
+    "title_update, expected_title",
+    [({}, "原始标题"), ({"title": None}, None), ({"title": "新标题"}, "新标题")],
+)
+def test_content_update_only_changes_title_when_supplied(
+    method, title_update, expected_title
+):
+    app = create_app(
+        database_url="sqlite+pysqlite:///:memory:",
+        model_gateway=HeuristicModelGateway(),
+        api_token="test-secret",
+    )
+
+    async def scenario():
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            headers = {"Authorization": "Bearer test-secret"}
+            created = await client.post(
+                "/materials",
+                headers=headers,
+                json={
+                    "source_type": "text",
+                    "title": "原始标题",
+                    "content": "原始内容",
+                },
+            )
+            material_id = created.json()["id"]
+            path = f"/materials/{material_id}" + ("/update" if method == "POST" else "")
+            response = await client.request(
+                method,
+                path,
+                headers=headers,
+                json={"content": "修改后的内容", **title_update},
+            )
+            assert response.status_code == 200
+            assert response.json()["title"] == expected_title
+            stored = await client.get(f"/materials/{material_id}", headers=headers)
+            assert stored.json()["title"] == expected_title
+            assert stored.json()["raw_text"] == "修改后的内容"
+
+    try:
+        asyncio.run(scenario())
+    finally:
+        app.state.repository.close()
 
 
 def test_web_app_shell_and_styles_are_served() -> None:
