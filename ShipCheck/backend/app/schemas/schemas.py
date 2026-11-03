@@ -8,6 +8,8 @@ from pydantic import BaseModel, ConfigDict, Field
 # ===== 请求 =====
 
 class AcceptanceRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     prd_text: str = Field(..., min_length=10, description="PRD 全文")
     target_url: str = Field(..., description="待验收产品网址")
     allow_destructive: bool = Field(
@@ -16,6 +18,8 @@ class AcceptanceRequest(BaseModel):
 
 
 class ReviewRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     prd_text: str = Field(..., min_length=10, description="PRD 全文")
 
 
