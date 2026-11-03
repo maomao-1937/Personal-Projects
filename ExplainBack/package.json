@@ -42,7 +42,7 @@
   },
   "packageManager": "npm@11.16.0",
   "allowScripts": {
-    "better-sqlite3@13.0.3": true,
+    "better-sqlite3@13.0.3": false,
     "unrs-resolver@1.12.2": true
   }
 }
