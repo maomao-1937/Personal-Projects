@@ -144,6 +144,7 @@ ul { padding: 0; list-style: none; }
 .btn .icon { width: 18px; height: 18px; }
 .btn:active { transform: scale(.97); }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn[hidden] { display: none; }
 .btn--primary { background: var(--grad); color: #fff; box-shadow: var(--shadow); }
 .btn--primary::after {
   content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
