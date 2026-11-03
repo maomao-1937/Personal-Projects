@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 学习监督规划助手
 
-## Getting Started
+本地单用户学习工具，包含任务与子任务、番茄钟、每日打卡和统计面板。数据保存在 SQLite；当前支持 JSON 导出，尚无产品内导入入口。
 
-First, run the development server:
+## 首次启动
 
-```bash
+需要 Node.js 22.12+，本轮验证环境为 Windows x64、Node 26.3.0、npm 11.16.0。
+
+```sh
+npm ci
+npm run db:setup
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+访问 http://localhost:3000。安装后会自动生成被 Git 忽略的 Prisma Client；`db:setup` 为新数据库创建文件并应用仓库已有的四个迁移。已有数据库只执行待应用迁移，不执行 reset 或清空用户任务；迁移失败会退出。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+时长字段的历史迁移已修正为将 `actualSec` 原值复制到 `plannedSec`，保留已有番茄钟记录。已经应用过该迁移的数据库不会重跑它；已处于失败迁移状态的数据库仍需先备份并人工检查、处理 Prisma 迁移历史，脚本不会自动 reset 或改写历史。开发环境 `prisma migrate dev` 可能提示已应用迁移的校验和变化，应先核对备份与数据库状态，不要据此直接重置数据。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+默认数据库为项目目录中的 `dev.db`。可在本地 `.env` 中设置 `DATABASE_URL=file:./dev.db` 或指定其他 SQLite 路径。Prisma CLI 与应用使用相同的默认路径。数据库与环境文件不应提交到 Git。
 
-## Learn More
+npm 11 的脚本权限只禁用已自带预编译绑定的 `better-sqlite3@13.0.2` 安装编译，保留 Prisma 及其 SQLite adapter 所需安装脚本。未升级依赖；其他平台需独立验证。
 
-To learn more about Next.js, take a look at the following resources:
+## 构建与检查
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```sh
+npm test
+npm run lint
+npm run build
+npm start
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+构建前先完成 `npm run db:setup`，因为部分页面会在构建时查询数据库。测试使用独立临时数据库，覆盖全新文件迁移和再次初始化保留已有任务。
 
-## Deploy on Vercel
+## 核心流程
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- 在「任务管理」创建任务、子任务，调整优先级、排序和完成状态。
+- 在「番茄钟」选择任务并开始计时，完整阶段结束后保存记录。
+- 在「打卡」记录当日心情与备注。
+- 在「统计」查看聚合记录或导出 JSON。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+本地启动、构建及模拟/真实数据验证应分别记录；通过本地检查不代表已经部署。
