@@ -10,7 +10,7 @@ import { validGoals } from './taskPlanValidation.mjs';
 const SESSION_LIFETIME = 30 * 24 * 60 * 60 * 1000;
 const BODY_LIMIT = 4 * 1024 * 1024;
 const LIMIT_WINDOW = 15 * 60 * 1000;
-const isoDate = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
+const isoDate = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !value.startsWith('0000') && !Number.isNaN(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
 
 function anniversary(birth, years) {
   const [year, month, day] = birth.split('-').map(Number);

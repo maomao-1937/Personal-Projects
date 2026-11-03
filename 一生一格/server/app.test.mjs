@@ -25,6 +25,19 @@ const profile = {
   guide: { goal: '写一页', distraction: '刷手机', soundEnabled: false }, updatedAt: '',
 };
 
+test('a year-zero profile cannot replace an existing readable calendar', async (t) => {
+  const f = await fixture(t);
+  const account = f.create();
+  const { cookie } = await f.login(account.code);
+  const saved = await f.request('/api/profile', { method: 'PUT', cookie, body: { profile, revision: 0 } });
+  assert.equal(saved.status, 200);
+  const invalid = await f.request('/api/profile', { method: 'PUT', cookie, body: { profile: { ...profile, birthDate: '0000-01-01', endDate: '0090-01-01' }, revision: 1 } });
+  assert.equal(invalid.status, 400);
+  const after = await f.request('/api/profile', { cookie });
+  assert.equal(after.data.revision, 1);
+  assert.equal(after.data.profile.birthDate, profile.birthDate);
+});
+
 async function fixture(t, options = {}) {
   let clock = Date.UTC(2026, 8, 25);
   const app = createApp({ allowedOrigins: [ORIGIN], authSecret: SECRET, now: () => clock, ...options });
