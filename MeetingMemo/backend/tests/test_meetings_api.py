@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from sqlalchemy import select
 
 from app.meetings.models import Meeting, TranscriptSegment
@@ -83,7 +84,15 @@ def test_vtt_upload_is_parsed(auth_client):
     assert detail["segments"][0]["start_ms"] == 1000
 
 
-def test_invalid_timestamp_upload_preserves_existing_transcript(auth_client, settings):
+@pytest.mark.parametrize(
+    "timing",
+    [
+        b"00:00:03.000 --> 00:00:01.000",
+        b"-00:00:01.000 --> 00:00:03.000",
+        b"00:00:01.000 --> 00:00:03.0000",
+    ],
+)
+def test_invalid_timestamp_upload_preserves_existing_transcript(auth_client, settings, timing):
     meeting_id = create_meeting(auth_client)
     original = b"WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nAlice: Original\n"
     path = f"/api/v1/meetings/{meeting_id}/transcript-file"
@@ -98,7 +107,7 @@ def test_invalid_timestamp_upload_preserves_existing_transcript(auth_client, set
         files={
             "file": (
                 "meeting.vtt",
-                b"WEBVTT\n\n00:00:03.000 --> 00:00:01.000\nBob: Invalid\n",
+                b"WEBVTT\n\n" + timing + b"\nBob: Invalid\n",
                 "text/vtt",
             )
         },
