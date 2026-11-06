@@ -19,7 +19,7 @@ def test_txt_parser_splits_paragraphs_and_speakers():
 
 
 def test_vtt_parser_preserves_timestamps():
-    segments = parse_vtt("WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nAlice: Ship it\n")
+    segments = parse_vtt("WEBVTT\n\n00:00:01.000 --> 00:00:03.000 align:start\nAlice: Ship it\n")
 
     assert segments[0].start_ms == 1000
     assert segments[0].end_ms == 3000
@@ -41,6 +41,23 @@ def test_srt_parser_preserves_multiline_text():
     assert segments[0].end_ms == 7000
     assert segments[0].speaker == "Bob"
     assert segments[0].text == "First line\nsecond line"
+
+
+@pytest.mark.parametrize("parser", [parse_vtt, parse_srt])
+@pytest.mark.parametrize(
+    "timing",
+    [
+        "00:00:03.000 --> 00:00:01.000",
+        "00:60:00.000 --> 01:01:00.000",
+        "00:00:60.000 --> 00:02:00.000",
+        "-00:00:01.000 --> 00:00:03.000",
+        "00:00:01.000 --> 00:00:03.0000",
+    ],
+)
+def test_timed_transcript_rejects_invalid_timestamps(parser, timing):
+    with pytest.raises(DomainError) as error:
+        parser(f"{timing}\nAlice: Release on Friday.\n")
+    assert error.value.code == "TRANSCRIPT_FORMAT_INVALID"
 
 
 @pytest.mark.parametrize(
