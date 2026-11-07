@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { startOfDay, endOfDay, format } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { TimerPanel } from "./timer-panel";
@@ -6,6 +7,7 @@ import { SessionList, type SessionRow } from "./session-list";
 import type { Phase } from "./timer-store";
 
 export default async function TimerPage() {
+  await connection();
   const now = new Date();
 
   const [tasks, sessions] = await Promise.all([
