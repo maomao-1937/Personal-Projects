@@ -29,7 +29,7 @@ from app.model_gateway import (
     ModelGatewayUnavailable,
     TencentHy3ModelGateway,
 )
-from app.repository import Repository
+from app.repository import MaterialChangedError, Repository
 from app.retrieval import MaterialRetriever
 from app.security import UnsafeUrlError
 from app.workflow import (
@@ -156,6 +156,10 @@ def create_app(
             material = IngestionService(repository, gateway).reanalyze(
                 user_id, material_id
             )
+        except MaterialChangedError as exc:
+            raise HTTPException(
+                status_code=409, detail="素材在分析期间已修改，请刷新后重试"
+            ) from exc
         except (
             ModelGatewayAuthenticationError,
             ModelGatewayInvalidResponse,

@@ -69,13 +69,21 @@ class IngestionService:
         return self.repository.update_material(user_id, material_id, updated)
 
     def reanalyze(self, user_id: str, material_id) -> Material | None:
-        existing = self.repository.get_material(user_id, material_id)
-        if existing is None:
+        snapshot = self.repository.get_material_snapshot(user_id, material_id)
+        if snapshot is None:
             return None
-        return self.update(
-            user_id,
-            material_id,
-            MaterialUpdate(title=existing.title, content=existing.raw_text),
+        existing, expected_payload = snapshot
+        content = MaterialUpdate(content=existing.raw_text).content
+        analysis = self.analyzer.analyze_material(content)
+        updated = existing.model_copy(
+            update={
+                **analysis.model_dump(),
+                "processing_status": "ready",
+                "model_name": self._public_model_name(),
+            }
+        )
+        return self.repository.update_material(
+            user_id, material_id, updated, expected_payload=expected_payload
         )
 
     def _public_model_name(self) -> str:
