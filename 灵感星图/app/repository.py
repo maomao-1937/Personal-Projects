@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import JSON, String, create_engine, select
+from sqlalchemy import JSON, String, Text, cast, create_engine, select, update
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from sqlalchemy.pool import StaticPool
 
@@ -11,6 +11,10 @@ from app.domain import Feedback, FeedbackCreate, Material, ProjectHypothesis
 
 class Base(DeclarativeBase):
     pass
+
+
+class MaterialChangedError(RuntimeError):
+    """The material no longer matches the snapshot used for analysis."""
 
 
 class MaterialRecord(Base):
@@ -86,20 +90,46 @@ class Repository:
             ).all()
             return [Material.model_validate(record.payload) for record in records]
 
-    def update_material(
-        self, user_id: str, material_id: UUID, material: Material
-    ) -> Material | None:
+    def get_material_snapshot(
+        self, user_id: str, material_id: UUID
+    ) -> tuple[Material, str] | None:
         with Session(self._engine) as session:
-            record = session.scalar(
-                select(MaterialRecord).where(
+            row = session.execute(
+                select(
+                    MaterialRecord.payload, cast(MaterialRecord.payload, Text).label("snapshot")
+                ).where(
                     MaterialRecord.id == str(material_id),
                     MaterialRecord.user_id == user_id,
                 )
-            )
-            if record is None:
+            ).one_or_none()
+            if row is None:
                 return None
-            record.payload = material.model_dump(mode="json")
-            session.commit()
+            payload, snapshot = row
+            return Material.model_validate(payload), snapshot
+
+    def update_material(
+        self,
+        user_id: str,
+        material_id: UUID,
+        material: Material,
+        *,
+        expected_payload: str | None = None,
+    ) -> Material | None:
+        statement = (
+            update(MaterialRecord)
+            .where(
+                MaterialRecord.id == str(material_id),
+                MaterialRecord.user_id == user_id,
+            )
+            .values(payload=material.model_dump(mode="json"))
+        )
+        if expected_payload is not None:
+            statement = statement.where(cast(MaterialRecord.payload, Text) == expected_payload)
+        with self._engine.begin() as connection:
+            if connection.execute(statement).rowcount == 0:
+                if expected_payload is not None:
+                    raise MaterialChangedError
+                return None
         return material
 
     def save_hypothesis(
