@@ -230,3 +230,39 @@ def test_delete_makes_meeting_immediately_inaccessible(auth_client, session_fact
         stored = session.get(Meeting, meeting_id)
         assert stored is not None
         assert stored.deleted_at is not None
+
+
+def test_srt_upload_with_browser_default_content_type_is_parsed(auth_client):
+    meeting_id = create_meeting(auth_client)
+    content = b"1\r\n00:00:01,500 --> 00:00:03,000\r\nAlice: Ship it\r\n"
+
+    response = auth_client.post(
+        f"/api/v1/meetings/{meeting_id}/transcript-file",
+        files={"file": ("meeting.srt", content, "application/octet-stream")},
+    )
+
+    assert response.status_code == 200, response.json()
+    assert response.json()["segment_count"] == 1
+    segment = auth_client.get(f"/api/v1/meetings/{meeting_id}").json()["segments"][0]
+    assert (segment["start_ms"], segment["end_ms"], segment["speaker"], segment["text"]) == (
+        1500,
+        3000,
+        "Alice",
+        "Ship it",
+    )
+
+
+def test_non_srt_generic_upload_preserves_existing_transcript(auth_client):
+    meeting_id = create_meeting(auth_client)
+    url = f"/api/v1/meetings/{meeting_id}"
+    assert auth_client.post(f"{url}/transcript", json={"text": "Original notes"}).status_code == 200
+    before = auth_client.get(url).json()["segments"]
+
+    response = auth_client.post(
+        f"{url}/transcript-file",
+        files={"file": ("invalid.srt", b"not a subtitle", "application/octet-stream")},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "TRANSCRIPT_FILE_INVALID"
+    assert auth_client.get(url).json()["segments"] == before
