@@ -7,7 +7,9 @@ from app.core.errors import DomainError
 ALLOWED_CONTENT_TYPES = {
     ".txt": {"text/plain"},
     ".vtt": {"text/plain", "text/vtt"},
-    ".srt": {"application/x-subrip", "text/plain"},
+    # Chromium may send a generic multipart type when the OS has no SRT MIME mapping.
+    # The payload still has to pass the SRT content checks below.
+    ".srt": {"application/x-subrip", "text/plain", "application/octet-stream"},
 }
 AUDIO_VIDEO_SUFFIXES = {
     ".aac",
