@@ -279,7 +279,7 @@
       renderResults();
     } catch (e) {
       toast('生成失败：' + e.message);
-      grid.innerHTML = '';
+      renderResults();
     } finally {
       state.generating = false;
       updateFab();
