@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 
 from backend.persistence.database import Database
 from backend.storage.local_artifacts import LocalArtifactStore
+
+
+logger = logging.getLogger(__name__)
 
 
 class RetentionService:
@@ -35,21 +39,25 @@ class RetentionService:
         expired = 0
         for row in rows:
             artifact_path = self.artifacts.resolve(row["storage_key"])
-            with self.database.transaction() as connection:
-                updated = connection.execute(
-                    """
-                    UPDATE artifacts
-                    SET status = 'expired', expires_at = ?
-                    WHERE id = ? AND status = 'ready'
-                      AND EXISTS (
-                          SELECT 1 FROM projects
-                          WHERE projects.id = artifacts.project_id
-                            AND projects.updated_at < ?
-                      )
-                    """,
-                    (current.isoformat(), row["id"], cutoff),
-                ).rowcount
-                if updated:
-                    artifact_path.unlink(missing_ok=True)
+            try:
+                with self.database.transaction() as connection:
+                    updated = connection.execute(
+                        """
+                        UPDATE artifacts
+                        SET status = 'expired', expires_at = ?
+                        WHERE id = ? AND status = 'ready'
+                          AND EXISTS (
+                              SELECT 1 FROM projects
+                              WHERE projects.id = artifacts.project_id
+                                AND projects.updated_at < ?
+                          )
+                        """,
+                        (current.isoformat(), row["id"], cutoff),
+                    ).rowcount
+                    if updated:
+                        artifact_path.unlink(missing_ok=True)
+            except OSError:
+                logger.warning("Retention will retry artifact %s after a file operation failed", row["id"])
+                continue
             expired += updated
         return expired

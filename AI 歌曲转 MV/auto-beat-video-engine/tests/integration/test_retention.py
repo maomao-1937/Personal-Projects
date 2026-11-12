@@ -2,8 +2,6 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import pytest
-
 from backend.persistence.database import Database
 from backend.persistence.repositories import Repositories
 from backend.services.retention import RetentionService
@@ -95,7 +93,7 @@ def test_retention_keeps_file_when_project_becomes_active_after_candidate_read(t
         ).fetchone()[0] == "ready"
 
 
-def test_retention_retries_after_temporary_file_lock(tmp_path, monkeypatch) -> None:
+def test_retention_retries_locked_file_and_expires_other_files(tmp_path, monkeypatch) -> None:
     database = Database(tmp_path / "app.db")
     database.initialize()
     repositories = Repositories(database)
@@ -103,15 +101,19 @@ def test_retention_retries_after_temporary_file_lock(tmp_path, monkeypatch) -> N
     project = repositories.projects.create(user.id, "Locked file")
     artifacts = LocalArtifactStore(tmp_path / "artifacts")
     stored = artifacts.put_bytes(f"{project.id}/video.mp4", b"retry later")
+    unlocked = artifacts.put_bytes(f"{project.id}/other.mp4", b"expire now")
     now = datetime.now(timezone.utc)
     with database.transaction() as connection:
         connection.execute(
             "UPDATE projects SET updated_at = ? WHERE id = ?",
             ((now - timedelta(days=31)).isoformat(), project.id),
         )
-        connection.execute(
+        connection.executemany(
             "INSERT INTO artifacts VALUES (?, ?, 'video', ?, '{}', 'ready', NULL, ?)",
-            ("art_locked", project.id, stored.key, now.isoformat()),
+            [
+                ("art_locked", project.id, stored.key, now.isoformat()),
+                ("art_unlocked", project.id, unlocked.key, now.isoformat()),
+            ],
         )
 
     original_unlink = Path.unlink
@@ -126,14 +128,17 @@ def test_retention_retries_after_temporary_file_lock(tmp_path, monkeypatch) -> N
 
     monkeypatch.setattr(Path, "unlink", unlink_with_temporary_lock)
     service = RetentionService(database, artifacts, retention_days=30)
-    with pytest.raises(PermissionError, match="temporary file lock"):
-        service.purge_inactive(now=now)
+    assert service.purge_inactive(now=now) == 1
 
     assert stored.path.read_bytes() == b"retry later"
+    assert not unlocked.path.exists()
     with database.connect() as connection:
         artifact = connection.execute(
             "SELECT status, expires_at FROM artifacts WHERE id = 'art_locked'"
         ).fetchone()
+        assert connection.execute(
+            "SELECT status FROM artifacts WHERE id = 'art_unlocked'"
+        ).fetchone()[0] == "expired"
     assert (artifact["status"], artifact["expires_at"]) == ("ready", None)
     assert service.purge_inactive(now=now) == 1
     assert not stored.path.exists()
