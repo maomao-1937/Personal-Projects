@@ -33,7 +33,7 @@ AI 歌曲转 MV/
 cd auto-beat-video-engine
 cp .env.example .env   # 填入 STORYBOARD_* / VIDEO_* 等密钥
 uv sync
-uv run uvicorn backend.app.main:app --reload
+uv run uvicorn backend.main:app --reload
 ```
 
 前端：
